@@ -15,7 +15,7 @@ public class EditPopup {
 	private GridLayout gl = new GridLayout(3, 2, 5, 5);
 	
 	private String type[] = {"Gang", "Regal", "Rolltreppe", "Aufzug", "Kasse"};
-	private String article[] = {"Lebensmittel", "Hygene", "Drogerie", "Kleidung", "Elektro", "Boote", "Sport", "Outdoor", "Parfüm", "Zeugs"};
+	private String article[] = {"Lebensmittel", "Hygene", "Drogerie", "Kleidung", "Elektro", "Boote", "Sport", "Outdoor", "Parfï¿½m", "Zeugs"};
 	
 	private JComboBox<String> typeSelector = new JComboBox<>(type);	
 	private JComboBox<String> articleSelector = new JComboBox<>(article);
@@ -26,9 +26,9 @@ public class EditPopup {
 		f.setSize(300, 400);
 		f.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 		f.setLayout(gl);
-		f.add(new JLabel("Feldtyp auswählen: "));
+		f.add(new JLabel("Feldtyp auswï¿½hlen: "));
 		f.add(typeSelector);
-		f.add(new JLabel("Regalinhalt auswählen: "));
+		f.add(new JLabel("Regalinhalt auswï¿½hlen: "));
 		f.add(articleSelector);
 		f.add(new JLabel(""));
 		f.add(save);
@@ -43,7 +43,7 @@ public class EditPopup {
 	}
 	
 	/**
-	 * Setze die Parameter und sende sie zurück ans DrawPanel
+	 * Setze die Parameter und sende sie zurï¿½ck ans DrawPanel
 	 */
 	protected void setContents() {
 		int t = 0, c = 0;
@@ -66,7 +66,7 @@ public class EditPopup {
 			break;
 		}
 		c = 0;
-		backhandle.saveFromEditor(t, c);
+		backhandle.saveFromEditor(t, c, 0);
 	}
 
 	public void toggleOn(DrawPanel drawPanel) {

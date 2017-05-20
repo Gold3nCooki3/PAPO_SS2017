@@ -9,8 +9,8 @@ public class Field {
 	 * 4 = Rolltreppe/Aufzug = gelb
 	 */
 	int type = 0;			//Definiert ob Gang, Schrank, Kasse, Rolltreppe, ...
-	int content;		//
-	int contentcount;
+	int content = 0;		//
+	int contentcount = 0;
 	boolean working = false;
 	
 	public Field() {
@@ -33,13 +33,14 @@ public class Field {
 		return working;
 	}
 
-	public void setData(int type, int content) {
+	public void setData(int type, int content, int contentcount) {
 		this.type = type;
 		this.content = content;
+		this.contentcount = contentcount;
 	}
 	
 	public int[] getData() {
-		int ret[] = {this.type, this.content}; 
+		int ret[] = {this.type, this.content, this.contentcount}; 
 		return ret;
 	}
 }

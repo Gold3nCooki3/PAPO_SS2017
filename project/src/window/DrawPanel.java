@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Point;
 import java.io.File;
+import java.io.IOException;
 
 import javax.swing.JPanel;
 
@@ -24,7 +25,7 @@ public class DrawPanel extends JPanel {
 	StoryContainer workingData;								//Aktuelles Stockwerk in Datenform
 	
 	EditPopup editor = new EditPopup();
-
+	
 	/**
 	 * 
 	 */
@@ -155,6 +156,7 @@ public class DrawPanel extends JPanel {
 		//Wechsle Etage
 		this.currentStory = curStory;
 		workingData = shoppingMall[this.currentStory];
+		repaint();
 	}
 	
 	/**
@@ -200,11 +202,11 @@ public class DrawPanel extends JPanel {
 		editor.toggleOn(this);
 	}
 	
-	public void saveFromEditor(int type, int content) {
+	public void saveFromEditor(int type, int content, int contentcount) {
 		for (int r = 0; r < rows; r++) {
 			for (int c = 0; c < columns; c++) {
 				if (workingData.getWorking(r, c)) {
-					workingData.setData(r, c, type, content);
+					workingData.setData(r, c, type, content, contentcount);
 					workingData.setNotWorking(r, c);
 				}
 			}
@@ -226,8 +228,42 @@ public class DrawPanel extends JPanel {
 
 	/**
 	 * Starte das Schreiben der Daten
+	 * @throws IOException 
 	 */
-	public void writeData(File saveFile) {
-		
+	public void writeData(File saveFile) throws IOException {
+		DataIO out = new DataIO();
+		out.initWriter(saveFile);
+		out.writeLevelInit(rows, columns, stories);
+		for(int s = 0; s < stories; s++) {
+			for(int r = 0; r < rows; r++) {
+				for(int c = 0; c < columns; c++) {
+					out.writeDataLine(shoppingMall[s].getData(r, c));
+				}
+			}
+		}
+		out.closeWriter();
+	}
+	
+	public void readData(File openFile) throws IOException {
+		DataIO in = new DataIO();
+		in.initReader(openFile);
+		int arr[] = in.readLevelInit(openFile);
+		setRows(arr[0]);
+		setColumns(arr[1]);
+		setStories(arr[2]);
+		setCurrentStory(1);
+		int buf[] = new int[3];
+		for(int s = 0; s < this.stories; s++) {
+			workingData = shoppingMall[s];
+			for(int r = 0; r < this.rows; r++) {
+				for(int c = 0; c < this.columns; c++) {
+					buf = in.readLevelField();
+					workingData.setData(r, c, buf[0], buf[1], buf[2]);
+				}
+			}
+			shoppingMall[s] = workingData;
+		}
+		in.closeReader();
+		repaint();
 	}
 }

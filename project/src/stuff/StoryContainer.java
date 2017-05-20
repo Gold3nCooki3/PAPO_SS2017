@@ -17,7 +17,7 @@ public class StoryContainer {
 
 	public void addData(int row, int column, int type, int id) {
 		// Hier kommt die Unterscheidung auf Gang, Schrank, Rolltreppe, Kassen
-		// ... rein und dementsprechend wird das Feld befüllt
+		// ... rein und dementsprechend wird das Feld befï¿½llt
 	}
 
 	/**
@@ -31,7 +31,7 @@ public class StoryContainer {
 	}
 
 	/**
-	 * Setter für die Zeilen und Reinitialisiuerung
+	 * Setter fï¿½r die Zeilen und Reinitialisiuerung
 	 * @param rows
 	 */
 	public void setRows(int rows) {
@@ -40,7 +40,7 @@ public class StoryContainer {
 	}
 	
 	/**
-	 * Setter für die Spalten und Reinitialisierung
+	 * Setter fï¿½r die Spalten und Reinitialisierung
 	 * @param columns
 	 */
 	public void setColumns(int columns) {
@@ -69,8 +69,8 @@ public class StoryContainer {
 	 * @param type
 	 * @param content
 	 */
-	public void setData(int row, int column, int type, int content) {
-		storyContent[row][column].setData(type, content);
+	public void setData(int row, int column, int type, int content, int contentcount) {
+		storyContent[row][column].setData(type, content, contentcount);
 	}
 	
 	/**
