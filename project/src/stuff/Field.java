@@ -5,11 +5,12 @@ public class Field {
 	 * 0 == frei
 	 * 1 = Gang = grau
 	 * 2 = Schrank = Farbe nach Inhalt
-	 * 3 = Kasse = grün
+	 * 3 = Kasse = grï¿½n
 	 * 4 = Rolltreppe/Aufzug = gelb
 	 */
 	int type = 0;			//Definiert ob Gang, Schrank, Kasse, Rolltreppe, ...
 	int content;		//
+	int contentcount;
 	boolean working = false;
 	
 	public Field() {

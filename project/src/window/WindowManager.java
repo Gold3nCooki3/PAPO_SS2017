@@ -6,11 +6,14 @@ import java.awt.Container;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Point;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JSlider;
@@ -43,17 +46,17 @@ public class WindowManager {
 																		// durch
 																		// die
 																		// Stockwerke
-	JLabel storySetterInfo = new JLabel("Anzahl Stockwerke"); // Titel für das
+	JLabel storySetterInfo = new JLabel("Anzahl Stockwerke"); // Titel fï¿½r das
 																// Eingabefeld
 																// storySetter
-	JTextField storySetter = new JTextField("5"); // Eingabefeld für
+	JTextField storySetter = new JTextField("5"); // Eingabefeld fï¿½r
 												// Stockwerkszahl
 	JLabel rowSetterInfo = new JLabel("#Zeilen");
 	JTextField rowSetter = new JTextField("10");
 	JLabel columnsSetterInfo = new JLabel("#Spalten");
 	JTextField columnsSetter = new JTextField("10");
 
-	boolean noerrors = true;				//true, wenn alle eingegebene Parameter in den Textfeldern zulässig sind und gespeichert werden darf
+	boolean noerrors = true;				//true, wenn alle eingegebene Parameter in den Textfeldern zulï¿½ssig sind und gespeichert werden darf
 	
 	public WindowManager() {
 		// Init Window
@@ -77,24 +80,48 @@ public class WindowManager {
 		f.setVisible(true);
 
 		addTextfieldListeners();
-		addDoubleclickListener();
+		addClickListener();
+		addButtonListeners();
 	}
 
 	/**
-	 * Setzt einen Listener auf das DrawPanel dp, damit man Felder mit Doppelklick modifizieren kann
+	 * Ãœberwacht die Buttons auf Klickevents
 	 */
-	private void addDoubleclickListener() {
-		//Höre auf Mausklicks und sorge dafür, dass nicht-drag erkannt wird
+	private void addButtonListeners() {
+		//Ladebutton
+		
+		//Speicherbutton
+		saveButton.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				//Schreibe Kaufhaus in Datei
+				//1. Starte Ausgabedialog
+				//2. Schreibe
+				JFileChooser auswahl = new JFileChooser();
+				int action = auswahl.showSaveDialog(null);
+				if(action == JFileChooser.APPROVE_OPTION) {
+					dp.writeData(auswahl.getSelectedFile());
+				}
+			}
+		});
+	}
+
+	/**
+	 * Setzt einen Listener auf das DrawPanel dp, damit man Felder modifizieren kann
+	 */
+	private void addClickListener() {
+		//Hï¿½re auf Mausklicks und sorge dafï¿½r, dass nicht-drag erkannt wird
 		dp.addMouseListener(new MouseListener() {
 			@Override
 			public void mousePressed(MouseEvent me) {
 				dp.modifyField(new Point(me.getX(), me.getY()));
-				//Deaktiviere Größensetzung rowSetter und columnsSetter
+				//Deaktiviere Grï¿½ï¿½ensetzung rowSetter und columnsSetter
 				rowSetter.setEnabled(false);
 				columnsSetter.setEnabled(false);
 			}
 			
-			//Öffne Editor
+			//ï¿½ffne Editor
 			@Override
 			public void mouseReleased(MouseEvent me) {
 				dp.invokeEditor();
@@ -110,7 +137,7 @@ public class WindowManager {
 			public void mouseClicked(MouseEvent arg0) {/*Do nothing*/}
 		});
 		
-		//Höre auf Mausbewegung um Felder zeichnen zu können
+		//Hï¿½re auf Mausbewegung um Felder zeichnen zu kï¿½nnen
 		dp.addMouseMotionListener(new MouseMotionListener() {
 			
 			@Override
@@ -125,7 +152,7 @@ public class WindowManager {
 
 
 	/**
-	 * Prüft, ob der inhalt für ein gegebenes Textfeld aus positiven Zahlen größer als 0 besteht
+	 * Prï¿½ft, ob der inhalt fï¿½r ein gegebenes Textfeld aus positiven Zahlen grï¿½ï¿½er als 0 besteht
 	 * @param tf
 	 */
 	private boolean inputchecker(JTextField tf) {
@@ -167,62 +194,62 @@ public class WindowManager {
 	}
 	
 	private void addTextfieldListeners() {
-		// Listener für Änderungen der Spaltenzahl
+		// Listener fï¿½r ï¿½nderungen der Spaltenzahl
 		columnsSetter.getDocument().addDocumentListener(new DocumentListener() {
 
 			@Override
 			public void removeUpdate(DocumentEvent e) {
-				// Prüfe ob Zahl>0 und aktualisiere Spaltenzahl, wenn dem so ist
+				// Prï¿½fe ob Zahl>0 und aktualisiere Spaltenzahl, wenn dem so ist
 				if (inputchecker(columnsSetter))
 					dp.setColumns(Integer.parseInt(columnsSetter.getText()));
 			}
 
 			@Override
 			public void insertUpdate(DocumentEvent e) {
-				// Prüfe ob Zahl>0 und aktualisiere Spaltenzahl, wenn dem so ist
+				// Prï¿½fe ob Zahl>0 und aktualisiere Spaltenzahl, wenn dem so ist
 				if (inputchecker(columnsSetter))
 					dp.setColumns(Integer.parseInt(columnsSetter.getText()));
 			}
 
 			@Override
 			public void changedUpdate(DocumentEvent e) {
-				// Prüfe ob Zahl>0 und aktualisiere Spaltenzahl, wenn dem so ist
+				// Prï¿½fe ob Zahl>0 und aktualisiere Spaltenzahl, wenn dem so ist
 				if (inputchecker(columnsSetter))
 					dp.setColumns(Integer.parseInt(columnsSetter.getText()));
 			}
 		});
 
-		// Listener für Änderungen der Zeilenzahl
+		// Listener fï¿½r ï¿½nderungen der Zeilenzahl
 		rowSetter.getDocument().addDocumentListener(new DocumentListener() {
 
 			@Override
 			public void removeUpdate(DocumentEvent e) {
-				// Prüfe ob Zahl>0 und aktualisiere Zeilenzahl, wenn dem so ist
+				// Prï¿½fe ob Zahl>0 und aktualisiere Zeilenzahl, wenn dem so ist
 				if (inputchecker(rowSetter))
 					dp.setRows(Integer.parseInt(rowSetter.getText()));
 			}
 
 			@Override
 			public void insertUpdate(DocumentEvent e) {
-				// Prüfe ob Zahl>0 und aktualisiere Zeilenzahl, wenn dem so ist
+				// Prï¿½fe ob Zahl>0 und aktualisiere Zeilenzahl, wenn dem so ist
 				if (inputchecker(rowSetter))
 					dp.setRows(Integer.parseInt(rowSetter.getText()));
 			}
 
 			@Override
 			public void changedUpdate(DocumentEvent e) {
-				// Prüfe ob Zahl>0 und aktualisiere Zeilenzahl, wenn dem so ist
+				// Prï¿½fe ob Zahl>0 und aktualisiere Zeilenzahl, wenn dem so ist
 				if (inputchecker(rowSetter))
 					dp.setRows(Integer.parseInt(rowSetter.getText()));
 			}
 		});
 
-		// Listener für Änderungen der Stockwerkszahl
+		// Listener fï¿½r ï¿½nderungen der Stockwerkszahl
 		storySetter.getDocument().addDocumentListener(new DocumentListener() {
 
 			@Override
 			public void removeUpdate(DocumentEvent e) {
-				// Prüfe ob Zahl>0 und aktualisiere Stockwerkszahl, wenn dem so
+				// Prï¿½fe ob Zahl>0 und aktualisiere Stockwerkszahl, wenn dem so
 				// ist
 				if (inputchecker(storySetter))
 					dp.setStories(Integer.parseInt(storySetter.getText()));
@@ -230,7 +257,7 @@ public class WindowManager {
 
 			@Override
 			public void insertUpdate(DocumentEvent e) {
-				// Prüfe ob Zahl>0 und aktualisiere Stockwerkszahl, wenn dem so
+				// Prï¿½fe ob Zahl>0 und aktualisiere Stockwerkszahl, wenn dem so
 				// ist
 				if (inputchecker(storySetter))
 					dp.setStories(Integer.parseInt(storySetter.getText()));
@@ -238,7 +265,7 @@ public class WindowManager {
 
 			@Override
 			public void changedUpdate(DocumentEvent e) {
-				// Prüfe ob Zahl>0 und aktualisiere Stockwerkszahl, wenn dem so
+				// Prï¿½fe ob Zahl>0 und aktualisiere Stockwerkszahl, wenn dem so
 				// ist
 				if (inputchecker(storySetter))
 					dp.setStories(Integer.parseInt(storySetter.getText()));

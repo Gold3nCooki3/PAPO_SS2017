@@ -3,9 +3,11 @@ package window;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Point;
+import java.io.File;
 
 import javax.swing.JPanel;
 
+import stuff.DataIO;
 import stuff.StoryContainer;
 
 @SuppressWarnings("serial")
@@ -33,7 +35,7 @@ public class DrawPanel extends JPanel {
 	}
 
 	/**
-	 * Überschreiben der paintComponent
+	 * ï¿½berschreiben der paintComponent
 	 */
 	@Override
 	protected void paintComponent(Graphics g) {
@@ -46,7 +48,7 @@ public class DrawPanel extends JPanel {
 	}
 	
 	/**
-	 * Färbt die bereits belegten Felder ein 
+	 * Fï¿½rbt die bereits belegten Felder ein 
 	 * @param g
 	 */
 	private void drawFields(Graphics g) {
@@ -110,7 +112,7 @@ public class DrawPanel extends JPanel {
 	}
 
 	/**
-	 * Setter für Zeilenzahl
+	 * Setter fï¿½r Zeilenzahl
 	 * 
 	 * @param rows
 	 */
@@ -121,7 +123,7 @@ public class DrawPanel extends JPanel {
 	}
 
 	/**
-	 * Setter für Spaltenzahl
+	 * Setter fï¿½r Spaltenzahl
 	 * 
 	 * @param columns
 	 */
@@ -132,7 +134,7 @@ public class DrawPanel extends JPanel {
 	}
 	
 	/**
-	 * Setter für die Anzahl von Stockwerken (stories)
+	 * Setter fï¿½r die Anzahl von Stockwerken (stories)
 	 * @param story
 	 */
 	public void setStories(int stories) {
@@ -148,7 +150,7 @@ public class DrawPanel extends JPanel {
 	 * @param curStory
 	 */
 	public void setCurrentStory(int curStory) {
-		//Speichere erst die aktuelle Etage zurück
+		//Speichere erst die aktuelle Etage zurï¿½ck
 		shoppingMall[currentStory] = workingData;
 		//Wechsle Etage
 		this.currentStory = curStory;
@@ -156,7 +158,7 @@ public class DrawPanel extends JPanel {
 	}
 	
 	/**
-	 * Getter für das aktuelle Stockwerk (currentStory)
+	 * Getter fï¿½r das aktuelle Stockwerk (currentStory)
 	 * @return story
 	 */
 	public int getCurrentStory() {
@@ -176,7 +178,7 @@ public class DrawPanel extends JPanel {
 	}
 
 	/**
-	 * Färbe die aktuelle Auswahl zu bearbeitender Felder ein 
+	 * Fï¿½rbe die aktuelle Auswahl zu bearbeitender Felder ein 
 	 * @param cur
 	 */
 	public void colorFieldsWhenDragged(Point cur) {
@@ -192,7 +194,7 @@ public class DrawPanel extends JPanel {
 	}
 	
 	/**
-	 * Öffne den Editor
+	 * ï¿½ffne den Editor
 	 */
 	public void invokeEditor() {
 		editor.toggleOn(this);
@@ -220,5 +222,12 @@ public class DrawPanel extends JPanel {
 			shoppingMall[i] = new StoryContainer(rows, columns);
 		}
 		workingData = shoppingMall[currentStory];
+	}
+
+	/**
+	 * Starte das Schreiben der Daten
+	 */
+	public void writeData(File saveFile) {
+		
 	}
 }
