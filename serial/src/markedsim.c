@@ -13,8 +13,8 @@ struct field*** createmarked(int x, int y, int floor_count){
 }
 
 void freemarked(struct field*** marked){
-	for(int o = 0; o < sizeof(marked)/sizeof(struct field***); o++ ){
-		for(int i = 0; i < sizeof(marked[0])/sizeof(struct field**); i++){
+	for(int o = 0; o < sizeof(marked); o++ ){
+		for(int i = 0; i < sizeof(marked[o]); i++){
 			free(marked[o][i]);
 		}
 		free(marked[o]);
