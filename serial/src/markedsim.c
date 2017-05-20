@@ -12,9 +12,9 @@ struct field*** createmarked(int x, int y, int floor_count){
 	return marked;
 }
 
-void freemarked(struct field*** marked){
-	for(int o = 0; o < sizeof(marked)/sizeof(struct field***); o++ ){
-		for(int i = 0; i < sizeof(marked[o]); i++){
+void freemarked(struct field*** marked, int y, int floor_count){
+	for(int o = 0; o < floor_count; o++ ){
+		for(int i = 0; i < y; i++){
 			free(marked[o][i]);
 		}
 		free(marked[o]);
@@ -23,11 +23,21 @@ void freemarked(struct field*** marked){
 }
 
 
+void import_marked(char* path){
+
+}
+
 int
 main(){
-	
-struct field*** marked = createmarked(10, 10, 1);	
 
-freemarked(marked);
-	
+
+struct field*** marked = createmarked(x, y, floor_count);
+
+
+
+
+
+
+
+freemarked(marked, y, floor_count);
 }
