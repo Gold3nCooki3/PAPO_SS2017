@@ -12,6 +12,8 @@ import stuff.StoryContainer;
 public class DrawPanel extends JPanel {
 	private int rows = 10;		//#horizontale Felder
 	private int columns = 10;	//#vertikale Felder
+	private float vlinesGap; 
+	private float hlinesGap;
 	
 	int stories = 5;					//#Etagen
 	int currentStory = 0;				//Aktuelle Etage
@@ -35,6 +37,8 @@ public class DrawPanel extends JPanel {
 	 */
 	@Override
 	protected void paintComponent(Graphics g) {
+		vlinesGap = (float)this.getWidth() / (float)columns;
+		hlinesGap = (float)this.getHeight() /(float) rows;
 		super.paintComponent(g);
 		drawGrid(g);
 		drawWorking(g);
@@ -47,8 +51,6 @@ public class DrawPanel extends JPanel {
 	 */
 	private void drawFields(Graphics g) {
 		// Berechne den Abstand der Linien
-		int vlinesGap = this.getWidth() / columns;
-		int hlinesGap = this.getHeight() / rows;
 		int[] data = new int[2];
 		
 		for (int r = 0; r < rows; r++) {
@@ -71,7 +73,7 @@ public class DrawPanel extends JPanel {
 					default:
 						break;
 					}
-					g.fillRect(c*vlinesGap+1, r*hlinesGap+1, vlinesGap-1, hlinesGap-1);
+					g.fillRect(Math.round(c*vlinesGap+1),Math.round( r*hlinesGap+1),Math.round(vlinesGap-1),Math.round(hlinesGap-1));
 				}
 			}
 		}
@@ -82,17 +84,13 @@ public class DrawPanel extends JPanel {
 	 * @param g
 	 */
 	private void drawGrid(Graphics g) {
-		// Berechne den Abstand der Linien
-		int vlinesGap = this.getWidth() / columns;
-		int hlinesGap = this.getHeight() / rows;
 		// Zeichne vertikale Linien
 		for (int i = 0; i < columns; i++) {
-			g.drawLine(i * vlinesGap, 0, i * vlinesGap, getHeight());
+			g.drawLine(Math.round(i*vlinesGap), 0, Math.round(i *vlinesGap), getHeight());
 		}
-
 		// Zeichne horizontale Linien
 		for (int i = 0; i < rows; i++) {
-			g.drawLine(0, i * hlinesGap, getWidth(), i * hlinesGap);
+			g.drawLine(0, Math.round(i * hlinesGap), getWidth(), Math.round( i * hlinesGap));
 		}
 	}
 	
@@ -100,15 +98,12 @@ public class DrawPanel extends JPanel {
 	 * Zeichne die aktuell bearbeiteten Felder
 	 */
 	private void drawWorking(Graphics g) {
-		int vlinesGap = this.getWidth() / columns;
-		int hlinesGap = this.getHeight() / rows;
-		
 		//Aktuell bearbeitete Felder
 		for(int r = 0; r < rows; r++) {
 			for(int c = 0; c < columns; c++) {
 				if(workingData.getWorking(r, c)) {					
 					g.setColor(Color.orange);
-					g.fillRect(c*vlinesGap+1, r*hlinesGap+1, vlinesGap-1, hlinesGap-1);
+					g.fillRect(Math.round(c*vlinesGap+1),Math.round( r*hlinesGap+1),Math.round(vlinesGap-1),Math.round(hlinesGap-1));
 				}
 			}
 		}
