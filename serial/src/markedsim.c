@@ -1,35 +1,33 @@
 #include "markedsim.h"
-#include stdio.h
 
-
-void createmarked(int x, int y, int floor_count){
-	int *** marked = malloc(floor_count * sizeof(int**)); 
+struct field*** createmarked(int x, int y, int floor_count){
+	struct  field *** marked = malloc(floor_count * sizeof(struct field**)); 
 	for(int i = 0; i < floor_count; i++){
-		int** floor = malloc(y * sizeof(int*));
+		struct  field** floor = malloc(y * sizeof(struct field*));
 		marked[i] = floor;
 		for(int j = 0; j < y; j++){
-			floor[j] = calloc(x * sizeof(int))
+			floor[j] = malloc(x * sizeof(struct field));
 		}
-		
 	}
-	
-	
+	return marked;
 }
 
-void freemarked(int** marked){
-	for(int i = 0; i < (sizeof(marked)/sizeof(int**)); i+++ ){
-	
-	
+void freemarked(struct field*** marked){
+	for(int o = 0; o < sizeof(marked)/sizeof(struct field***); o++ ){
+		for(int i = 0; i < sizeof(marked[0])/sizeof(struct field**); i++){
+			free(marked[o][i]);
+		}
+		free(marked[o]);
 	}
-
+	free(marked);
 }
 
 
 int
 main(){
 	
-createmarked();	
+struct field*** marked = createmarked(10, 10, 1);	
 	
-freemarked();
+freemarked(marked);
 	
 }
