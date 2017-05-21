@@ -14,8 +14,12 @@ public class DataIO {
 	private String[] splitted = new String[3];
 	int a, b, c;
 	int[] ret = new int[3];
+	int i = 0;
 	
-	public void initWriter(File f) throws FileNotFoundException {
+	public void initWriter(File f) throws IOException {
+		if(!f.exists()) {
+			f.createNewFile();
+		}
 		out = new PrintWriter(f);
 	}
 	
@@ -54,7 +58,7 @@ public class DataIO {
 	 */
 	public int[] readLevelInit(File inputFile) throws IOException {
 		curline = buf.readLine();
-		System.out.println(curline);
+		//System.out.println(curline);
 		String rc[] = curline.split(",");
 		ret[0] = Integer.parseInt(rc[0]);
 		ret[1] = Integer.parseInt(rc[1]);
@@ -64,8 +68,8 @@ public class DataIO {
 	
 	public int[] readLevelField() throws IOException {
 		curline = buf.readLine();
-		//System.out.println(curline);
 		if(curline == null) {
+			System.out.println("ÄHEM");
 			int a[] = {42, 42, 42};
 			return a;
 		}

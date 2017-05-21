@@ -251,19 +251,22 @@ public class DrawPanel extends JPanel {
 		setRows(arr[0]);
 		setColumns(arr[1]);
 		setStories(arr[2]);
-		setCurrentStory(1);
 		int buf[] = new int[3];
 		for(int s = 0; s < this.stories; s++) {
-			workingData = shoppingMall[s];
+			setCurrentStory(s);
 			for(int r = 0; r < this.rows; r++) {
 				for(int c = 0; c < this.columns; c++) {
 					buf = in.readLevelField();
 					workingData.setData(r, c, buf[0], buf[1], buf[2]);
+					//if(r < 6 && c < 6) {
+					//	System.out.println(" - " + buf[0] +" " +r + " " + c + " " + s);
+					//}
 				}
 			}
 			shoppingMall[s] = workingData;
 		}
 		in.closeReader();
+		setCurrentStory(0);
 		repaint();
 	}
 }

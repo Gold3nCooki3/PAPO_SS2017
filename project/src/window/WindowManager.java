@@ -11,6 +11,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.io.File;
 import java.io.IOException;
 
 import javax.swing.JButton;
@@ -23,6 +24,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 
 public class WindowManager {
@@ -112,6 +114,11 @@ public class WindowManager {
 						// TODO Auto-generated catch block
 						e1.printStackTrace();
 					}
+					storySlider.setValue(1);
+					storySlider.setMaximum(dp.stories);
+					storySetter.setEnabled(false);
+					rowSetter.setEnabled(false);
+					columnsSetter.setEnabled(false);
 				}
 			}
 		});
@@ -126,13 +133,22 @@ public class WindowManager {
 				//1. Starte Ausgabedialog
 				//2. Schreibe
 				JFileChooser auswahl = new JFileChooser();
+				FileNameExtensionFilter filter = new FileNameExtensionFilter("Kaufhaus", ".mall");
+				auswahl.setFileFilter(filter);
 				int action = auswahl.showSaveDialog(null);
 				if(action == JFileChooser.APPROVE_OPTION) {
 					try {
-						dp.writeData(auswahl.getSelectedFile());
+						if(!auswahl.getSelectedFile().getName().endsWith(".mall")) {
+							dp.writeData(new File(auswahl.getSelectedFile().toString().concat(".mall")));
+						} else {
+							dp.writeData(auswahl.getSelectedFile());
+						}
 					} catch (IOException ioe) {
 						System.err.println(ioe);
 					}
+					storySetter.setEnabled(false);
+					rowSetter.setEnabled(false);
+					columnsSetter.setEnabled(false);
 				}
 			}
 		});
@@ -148,6 +164,7 @@ public class WindowManager {
 			public void mousePressed(MouseEvent me) {
 				dp.modifyField(new Point(me.getX(), me.getY()));
 				//Deaktiviere Gr��ensetzung rowSetter und columnsSetter
+				storySetter.setEnabled(false);
 				rowSetter.setEnabled(false);
 				columnsSetter.setEnabled(false);
 			}
