@@ -2,10 +2,11 @@
 #define MARKEDSIM_H
 #define TURE 1
 #define FALSE 0
-#define BLOCKVAL 0
+#define BLOCKVAL 1
 #define LISTL 1
 
-#include <stdlib.h>
+#include <stdlib.h>  // rand(), srand()
+#include <time.h>    // time()
 #include <stdio.h>
 #include "queue.h"
 

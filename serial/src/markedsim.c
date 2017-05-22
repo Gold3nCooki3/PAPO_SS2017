@@ -50,7 +50,7 @@ field* in_matrix(field*** marked, vector3 vec){
 }
 
 int is_blocked(field*** marked, vector3 vec){
-	if(&marked[vec.z][vec.y][vec.x] == BLOCKVAL){
+	if(marked[vec.z][vec.y][vec.x].type == BLOCKVAL){
 		return TRUE;
 	}
 	return FALSE;
@@ -62,9 +62,15 @@ work_queue(field*** marked, queue_t* queue){
 	if(queue_empty(queue)){
 		return;
 	}else{
-		entity* e = queue_dequeue(queue);
-		printf("id: %d, type: %d, pos: (%d,%d,%d)\n",
-		e->id, e->type, e->position.x, e->position.y, e->position.z);
+		entity* first = queue_dequeue(queue);
+		entity* e = first;
+		do{
+			printf("id: %d, type: %d, pos: (%d,%d,%d)\n",
+			e->id, e->type, e->position.x, e->position.y, e->position.z);
+			
+			queue_enqueue(queue, e);
+			e = queue_dequeue(queue);
+		}while(first->id = e->id);
 	}	
 }
 
@@ -85,10 +91,17 @@ void free_entitys(queue_t* queue){
 	}
 }
 
+vector3
+rand_vector3(int x, int y, int z){
+	vector3 v = {rand()%x, rand()%y, rand()%z};
+	return v;
+}
+
 int
 main(int argc, char *argv[]){
 	if (argc < 2) exit(EXIT_FAILURE);
-
+	srand(time(NULL));
+	
 	int x, y, floor_count;	
 	field*** marked;
 	queue_t *queue = queue_new();
@@ -98,6 +111,14 @@ main(int argc, char *argv[]){
 	printf("y: %d\n", y);
 	printf("floor_count: %d\n", floor_count);
 
+	for(int i= 0; i < 4; i++){
+		spawn_entity(marked, queue, rand_vector3(x, y, floor_count), 0, 1);
+	}
+	for(int i= 0; i < 4; i++){
+		spawn_entity(marked, queue, rand_vector3(x, y, floor_count), 5, 1);
+	}
+	work_queue(marked, queue);
+	
 	free_marked(marked, y, floor_count);
 	free_entitys(queue);
 	
