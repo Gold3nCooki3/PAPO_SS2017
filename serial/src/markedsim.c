@@ -79,7 +79,7 @@ spawn_entity(field*** marked, queue_t* queue, vector3 position, int type, int si
 }
 
 void free_entitys(queue_t* queue){
-	while(queue_empty(queue)){
+	while(!queue_empty(queue)){
 		entity* e = queue_dequeue(queue);
 		free(e->list);
 	}
