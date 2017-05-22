@@ -1,5 +1,9 @@
 #ifndef MARKEDSIM_H
 #define MARKEDSIM_H
+#define TURE 1
+#define FALSE 0
+#define BLOCKVAL 0
+#define LISTL 1
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -11,8 +15,24 @@ field{
 	int content;
 	int amount;
 };
-
 typedef struct field field;
+
+struct
+vector3{
+	int x;
+	int y;
+	int z;
+};
+typedef struct vector3 vector3;
+
+struct
+entity{
+	int id;
+	int type;
+	vector3 position;
+	vector3* list;	
+};
+typedef struct entity entity;
 
 field*** import_marked(char* path, int* x, int* y, int* floor_count);
 void freemarked(field*** marked, int y, int floor_count);
