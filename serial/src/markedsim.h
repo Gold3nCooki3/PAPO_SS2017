@@ -4,10 +4,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-struct field{
-	int stuff1;
-	int stuff2;
-	int stuff3;
+struct
+field{
+	int type;
+	int content;
+	int amount;
 };
+
+
 
 #endif
