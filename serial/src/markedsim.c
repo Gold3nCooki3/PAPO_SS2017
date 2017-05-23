@@ -60,20 +60,17 @@ int is_blocked(field*** marked, vector3 vec){
 void
 work_queue(field*** marked, queue_t* queue){
 	if(queue_empty(queue)){
+		printf("empty!");
 		return;
 	}else{
 		entity* first = queue_dequeue(queue);
 		entity* e = first;
-		//do{
-			printf("id: %d, type: %d, pos: (%d,%d,%d)\n",
-			e->id, e->type, e->position.x, e->position.y, e->position.z);
-
+		do{
+			printf("work => id: %d, type: %d, pos: (%2d,%2d,%2d)\n",
+				e->id, e->type, e->position.x, e->position.y, e->position.z);
 			queue_enqueue(queue, e);
 			e = queue_dequeue(queue);
-		printf("id: %d, type: %d, pos: (%d,%d,%d)\n",
-                        e->id, e->type, e->position.x, e->position.y, e->position.z);
-
-		//}while(first->id != e->id);
+		}while(first != e);
 	}
 }
 
@@ -106,7 +103,7 @@ main(int argc, char *argv[]){
 	printf("floor_count: %d\n", floor_count);
 	
 	test_spawn(marked, queue, x, y, floor_count);
-	//work_queue(marked, queue);
+	work_queue(marked, queue);
 
 	free_marked(marked, y, floor_count);
 	queue_destroy(queue);
