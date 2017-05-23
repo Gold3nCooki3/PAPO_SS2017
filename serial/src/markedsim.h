@@ -31,7 +31,7 @@ entity{
 	int id;
 	int type;
 	vector3 position;
-	vector3* list;	
+	vector3 list[5];
 };
 typedef struct entity entity;
 
