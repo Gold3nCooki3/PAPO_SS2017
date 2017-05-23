@@ -82,23 +82,13 @@ spawn_entity(field*** marked, queue_t* queue, vector3 position, int type){
 	if(is_blocked(marked, position)) exit(EXIT_FAILURE);
 	static int counter = 0;
 	//TODO:: gen list (type);
-	entity e;
-	e.id = counter;
-	e.type = type;
-	e.position.x= position.x;
-	e.position.y= position.y;
-	e.position.z= position.z;
-	e.list[0].x = 42;
-	e.list[0].y = 42;
-	e.list[0].z = 42;
-	queue_enqueue(queue, &e);
+	entity* e = malloc(sizeof(*e));
+		e->id = counter;
+		e->type = type;
+		e->position= position;
+		e->list[0] = position;
+	queue_enqueue(queue, e);
 	counter++;
-}
-
-vector3
-rand_vector3(int x, int y, int z){
-	vector3 v = {rand()%x, rand()%y, rand()%z};
-	return v;
 }
 
 int
@@ -106,7 +96,7 @@ main(int argc, char *argv[]){
 	if (argc < 2) exit(EXIT_FAILURE);
 	srand(time(NULL));
 
-	int x, y, floor_count;	
+	int x, y, floor_count;
 	field*** marked;
 	queue_t *queue = queue_new();
 
@@ -114,16 +104,11 @@ main(int argc, char *argv[]){
 	printf("x: %d\n", x);
 	printf("y: %d\n", y);
 	printf("floor_count: %d\n", floor_count);
-
-	for(int i= 0; i < 4; i++){
-		spawn_entity(marked, queue, rand_vector3(x, y, floor_count), 0);
-	}
-	for(int i= 0; i < 4; i++){
-		spawn_entity(marked, queue, rand_vector3(x, y, floor_count), 5);
-	}
-	work_queue(marked, queue);
+	
+	test_spawn(marked, queue, x, y, floor_count);
+	//work_queue(marked, queue);
 
 	free_marked(marked, y, floor_count);
-
+	queue_destroy(queue);
 	return 0;
 }

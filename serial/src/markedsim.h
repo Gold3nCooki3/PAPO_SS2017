@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include "queue.h"
 
+
 struct
 field{
 	int type;
@@ -35,8 +36,12 @@ entity{
 };
 typedef struct entity entity;
 
+
 field*** import_marked(char* path, int* x, int* y, int* floor_count);
-void freemarked(field*** marked, int y, int floor_count);
 field*** createmarked(int x, int y, int floor_count);
+void freemarked(field*** marked, int y, int floor_count);
+void spawn_entity(field*** marked, queue_t* queue, vector3 position, int type);
+
+#include "program_test.h"
 
 #endif
