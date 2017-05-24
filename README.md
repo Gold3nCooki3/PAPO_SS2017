@@ -1,5 +1,5 @@
 # PAPO_SS2017
-Parallele Programmierung Praktikum SS2017 \\
+Parallele Programmierung Praktikum SS2017 \
 Zu grundlegenden Verständniss von Message Passing,
 wird ein simples Programm erstellt.
 
@@ -16,7 +16,7 @@ Hinzukommen Mitarbeiter welche Waren nachfüllen,
 wenn diese ausgegangen sind.
 
 # Arbeitstitel
-  * SMITH  - Simulate Malls in the Hood \\
-  * DUMM   - der ultimative Mall-Mist \\
+  * SMITH  - Simulate Malls in the Hood \
+  * DUMM   - der ultimative Mall-Mist \
   * SOENKE - Simuliere ohne Ende neue Kaufhäuser einfachso
 
