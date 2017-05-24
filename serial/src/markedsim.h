@@ -5,13 +5,13 @@
 
 #define ETRANCE 7
 #define EXIT 7
-#define ROLLTREPPE 3
+#define ROLLTREPPE 2
 #define BLOCKVAL 1
 
 #define CUSTOMER 0
 #define EMPLOYEE 5
 
-#define LISTL 1
+#define LISTL 2
 
 #include <stdlib.h>  // rand(), srand()
 #include <time.h>    // time()

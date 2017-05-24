@@ -65,23 +65,28 @@ int vec_equal(vector3 const * vec1, vector3 const* vec2){
 
 int move_entity(field*** marked, entity* e){
 	int pos = e->listpos;
-	vector3 rel_pos = {e->list[pos].x  + 1, e->list[pos].y, e->list[pos].z};
+	vector3 rel_pos = {e->list[pos].x , e->list[pos].y, e->list[pos].z};
 	//get field right left bot or top of the destination, this is the field we want to go
-	if(is_blocked(marked, rel_pos)){
-		rel_pos.x -= 2;
-		if (is_blocked(marked, rel_pos)){
-			rel_pos.x++;
-			rel_pos.y++;
-			}if (is_blocked(marked, rel_pos)){
-				rel_pos.y -= 2;
-			}else{
-				printf("Not valid!\n");
-				exit(EXIT_FAILURE);
+	if(in_matrix(marked, e->list[pos]) ->type == ROLLTREPPE){
+	}else{
+		rel_pos.x++;
+		if(is_blocked(marked, rel_pos)){
+				rel_pos.x -= 2;
+			if (is_blocked(marked, rel_pos)){
+				rel_pos.x++;
+				rel_pos.y++;
+				if (is_blocked(marked, rel_pos)){
+					rel_pos.y -= 2;
+				}else{
+					printf("Not valid!\n");
+					exit(EXIT_FAILURE);
+				}
 			}
+		}
 	}
 
 	//move
-	if(e->list[pos].z == e->position.z){
+	if(rel_pos.z == e->position.z){
 		int move_in_x = clamp(rel_pos.x - e->position.x);
 		int move_in_y = clamp(rel_pos.y - e->position.y);
 		printf("id: %d, x: %d y: %d <=", e->id,move_in_x ,move_in_y);
@@ -100,7 +105,12 @@ int move_entity(field*** marked, entity* e){
 		//printf("i got to (%2d, %2d)\n", e->position.x, e->position.y);
 	}else if(in_matrix(marked, e->position)->type == ROLLTREPPE){
 		printf("i am going up!\n");
-		e->position.z++;
+		if(rel_pos.z > e->position.z){
+			e->position.z++;
+		}else{
+			e->position.z--;
+		}
+
 	}else{
 		printf("Somehow i got here !?\n");
 		//Weg zur Rolltreppe ?
@@ -156,7 +166,11 @@ void spawn_entity(field*** marked, queue_t* queue, vector3 position, int type){
 		e->listpos = 0;
 		e->position= position;
 			vector3 v = {rand()%10, rand()%11, position.z};
+			vector3 r = {rand()%10, rand()%11, position.z};
+			vector3 v2 = {rand()%10, rand()%11,position.z+1};
+			vector3 v3 = {rand()%10, rand()%11,position.z-1};
 		e->list[0] = v;
+		e->list[1] = (rand()%2) ? v3: v2;
 	queue_enqueue(queue, e);
 	counter++;
 }
