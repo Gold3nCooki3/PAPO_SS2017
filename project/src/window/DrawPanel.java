@@ -62,7 +62,6 @@ public class DrawPanel extends JPanel {
 			for (int c = 0; c < columns; c++) {
 				data = workingData.getData(r, c);
 				if(data[0] != 0) {
-					System.out.println("male "+ data[0]);
 					switch(data[0]) {
 					case 0:					//Gang
 						g.setColor(Color.white);
@@ -92,7 +91,7 @@ public class DrawPanel extends JPanel {
 						g.setColor(Color.pink);
 						break;
 					}
-					g.fillRect(Math.round(c*vlinesGap+1),Math.round( r*hlinesGap+1),Math.round(vlinesGap-1),Math.round(hlinesGap-1));
+					g.fillRect(Math.round(c*vlinesGap+1),Math.round( r*hlinesGap+1),Math.round(vlinesGap-1), Math.round(hlinesGap-1));
 				}
 			}
 		}
@@ -225,11 +224,22 @@ public class DrawPanel extends JPanel {
 	}
 	
 	public void saveFromEditor(int type, int content, int contentcount) {
+		int data[] = new int[3];
 		for (int r = 0; r < rows; r++) {
 			for (int c = 0; c < columns; c++) {
 				if (workingData.getWorking(r, c)) {
-					workingData.setData(r, c, type, content, contentcount);
-					workingData.setNotWorking(r, c);
+					if(type == 2 || type == 3) {
+						for(int s = 0; s < stories; s++) {
+							shoppingMall[s].setData(r, c, type, content, contentcount);
+							workingData.setNotWorking(r, c);
+						}
+					} else {
+						data = workingData.getData(r, c);
+						if(data[0] != 2 && data[0] != 3) {
+							workingData.setData(r, c, type, content, contentcount);
+						}
+						workingData.setNotWorking(r, c);
+					}
 				}
 			}
 			editcount = 0;
@@ -291,5 +301,15 @@ public class DrawPanel extends JPanel {
 		in.closeReader();
 		setCurrentStory(0);
 		repaint();
+	}
+	
+	public boolean duplicateStory() {
+		try {
+			shoppingMall[this.getCurrentStory()+1] = workingData;
+			return true;
+		} catch (ArrayIndexOutOfBoundsException e) {
+			System.out.println("DENIED");
+			return false;
+		}
 	}
 }

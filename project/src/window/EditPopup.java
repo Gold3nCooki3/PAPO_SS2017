@@ -101,7 +101,6 @@ public class EditPopup {
 		default:
 			System.out.println("wtf?");
 		}
-		System.out.println("Habe typ "+t+" gesetzt");
 		backhandle.saveFromEditor(t, c, cc);
 	}
 

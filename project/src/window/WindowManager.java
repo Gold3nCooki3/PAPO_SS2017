@@ -45,6 +45,7 @@ public class WindowManager {
 	 */
 	JButton loadButton = new JButton("Lade Map"); // Lade Map Button
 	JButton saveButton = new JButton("Speichere Map"); // Speichere Map Button
+	JButton dupButton = new JButton("Dupliziere Stockwerk nach oben"); //Generiere eine Map
 	JSlider storySlider = new JSlider(JSlider.VERTICAL, 0, 1337, 0); // Slider
 																		// zum
 																		// Scrollen
@@ -75,17 +76,18 @@ public class WindowManager {
 		storySlider.setPaintLabels(true);
 		// Fill Window with first Elements
 		// addComponent(c, gbl, c, x, y, width, height, weightx, weighty);
-		addComponent(c, gbl, dp, 0, 0, 1, 8, 90, 10);
-		addComponent(c, gbl, loadButton, 0, 8, 1, 1, 90, 10);
-		addComponent(c, gbl, saveButton, 1, 8, 1, 1, 10, 10);
-		addComponent(c, gbl, columnsSetterInfo, 1, 0, 1, 1, 10, 10);
-		addComponent(c, gbl, columnsSetter, 1, 1, 1, 1, 10, 10);
-		addComponent(c, gbl, rowSetterInfo, 1, 2, 1, 1, 10, 10);
-		addComponent(c, gbl, rowSetter, 1, 3, 1, 1, 10, 10);
-		addComponent(c, gbl, storySetterInfo, 1, 4, 1, 1, 10, 10);
-		addComponent(c, gbl, storySetter, 1, 5, 1, 1, 10, 10);
-		addComponent(c, gbl, curStoryInfo, 1, 6, 1, 1, 10, 10);
-		addComponent(c, gbl, storySlider, 1, 7, 1, 1, 10, 10);
+		addComponent(c, gbl, dp, 0, 0, 2, 8, 90, 10);
+		addComponent(c, gbl, dupButton, 0, 8, 1, 1, 30, 10);
+		addComponent(c, gbl, loadButton, 1, 8, 1, 1, 30, 10);
+		addComponent(c, gbl, saveButton, 2, 8, 1, 1, 30, 10);
+		addComponent(c, gbl, columnsSetterInfo, 2, 0, 1, 1, 10, 10);
+		addComponent(c, gbl, columnsSetter, 2, 1, 1, 1, 10, 10);
+		addComponent(c, gbl, rowSetterInfo, 2, 2, 1, 1, 10, 10);
+		addComponent(c, gbl, rowSetter, 2, 3, 1, 1, 10, 10);
+		addComponent(c, gbl, storySetterInfo, 2, 4, 1, 1, 10, 10);
+		addComponent(c, gbl, storySetter, 2, 5, 1, 1, 10, 10);
+		addComponent(c, gbl, curStoryInfo, 2, 6, 1, 1, 10, 10);
+		addComponent(c, gbl, storySlider, 2, 7, 1, 1, 10, 10);
 
 		// Show Window
 		f.setVisible(true);
@@ -149,6 +151,19 @@ public class WindowManager {
 					storySetter.setEnabled(false);
 					rowSetter.setEnabled(false);
 					columnsSetter.setEnabled(false);
+				}
+			}
+		});
+		
+		//Duplizierer
+		dupButton.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if(dp.duplicateStory()) {
+					System.out.println("true");
+					dp.setCurrentStory(dp.getCurrentStory()+1);
+					storySlider.setValue(dp.getCurrentStory()+1);
 				}
 			}
 		});
