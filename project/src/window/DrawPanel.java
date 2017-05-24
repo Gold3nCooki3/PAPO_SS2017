@@ -24,6 +24,8 @@ public class DrawPanel extends JPanel {
 	StoryContainer shoppingMall[];
 	StoryContainer workingData;								//Aktuelles Stockwerk in Datenform
 	
+	int x = 0, y = 0;
+	int editcount = 0; 						//Menge aktuell bearbeiteter Felder
 	EditPopup editor = new EditPopup();
 	
 	/**
@@ -60,20 +62,34 @@ public class DrawPanel extends JPanel {
 			for (int c = 0; c < columns; c++) {
 				data = workingData.getData(r, c);
 				if(data[0] != 0) {
+					System.out.println("male "+ data[0]);
 					switch(data[0]) {
-					case 1:					//Gang
+					case 0:					//Gang
+						g.setColor(Color.white);
+						break;
+					case 1:					//Regal
 						g.setColor(Color.gray);
 						break;
-					case 2:					//Regal
-						g.setColor(Color.blue);
+					case 2:					//Rolltreppe
+						g.setColor(new Color(0, 204, 204));
 						break;
-					case 3:					//Kasse
+					case 3:					//Aufzug
+						g.setColor(new Color(0, 76, 153));
+						break;
+					case 4:					//Kasse
+						g.setColor(Color.red);
+						break;
+					case 5:					//Mauer
+						g.setColor(new Color(153, 76, 0));		//braun
+						break;
+					case 6:					//Lager
+						g.setColor(Color.orange);
+						break;
+					case 7:
 						g.setColor(Color.green);
 						break;
-					case 4:					//Aufzug/Rolltreppe
-						g.setColor(Color.yellow);
-						break;
 					default:
+						g.setColor(Color.pink);
 						break;
 					}
 					g.fillRect(Math.round(c*vlinesGap+1),Math.round( r*hlinesGap+1),Math.round(vlinesGap-1),Math.round(hlinesGap-1));
@@ -169,13 +185,16 @@ public class DrawPanel extends JPanel {
 
 	public void modifyField(Point p) {
 		System.out.println("Arbeite mit Position " + p.getX()+", "+p.getY());
-		int y = (int) ((p.getX() / this.getWidth()) * columns);
-		int x = (int) ((p.getY() / this.getHeight()) * rows);
-		try {
-			workingData.setWorking(x,  y);
-			repaint();
-		} catch (ArrayIndexOutOfBoundsException e){
-			//Mach einfach nix, interessiert ziemlich wenig
+		y = (int) ((p.getX() / this.getWidth()) * columns);
+		x = (int) ((p.getY() / this.getHeight()) * rows);
+		if(!workingData.getWorking(x, y)) {
+			try {
+				workingData.setWorking(x, y);
+				editcount++;
+				repaint();
+			} catch (ArrayIndexOutOfBoundsException e) {
+				// Mach einfach nix, interessiert ziemlich wenig
+			}
 		}
 	}
 
@@ -199,6 +218,9 @@ public class DrawPanel extends JPanel {
 	 * �ffne den Editor
 	 */
 	public void invokeEditor() {
+		if(editcount == 1) {
+			editor.getCurrentValues(workingData.getData(x, y));
+		}
 		editor.toggleOn(this);
 	}
 	
@@ -210,6 +232,7 @@ public class DrawPanel extends JPanel {
 					workingData.setNotWorking(r, c);
 				}
 			}
+			editcount = 0;
 		}
 		
 		repaint();
