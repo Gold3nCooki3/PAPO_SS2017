@@ -2,7 +2,13 @@
 #define MARKEDSIM_H
 #define TURE 1
 #define FALSE 0
+
+#define ROLLTREPPE 3
 #define BLOCKVAL 1
+
+#define CUSTOMER 0
+#define EMPLOYEE 5
+
 #define LISTL 1
 
 #include <stdlib.h>  // rand(), srand()
@@ -31,15 +37,12 @@ struct
 entity{
 	int id;
 	int type;
+	int listpos;
 	vector3 position;
-	vector3 list[5];
+	vector3 list[LISTL];
 };
 typedef struct entity entity;
 
-
-field*** import_marked(char* path, int* x, int* y, int* floor_count);
-field*** createmarked(int x, int y, int floor_count);
-void freemarked(field*** marked, int y, int floor_count);
 void spawn_entity(field*** marked, queue_t* queue, vector3 position, int type);
 
 #include "program_test.h"
