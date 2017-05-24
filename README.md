@@ -16,7 +16,7 @@ Hinzukommen Mitarbeiter welche Waren nachfüllen,
 wenn diese ausgegangen sind.
 
 # Arbeitstitel
-SMITH  - Simulate Malls in the Hood
-DUMM   - der ultimative Mall-Mist
-SOENKE - Simuliere ohne Ende neue Kaufhäuser einfachso
+ -- SMITH  - Simulate Malls in the Hood
+ -- DUMM   - der ultimative Mall-Mist
+ -- SOENKE - Simuliere ohne Ende neue Kaufhäuser einfachso
 
