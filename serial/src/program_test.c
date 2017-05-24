@@ -6,6 +6,21 @@ rand_vector3(int x, int y, int z){
 	return v;
 }
 
+void print_queue(queue_t* queue){
+	struct queue_node_s *node = queue->front;
+		while(node != NULL){
+			entity* e = node->data;
+			printf("p: %12p",queue);
+			printf(" pn: %12p",queue->front);
+			printf(" fp: %12p",node->next);
+			printf(" bp: %12p",node);
+			printf(" id: %d, type: %d, pos: (%2d,%2d,%2d), dest: (%2d,%2d,%2d) \n",
+				e->id, e ->type, e->position.x, e->position.y, e->position.z, e->list[0].x, e->list[0].y, e->list[0].z, e);
+			node = node->next;
+		}
+		printf("\n \n");
+}
+
 void 
 test_spawn(field*** marked, queue_t* queue, int x, int y, int floor_count){
 	for(int i= 0; i < 4; i++){
@@ -15,14 +30,8 @@ test_spawn(field*** marked, queue_t* queue, int x, int y, int floor_count){
 		spawn_entity(marked, queue, rand_vector3(x, y, floor_count), 5);
 	}
 	printf("\n \n");
-	struct queue_node_s *node = queue->front;
-	for(int i= 0; i < 8; i++){
-		entity* e = node->data;
-		printf("p: %12p",queue);
-		printf(" fp: %12p",node->next);
-		printf(" bp: %12p",node);
-		printf(" id: %d, type: %d, pos: (%2d,%2d,%2d) e: %p\n",
-			e->id, e ->type, e->position.x, e->position.y, e->position.z, e);
-		node = node->next;
-	}
+	print_queue(queue);
+	printf("\n \n");
 }
+
+

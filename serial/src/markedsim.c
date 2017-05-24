@@ -55,7 +55,7 @@ int is_blocked(field*** marked, vector3 vec){
 
 int clamp(int d) {
   if(d >= 1) return 1;
-  if(d <= -1) return 1;
+  if(d <= -1) return -1;
   return 0;
 }
 
@@ -80,14 +80,13 @@ int move_entity(field*** marked, entity* e){
 			}
 	}
 
-//	printf("i want to go from (%2d, %2d) to (%2d, %2d)  to get (%2d, %2d) \n",
-	//		e->position.x, e->position.y, rel_pos.x, rel_pos.y, e->list[pos].x, e->list[pos].y);
 	//move
 	if(e->list[pos].z == e->position.z){
 		int move_in_x = clamp(rel_pos.x - e->position.x);
 		int move_in_y = clamp(rel_pos.y - e->position.y);
-		printf("id: %d, x: %d y: %d \n", e->id,move_in_x ,move_in_y);
-
+		printf("id: %d, x: %d y: %d <=", e->id,move_in_x ,move_in_y);
+		printf(" (%2d, %2d) -> (%2d, %2d)  : (%2d, %2d) \n",
+					e->position.x, e->position.y, rel_pos.x, rel_pos.y,rel_pos.x - e->position.x , rel_pos.x - e->position.y);
 		vector3 vec_x = {e->position.x  + move_in_x, e->position.y, e->position.z};
 		vector3 vec_y = {e->position.x, e->position.y + move_in_y, e->position.z};
 		if(move_in_x != 0 && !is_blocked(marked, vec_x)){
@@ -109,15 +108,16 @@ int move_entity(field*** marked, entity* e){
 	}
 
 	//end
-	if(pos == LISTL-1 && vec_equal(&e->list[pos],&e->position)) return 0;
 	if(vec_equal(&rel_pos,&e->position)){
-		printf("i got it yes");
 		switch (e->type){
 			case CUSTOMER: in_matrix(marked, rel_pos)->amount -= 1; break;
-			case EMPLOYEE: in_matrix(marked, rel_pos)->amount += 10;
-			printf("new amount is now %d", in_matrix(marked, rel_pos)->amount); break;
+			case EMPLOYEE: in_matrix(marked, rel_pos)->amount += 10; break;
 			default: printf("NO not right\n"); break;
 		}
+		if(in_matrix(marked, e->position)->type == EXIT) return 0;
+		if(pos == LISTL-1){
+			printf("%d No Exit\n", e->id);
+			return 0;}
 		e->listpos++;
 	}
 	//printf("a small step for me .. \n");
@@ -132,10 +132,12 @@ void work_queue(field*** marked, queue_t* queue){
 		entity* first = queue_dequeue(queue);
 		entity* e = first;
 		do{
+			if(!first)first = e;
 			int not_finished = move_entity(marked, e);
 			if(not_finished){
 				queue_enqueue(queue, e);
 			}else {
+				if(e == first) first = NULL;
 				if(queue_empty(queue)) break;
 			}
 			e = queue_dequeue(queue);

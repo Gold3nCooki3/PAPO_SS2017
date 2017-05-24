@@ -3,6 +3,8 @@
 #define TURE 1
 #define FALSE 0
 
+#define ETRANCE 7
+#define EXIT 7
 #define ROLLTREPPE 3
 #define BLOCKVAL 1
 
