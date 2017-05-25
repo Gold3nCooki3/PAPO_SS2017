@@ -19,4 +19,9 @@ void test_spawn(field*** market, queue_t* queue, int x, int y, int floor_count);
  */
 void print_queue(queue_t* queue);
 
+/*
+ * Test all functions in market.c
+ */
+void test_marked();
+
 #endif
