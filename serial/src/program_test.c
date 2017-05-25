@@ -40,13 +40,13 @@ int test_vec_equal(){
 	}return c;
 }
 
-field*** test_import_market(int * y, int * z){
+field*** test_import_market(int * y, int * z, marketmetainfo * mmi){
 	int c = 0;
 	int x;
-	char* path = malloc(sizeof(char)*11);
+	char* path = malloc(sizeof(char)*16);
 		path[0] = '.';
 		path[1] = '.';
-		path[2] = 92 ;
+		path[2] = 92;
 		path[3] = 't';
 		path[4] = 'e';
 		path[5] = 's';
@@ -55,8 +55,13 @@ field*** test_import_market(int * y, int * z){
 		path[8] = 'a';
 		path[9] = 't';
 		path[10] = 'a';
+		path[11] = '.';
+		path[12] = 'm';
+		path[13] = 'a';
+		path[14] = 'l';
+		path[15] = 'l';
 
-	field*** m = import_market(path, &x, y, z);
+	field*** m = import_market(path, &x, y, z, mmi);
 	free(path);
 	if(m[0][0][0].type != 0 ||
 			m[0][0][0].content != 100000 ||
@@ -101,8 +106,10 @@ int test_isblocked(field*** m){
 void test_market(){
 	int a = 0;
 	int y, z;
+	marketmetainfo mmi;
 	a += test_vec_equal();
-	field*** m = test_import_market(&y, &z);
+	field*** m = test_import_market(&y, &z, &mmi);
+	printf("STUFF");
 	a += test_in_matrix(m);
 	a += test_isblocked(m);
 	free_market(m, y, z);

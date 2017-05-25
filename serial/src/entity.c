@@ -132,13 +132,6 @@ void spawn_entity(field*** const market, queue_t* queue, vector3 position, int t
 		e->listpos = 0;
 		e->position= position;
 		e->list = list;
-		/*	//TODO:: get rid of this
-			vector3 v = {rand()%10, rand()%11, position.z};
-			vector3 r = {rand()%10, rand()%11, position.z};
-			vector3 v2 = {rand()%10, rand()%11,position.z+1};
-			vector3 v3 = {rand()%10, rand()%11,position.z-1};
-		e->list[0] = v;
-		e->list[1] = (rand()%2 && v3.z < 50) ? v3: v2;*/
 	queue_enqueue(queue, e);
 	counter++;
 }

@@ -58,7 +58,9 @@ field*** create_market(int x, int y, int floor_count){
 field*** import_market(char* path, int* x, int* y, int* floor_count, marketmetainfo *mmi){
 
 	FILE *file = fopen(path, "r");
-	if (file == NULL) exit(EXIT_FAILURE);
+	if (file == NULL){
+		exit(EXIT_FAILURE);
+	}
 
 	int q, w, e, r, t;
 	fscanf(file, "%d,%d,%d,%d,%d,%d,%d,%d\n", x, y, floor_count, &q, &w, &e, &r, &t);
@@ -80,7 +82,6 @@ field*** import_market(char* path, int* x, int* y, int* floor_count, marketmetai
 					&market[a][b][c].type,
 					&market[a][b][c].content,
 					&market[a][b][c].amount);
-
 				switch(market[a][b][c].type) {
 				case SHELF:
 					shelves[q++] = &market[a][b][c];
