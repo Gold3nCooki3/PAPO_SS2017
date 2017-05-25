@@ -69,7 +69,7 @@ public class DataIO {
 	public int[] readLevelField() throws IOException {
 		curline = buf.readLine();
 		if(curline == null) {
-			System.out.println("ÄHEM");
+			System.out.println("Ã„HEM");
 			int a[] = {42, 42, 42};
 			return a;
 		}
