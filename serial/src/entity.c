@@ -1,29 +1,36 @@
 #include "entity.h"
 
+/*Clamps a value to -1, 0, 1
+ * @param d 	: input value
+ * @return 		: -1, 0, 1
+ */
 int clamp(int d) {
   if(d >= 1) return 1;
   if(d <= -1) return -1;
   return 0;
 }
 
-int vec_equal(vector3 const * vec1, vector3 const* vec2){
-	return (vec1->x == vec2->x) && (vec1->y == vec2->y) && (vec1->z == vec2->z);
-}
-
-int move_entity(field*** market, entity* e){
+/*Moves an entity towards their destination,
+ * to pick up or fill up content from a frame
+ * @param market	: market where entity is moving within
+ * @param e			: entity
+ * @return FALSE if person has reached their final destination
+ */
+int move_entity(field*** const market, entity* const e){
 	int pos = e->listpos;
-	vector3 rel_pos = {e->list[pos].x , e->list[pos].y, e->list[pos].z};
-	//get field right left bot or top of the destination, this is the field we want to go
-	if(in_matrix(market, e->list[pos]) ->type == ROLLTREPPE){
+	vector3 actual_dest = {e->list[pos].x , e->list[pos].y, e->list[pos].z};
+	/*get field right, left, bottom or top of the destination,
+	 * this is the field the entity has to go */
+	if(in_matrix(market, e->list[pos]) ->type == ESCALATOR){
 	}else{
-		rel_pos.x++;
-		if(is_blocked(market, rel_pos)){
-				rel_pos.x -= 2;
-			if (is_blocked(market, rel_pos)){
-				rel_pos.x++;
-				rel_pos.y++;
-				if (is_blocked(market, rel_pos)){
-					rel_pos.y -= 2;
+		actual_dest.x++;
+		if(is_blocked(market, actual_dest)){
+				actual_dest.x -= 2;
+			if (is_blocked(market, actual_dest)){
+				actual_dest.x++;
+				actual_dest.y++;
+				if (is_blocked(market, actual_dest)){
+					actual_dest.y -= 2;
 				}else{
 					printf("Not valid!\n");
 					exit(EXIT_FAILURE);
@@ -32,13 +39,10 @@ int move_entity(field*** market, entity* e){
 		}
 	}
 
-	//move
-	if(rel_pos.z == e->position.z){
-		int move_in_x = clamp(rel_pos.x - e->position.x);
-		int move_in_y = clamp(rel_pos.y - e->position.y);
-		printf("id: %d, x: %d y: %d <=", e->id,move_in_x ,move_in_y);
-		printf(" (%2d, %2d) -> (%2d, %2d)  : (%2d, %2d) \n",
-					e->position.x, e->position.y, rel_pos.x, rel_pos.y,rel_pos.x - e->position.x , rel_pos.x - e->position.y);
+	//move if entity is on the same floor as the destination
+	if(actual_dest.z == e->position.z){
+		int move_in_x = clamp(actual_dest.x - e->position.x);
+		int move_in_y = clamp(actual_dest.y - e->position.y);
 		vector3 vec_x = {e->position.x  + move_in_x, e->position.y, e->position.z};
 		vector3 vec_y = {e->position.x, e->position.y + move_in_y, e->position.z};
 		if(move_in_x != 0 && !is_blocked(market, vec_x)){
@@ -46,41 +50,50 @@ int move_entity(field*** market, entity* e){
 		}else if(move_in_y != 0 && !is_blocked(market, vec_y)){
 			e->position  = vec_y;
 		}else{
-			printf("Something went wrong!\n");
+			printf("No Movement");
 			exit(EXIT_FAILURE);
 		}
-		//printf("i got to (%2d, %2d)\n", e->position.x, e->position.y);
-	}else if(in_matrix(market, e->position)->type == ROLLTREPPE){
-		printf("i am going up!\n");
-		if(rel_pos.z > e->position.z){
+	}else if(in_matrix(market, e->position)->type == ESCALATOR){
+		//entity is standing on an escalator
+		if(actual_dest.z > e->position.z){
 			e->position.z++;
 		}else{
 			e->position.z--;
 		}
 
 	}else{
-		printf("Somehow i got here !?\n");
+		printf("Not on an escalator field nor moving\n");
 		exit(EXIT_FAILURE);
 	}
 
-	//end
-	if(vec_equal(&rel_pos,&e->position)){
+	//Check if entity reached destination
+	if(vec_equal(&actual_dest,&e->position)){
+		field* f = in_matrix(market, actual_dest);
 		switch (e->type){
-			case CUSTOMER: in_matrix(market, rel_pos)->amount -= 1; break;
-			case EMPLOYEE: in_matrix(market, rel_pos)->amount += 10; break;
-			default: printf("NO not right\n"); break;
+			case CUSTOMER:
+				if(f->type != ESCALATOR){
+					if(f->amount  > 0) {
+						f->amount -= 1;
+					}else{
+						printf("Didn't get content\n");
+					}
+				}
+				break;
+			case EMPLOYEE:
+				if(f->type != ESCALATOR)	f->amount += FILLVAL; break;
+			default: printf("Nether customer nor employee\n"); break;
 		}
-		if(in_matrix(market, e->position)->type == EXIT) return 0;
-		if(pos == LISTL-1){
-			printf("%d No Exit\n", e->id);
-			return 0;}
+		if(f->type == EXIT || pos >= LISTL-1) return FALSE;
 		e->listpos++;
 	}
-	//printf("a small step for me .. \n");
-	return 1;
+	return TRUE;
 }
 
-void work_queue(field*** market, queue_t* queue){
+/*Move every entity in the queue, dequeue if entity reached final destination
+ * @param market 	: fields where entities move within
+ * @param queue 	: queue of all entities
+ */
+void work_queue(field*** const market, queue_t* queue){
 	if(queue_empty(queue)){
 		printf("empty!");
 		return;
@@ -98,12 +111,16 @@ void work_queue(field*** market, queue_t* queue){
 			}
 			e = queue_dequeue(queue);
 		}while(first != e);
-		if(first == e) queue_enqueue(queue, e);
+		if(first == e) queue_enqueue(queue, e); // otherwise one element gets lost
 	}
 }
 
-void spawn_entity(field*** market, queue_t* queue, vector3 position, int type){
-	if(is_blocked(market, position)) exit(EXIT_FAILURE);
+/*Spawn an entity and enqueue it
+ * @param queue 	: queue of all entities
+ * @param position 	: position where the entity is spawned
+ * @param type		: type of the entity
+ */
+void spawn_entity(field*** const market, queue_t* queue, vector3 position, int type){
 	static int counter = 0;
 	//TODO:: gen list (type);
 	entity* e = malloc(sizeof(*e));
