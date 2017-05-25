@@ -123,18 +123,54 @@ void work_queue(field*** const market, queue_t* queue){
 void spawn_entity(field*** const market, queue_t* queue, vector3 position, int type){
 	static int counter = 0;
 	//TODO:: gen list (type);
+	int amountItems = rand()%18+2;		//2-20 Items on the shoppinglist
+	//vector3 list[amountItems];
+	vector3* list= generate_shoppinglist(market, 1, 10, 11, 50);
 	entity* e = malloc(sizeof(*e));
 		e->id = counter;
 		e->type = type;
 		e->listpos = 0;
 		e->position= position;
-			//TODO:: get rid of this
+		e->list = list;
+		/*	//TODO:: get rid of this
 			vector3 v = {rand()%10, rand()%11, position.z};
 			vector3 r = {rand()%10, rand()%11, position.z};
 			vector3 v2 = {rand()%10, rand()%11,position.z+1};
 			vector3 v3 = {rand()%10, rand()%11,position.z-1};
 		e->list[0] = v;
-		e->list[1] = (rand()%2 && v3.z < 50) ? v3: v2;
+		e->list[1] = (rand()%2 && v3.z < 50) ? v3: v2;*/
 	queue_enqueue(queue, e);
 	counter++;
 }
+
+/**
+ * Generates a random shopping list for each customer-entity
+ */
+vector3* generate_shoppinglist(field*** const market, int amountItems, int rows, int columns, int stories) {
+	vector3* list = malloc(sizeof(vector3) * amountItems);
+	vector3 v;			//Single item
+	for(int i = 0; i < amountItems; i++) {
+		printf("%d", i);
+		//random field in the mall
+		v.x = rand()%rows;
+		v.y = rand()%columns;
+		v.z = rand()%stories;
+
+		if(in_matrix(market, v) ->type == SHELF) {			//IF is SHELF	 -> add field
+			list[i] = v;
+		} else {											//generate new Field
+			i--;
+		}
+	}
+	return list;
+}
+
+/*entity* create_entity(int id, EntityType type, vector3 position, int listsize, vector3* list) {
+	entity e;
+	e->id = id;
+	e->type = type;
+	e->listpos = 0;
+	e->position = position;
+	e->list = list;
+	return *e;
+}*/

@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -g
+CFLAGS = -g -Wall
 BIN=prog
 
 OBJ = marketsim.o market.o entity.o queue.o program_test.o

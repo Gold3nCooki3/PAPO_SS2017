@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-typedef enum FieldType {ESCALATOR, BLOCKVAL, EXIT=7} FieldType;
+typedef enum FieldType {CORRIDOR, SHELF, ESCALATOR, LIFT, REGISTER, BLOCKVAL, STOCK, EXIT=7} FieldType;
 
 /*Struct for one filed in the market
  * type		: frame, walk, stock, escalator etc

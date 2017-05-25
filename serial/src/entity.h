@@ -32,7 +32,8 @@ entity{
 	EntityType type;
 	int listpos;
 	vector3 position;
-	vector3 list[LISTL];
+	//vector3 list[LISTL];
+	vector3* list;
 };
 typedef struct entity entity;
 
@@ -58,5 +59,23 @@ void work_queue(field*** const market, queue_t* const queue);
  */
 int move_entity(field*** const market, entity* const e);
 
+/*Generates a random shopping list by checking a random field if it is a SHELF.
+ * If not the next field is tested.
+ * @param market		: market in which the shoppinglist is generated
+ * @param list			: returner für the generated list
+ * @param amountItems	: amount of Items on the shopping list
+ * @param marketinfo	: vector3 with information for rows, columns and stories
+ */
+vector3* generate_shoppinglist(field*** const market, int amountItems, int rows, int columns, int stories);
+
+/**
+ * Constructor for an entity
+ * @param id
+ * @param type
+ * @param position
+ * @param listsize		: size of the shopping list
+ * @param list
+ */
+//void create_entity(entity e, int id, EntityType type, vector3 position, int listsize, vector3* list);
 
 #endif

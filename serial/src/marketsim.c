@@ -10,6 +10,7 @@ int main(int argc, char *argv[]){
 	queue_t *queue = queue_new();
 
 	market = import_market(argv[1], &x, &y, &floor_count);
+	vector3 marketinfo = {x, y, floor_count};
 	printf("x: %d\n", x);
 	printf("y: %d\n", y);
 	printf("floor_count: %d\n", floor_count);
