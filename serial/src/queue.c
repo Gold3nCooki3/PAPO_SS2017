@@ -27,6 +27,7 @@ queue_t *queue_new(void) {
 		return NULL;
 	}
 	queue->front = queue->back = NULL;
+	return queue;
 }
 
 void *queue_dequeue(queue_t *queue) {

@@ -55,11 +55,17 @@ field*** create_market(int x, int y, int floor_count){
  * 		  width and hight of the market
  * @return 			: pointer of the filled array
  */
-field*** import_market(char* path, int* x, int* y, int* floor_count){
+field*** import_market(char* path, int* x, int* y, int* floor_count, marketmetainfo *mmi){
+
 	FILE *file = fopen(path, "r");
 	if (file == NULL) exit(EXIT_FAILURE);
 
 	fscanf(file, "%d,%d,%d\n", x, y, floor_count);
+
+	//TODO
+	field** shelves = malloc(sizeof(field*));
+
+
 	field*** market = create_market(*x, *y, *floor_count);
 	for(int a = 0; a < (*floor_count); a++){
 		for(int b = 0; b < (*y); b++){
@@ -68,6 +74,20 @@ field*** import_market(char* path, int* x, int* y, int* floor_count){
 					&market[a][b][c].type,
 					&market[a][b][c].content,
 					&market[a][b][c].amount);
+
+				switch(&market[a][b][c].type) {
+				case SHELF:
+					break;
+				case LIFT:
+				case ESCALATOR:
+					break;
+				case REGISTER:
+					break;
+				case STOCK:
+					break;
+				case EXIT:
+					break;
+				}
 			}
 		}
 	}

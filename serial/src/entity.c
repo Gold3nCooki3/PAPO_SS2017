@@ -125,7 +125,7 @@ void spawn_entity(field*** const market, queue_t* queue, vector3 position, int t
 	//TODO:: gen list (type);
 	int amountItems = rand()%18+2;		//2-20 Items on the shoppinglist
 	//vector3 list[amountItems];
-	vector3* list= generate_shoppinglist(market, 1, 10, 11, 50);
+	vector3* list= generate_shoppinglist(market, 1, 10, 10, 5);
 	entity* e = malloc(sizeof(*e));
 		e->id = counter;
 		e->type = type;
