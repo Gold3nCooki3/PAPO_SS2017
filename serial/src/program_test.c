@@ -24,27 +24,40 @@ void print_queue(queue_t* queue){
 
 int test_vec_equal(){
 	int c = 0;
-	vector3 vec1 = { 1, 1 ,1 };
-	vector3 vec2 = { 1, 1 ,1 };
-	if(!vec_equal(vec1, vec2)) c++;
+	vector3 vec1 = {1,1,1};
+	vector3 vec2 = {1,1,1};
+	if(!vec_equal(&vec1, &vec2)) c++;
 
-	vec1 = { 1, 100 ,1000};
-	vec2 = { 1, 1 ,1 };
-	if(vec_equal(vec1, vec2)) c++;
+	vector3 vec3 = { 1, 100 ,1000};
+	vector3 vec4 = { 1, 1 ,1 };
+	if(vec_equal(&vec3, &vec4)) c++;
 
-	vec1 = { 0, 0 ,0};
-	vec2 = { 0, 0 ,0 };
-	if(vec_equal(vec1, vec2)) c++;
-	if(c > 0) printf("Error test vec");
-	return c;
+	vector3 vec5 = { 0, 0 ,0};
+	vector3 vec6 = { 0, 0 ,0};
+	if(!vec_equal(&vec5, &vec6)) c++;
+	if(c > 0){
+		printf("Error test vec\n");
+	}return c;
 }
 
-int test_import_market(field*** m, int * y, int * z){
+field*** test_import_market(int * y, int * z){
 	int c = 0;
 	int x;
-	char* path = "..\testdata";
-	m = import_market(path, &x, &y, &z);
+	char* path = malloc(sizeof(char)*11);
+		path[0] = '.';
+		path[1] = '.';
+		path[2] = 92 ;
+		path[3] = 't';
+		path[4] = 'e';
+		path[5] = 's';
+		path[6] = 't';
+		path[7] = 'd';
+		path[8] = 'a';
+		path[9] = 't';
+		path[10] = 'a';
 
+	field*** m = import_market(path, &x, y, z);
+	free(path);
 	if(m[0][0][0].type != 0 ||
 			m[0][0][0].content != 100000 ||
 			m[0][0][0].amount != 2)  c++;
@@ -57,26 +70,26 @@ int test_import_market(field*** m, int * y, int * z){
 			m[49][10][9].content != 42 ||
 			m[49][10][9].amount != 42) c++;
 
-	if(x != 10 || y != 11 || z != 50) c++;
+	if(x != 10 || *y != 11 || *z != 50) c++;
 	if(c > 0){
 		free_market(m, *y, *z);
-		printf("Error test import");
+		printf("Error test import\n");
 		exit(EXIT_FAILURE);
 	}
-	return c;
+	return m;
 }
 
 int test_in_matrix(field*** m){
+	vector3 vec1 = {0,0,0};
+	field* f = in_matrix(m, vec1);
 	int c = 0;
-	Vector3 vec = { 0, 0 ,0};
-	field* f = in_matrix(m, vec);
-	if(f->type.type != 0 || f.content != 100000 || f.amount != 2) c++;
+	if(f->type != 0 || f->content != 100000 || f->amount != 2) c++;
 	return c;
 }
 
 int test_isblocked(field*** m){
 	int c = 0;
-	Vector3 vec = { 0, 0 ,0};
+	vector3 vec = { 0, 0 ,0};
 	if(is_blocked(m, vec)) c++;
 
 	vec.x = 1;
@@ -85,16 +98,15 @@ int test_isblocked(field*** m){
 	return c;
 }
 
-void test_marked(){
+void test_market(){
 	int a = 0;
 	int y, z;
-	field*** m;
 	a += test_vec_equal();
-	a += test_import_market(m, &y, &z);
-	a += test_in_matirx(m);
+	field*** m = test_import_market(&y, &z);
+	a += test_in_matrix(m);
 	a += test_isblocked(m);
 	free_market(m, y, z);
-	printf("Es sind %d Fehler aufgetreten", a);
+	printf("Es sind %d Fehler aufgetreten\n", a);
 	if(a > 0) exit(EXIT_FAILURE);
 }
 

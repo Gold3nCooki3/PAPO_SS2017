@@ -1,6 +1,6 @@
 #include "marketsim.h"
 
-
+#ifndef DEBUG
 int main(int argc, char *argv[]){
 	if (argc < 2) exit(EXIT_FAILURE);
 	srand(time(NULL));
@@ -24,3 +24,9 @@ int main(int argc, char *argv[]){
 	queue_destroy(queue);
 	return 0;
 }
+#else
+int main (){
+	printf("DEBUG\n");
+	test_market();
+}
+#endif
