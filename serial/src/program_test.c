@@ -22,12 +22,12 @@ void print_queue(queue_t* queue){
 }
 
 void 
-test_spawn(field*** marked, queue_t* queue, int x, int y, int floor_count){
+test_spawn(field*** market, queue_t* queue, int x, int y, int floor_count){
 	for(int i= 0; i < 4; i++){
-		spawn_entity(marked, queue, rand_vector3(x, y, floor_count), 0);
+		spawn_entity(market, queue, rand_vector3(x, y, floor_count), 0);
 	}
 	for(int i= 0; i < 4; i++){
-		spawn_entity(marked, queue, rand_vector3(x, y, floor_count), 5);
+		spawn_entity(market, queue, rand_vector3(x, y, floor_count), 5);
 	}
 	printf("\n \n");
 	print_queue(queue);
