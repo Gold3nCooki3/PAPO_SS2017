@@ -4,10 +4,10 @@
 #define TRUE 1
 #define FALSE 0
 
-#define BLOCKVAL 1
-
 #include <stdlib.h>
 #include <stdio.h>
+
+typedef enum FieldType {ESCALATOR, BLOCKVAL, EXIT=7} FieldType;
 
 /*Struct for one filed in the market
  * type		: frame, walk, stock, escalator etc
@@ -16,7 +16,7 @@
  */
 struct
 field{
-	int type;
+	FieldType type;
 	int content;
 	int amount;
 };

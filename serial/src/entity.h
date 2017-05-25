@@ -4,15 +4,6 @@
 #define TRUE 1
 #define FALSE 0
 
-//TODO: make enum for field type
-#define ETRANCE 7
-#define EXIT 7
-#define ESCALATOR 0 //2
-
-//TODO: make enum for entity type
-#define CUSTOMER 0
-#define EMPLOYEE 5
-
 #define LISTL 2
 #define FILLVAL 10
 
@@ -22,6 +13,9 @@
 #include "market.h"
 #include "queue.h"
 #include "program_test.h"
+
+typedef enum EntityType {CUSTOMER, EMPLOYEE=5} EntityType;
+
 
 /*Entity
  * id 		: count upwards
@@ -35,7 +29,7 @@
 struct
 entity{
 	int id;
-	int type;
+	EntityType type;
 	int listpos;
 	vector3 position;
 	vector3 list[LISTL];

@@ -80,7 +80,7 @@ return market;
  * @param market	: address of 3d field array
  * @param y, floor_count	: width, hight of the market
  */
-void free_market(field*** const market, int y, int floor_count){
+void free_market(field*** market, int y, int floor_count){
 	for(int o = 0; o < floor_count; o++ ){
 		for(int i = 0; i < y; i++){
 			free(market[o][i]);
