@@ -60,11 +60,17 @@ field*** import_market(char* path, int* x, int* y, int* floor_count, marketmetai
 	FILE *file = fopen(path, "r");
 	if (file == NULL) exit(EXIT_FAILURE);
 
-	fscanf(file, "%d,%d,%d\n", x, y, floor_count);
+	int q, w, e, r, t;
+	fscanf(file, "%d,%d,%d,%d,%d,%d,%d,%d\n", x, y, floor_count, &q, &w, &e, &r, &t);
 
-	//TODO
-	field** shelves = malloc(sizeof(field*));
+	//Allocate pointers to specific field types
+	field** shelves = malloc(sizeof(field*)*q);
+	field** escalators_lifts = malloc(sizeof(field*)*w);
+	field** stocks = malloc(sizeof(field*)*e);
+	field** registers = malloc(sizeof(field*)*r);
+	field** exits = malloc(sizeof(field*)*t);
 
+	q = w = e = r = t = 0;
 
 	field*** market = create_market(*x, *y, *floor_count);
 	for(int a = 0; a < (*floor_count); a++){
@@ -75,17 +81,24 @@ field*** import_market(char* path, int* x, int* y, int* floor_count, marketmetai
 					&market[a][b][c].content,
 					&market[a][b][c].amount);
 
-				switch(&market[a][b][c].type) {
+				switch(market[a][b][c].type) {
 				case SHELF:
+					shelves[q++] = &market[a][b][c];
 					break;
 				case LIFT:
 				case ESCALATOR:
+					escalators_lifts[w++] = &market[a][b][c];
 					break;
 				case REGISTER:
+					registers[e++] = &market[a][b][c];
 					break;
 				case STOCK:
+					stocks[r++] = &market[a][b][c];
 					break;
 				case EXIT:
+					exits[t++] = &market[a][b][c];
+					break;
+				default:
 					break;
 				}
 			}

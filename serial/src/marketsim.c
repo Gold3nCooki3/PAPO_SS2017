@@ -11,7 +11,7 @@ int main(int argc, char *argv[]){
 
 	marketmetainfo mmi;
 
-	market = import_market(argv[1], &x, &y, &floor_count, &marketmetainfo);
+	market = import_market(argv[1], &x, &y, &floor_count, &mmi);
 	printf("x: %d\n", x);
 	printf("y: %d\n", y);
 	printf("floor_count: %d\n", floor_count);
