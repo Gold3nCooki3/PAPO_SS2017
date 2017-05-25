@@ -264,9 +264,14 @@ public class DrawPanel extends JPanel {
 	 * @throws IOException 
 	 */
 	public void writeData(File saveFile) throws IOException {
+		//Regale, Rolltreppen/Fahrstühle, Kassen, Lagerfelder, Ein/Ausgänge
+		int[] curcount = {0, 0, 0, 0, 0};
+		for(int s = 0; s < stories; s++) {
+			curcount = countTypes(s, curcount);
+		}
 		DataIO out = new DataIO();
 		out.initWriter(saveFile);
-		out.writeLevelInit(rows, columns, stories);
+		out.writeLevelInit(rows, columns, stories, curcount);
 		for(int s = 0; s < stories; s++) {
 			for(int r = 0; r < rows; r++) {
 				for(int c = 0; c < columns; c++) {
@@ -275,6 +280,34 @@ public class DrawPanel extends JPanel {
 			}
 		}
 		out.closeWriter();
+	}
+	
+	public int[] countTypes(int story, int[] curcount) {
+		for(int r = 0; r < rows; r++) {
+			for(int c = 0; c < columns; c++) {
+				switch((shoppingMall[story].getData(r, c))[0]) {
+				case 1:					//Regal
+					curcount[0]++;
+					break;
+				case 2:					//Rolltreppe
+				case 3:					//Aufzug
+					curcount[1]++;
+					break;
+				case 4:					//Kasse
+					curcount[2]++;
+					break;
+				case 6:					//Lager
+					curcount[3]++;
+					break;
+				case 7:					//Ein/ausgang
+					curcount[4]++;
+					break;
+				default:
+					break;
+				}
+			}
+		}
+		return curcount;
 	}
 	
 	public void readData(File openFile) throws IOException {

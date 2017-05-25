@@ -30,11 +30,12 @@ public class DataIO {
 	
 	/**
 	 * Setzt die Ausgabedatei und den benötigten Writer und schreibt Metainformationen
+	 * @param curcount 
 	 * @param outputFile			Ausgabedatei
 	 * @throws FileNotFoundException
 	 */
-	public void writeLevelInit(int rows, int columns, int stories) throws IOException {
-		out.println(rows+","+columns+","+stories);
+	public void writeLevelInit(int rows, int columns, int stories, int[] curcount) throws IOException {
+		out.println(rows+","+columns+","+stories+","+curcount[0]+","+curcount[1]+","+curcount[2]+","+curcount[3]+","+curcount[4]);
 	}
 
 	/**
