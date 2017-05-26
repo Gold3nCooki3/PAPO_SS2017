@@ -120,25 +120,16 @@ void work_queue(field*** const market, queue_t* queue){
  * @param position 	: position where the entity is spawned
  * @param type		: type of the entity
  */
-void spawn_entity(field*** const market, queue_t* queue, vector3 position, int type){
+void spawn_entity(field*** const market, marketmetainfo* const mmi, queue_t* queue, vector3 position, int type){
 	static int counter = 0;
-	//TODO:: gen list (type);
 	int amountItems = rand()%18+2;		//2-20 Items on the shoppinglist
-	//vector3 list[amountItems];
-	vector3* list= generate_shoppinglist(market, 1, 10, 10, 5);
+	vector3* list= generate_shoppinglist(market, mmi, amountItems);
 	entity* e = malloc(sizeof(*e));
 		e->id = counter;
 		e->type = type;
 		e->listpos = 0;
 		e->position= position;
 		e->list = list;
-		/*	//TODO:: get rid of this
-			vector3 v = {rand()%10, rand()%11, position.z};
-			vector3 r = {rand()%10, rand()%11, position.z};
-			vector3 v2 = {rand()%10, rand()%11,position.z+1};
-			vector3 v3 = {rand()%10, rand()%11,position.z-1};
-		e->list[0] = v;
-		e->list[1] = (rand()%2 && v3.z < 50) ? v3: v2;*/
 	queue_enqueue(queue, e);
 	counter++;
 }
@@ -146,7 +137,7 @@ void spawn_entity(field*** const market, queue_t* queue, vector3 position, int t
 /**
  * Generates a random shopping list for each customer-entity
  */
-vector3* generate_shoppinglist(field*** const market, int amountItems, int rows, int columns, int stories) {
+vector3* generate_shoppinglist(field*** const market, marketmetainfo* const mmi, int amountItems) {
 	vector3* list = malloc(sizeof(vector3) * amountItems);
 	vector3 v;			//Single item
 	for(int i = 0; i < amountItems; i++) {
@@ -164,13 +155,3 @@ vector3* generate_shoppinglist(field*** const market, int amountItems, int rows,
 	}
 	return list;
 }
-
-/*entity* create_entity(int id, EntityType type, vector3 position, int listsize, vector3* list) {
-	entity e;
-	e->id = id;
-	e->type = type;
-	e->listpos = 0;
-	e->position = position;
-	e->list = list;
-	return *e;
-}*/

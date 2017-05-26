@@ -42,7 +42,7 @@ typedef struct entity entity;
  * @param position 	: position where the entity is spawned
  * @param type		: type of the entity
  */
-void spawn_entity(field*** const market, queue_t* const queue, vector3 position, int type);
+void spawn_entity(field*** const market, marketmetainfo* const mmi, queue_t* const queue, vector3 position, int type);
 
 /*Move every entity in the queue, dequeue if entity reached final destination
  * @param market 	: fields where entities move within
@@ -62,11 +62,11 @@ int move_entity(field*** const market, entity* const e);
 /*Generates a random shopping list by checking a random field if it is a SHELF.
  * If not the next field is tested.
  * @param market		: market in which the shoppinglist is generated
- * @param list			: returner für the generated list
+ * @param list			: returner of the generated list
  * @param amountItems	: amount of Items on the shopping list
  * @param marketinfo	: vector3 with information for rows, columns and stories
  */
-vector3* generate_shoppinglist(field*** const market, int amountItems, int rows, int columns, int stories);
+vector3* generate_shoppinglist(field*** const market, marketmetainfo* const mmi, int amountItems);
 
 /**
  * Constructor for an entity

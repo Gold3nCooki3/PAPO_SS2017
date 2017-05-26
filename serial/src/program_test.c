@@ -40,37 +40,23 @@ int test_vec_equal(){
 	}return c;
 }
 
-field*** test_import_market(int * y, int * z){
+field*** test_import_market(char * path,int * y, int * z){
 	int c = 0;
 	int x;
-	char* path = malloc(sizeof(char)*11);
-		path[0] = '.';
-		path[1] = '.';
-		path[2] = 92 ;
-		path[3] = 't';
-		path[4] = 'e';
-		path[5] = 's';
-		path[6] = 't';
-		path[7] = 'd';
-		path[8] = 'a';
-		path[9] = 't';
-		path[10] = 'a';
-
-	field*** m = import_market(path, &x, y, z);
-	free(path);
+	marketmetainfo mmi;
+	field*** m = import_market(path, &x, y, z, &mmi);
 	if(m[0][0][0].type != 0 ||
-			m[0][0][0].content != 100000 ||
-			m[0][0][0].amount != 2)  c++;
+			m[0][0][0].content != 0 ||
+			m[0][0][0].amount != 0)  c++;
 
-	if(m[49][10][9].type != 42 ||
-			m[49][10][9].content != 42 ||
-			m[49][10][9].amount != 42) c++;
+	if(m[4][9][9].type != 3 ||
+			m[4][9][9].content != 0 ||
+			m[4][9][9].amount != 0) c++;
 
-	if(m[49][0][9].type == 42 ||
-			m[49][10][9].content != 42 ||
-			m[49][10][9].amount != 42) c++;
-
-	if(x != 10 || *y != 11 || *z != 50) c++;
+	if(m[3][2][2].type == 1 ||
+			m[3][2][1].content != 0 ||
+			m[3][2][1].amount != 0) c++;
+	if(x != 10 || *y != 10 || *z != 5) c++;
 	if(c > 0){
 		free_market(m, *y, *z);
 		printf("Error test import\n");
@@ -83,7 +69,7 @@ int test_in_matrix(field*** m){
 	vector3 vec1 = {0,0,0};
 	field* f = in_matrix(m, vec1);
 	int c = 0;
-	if(f->type != 0 || f->content != 100000 || f->amount != 2) c++;
+	if(f->type != 0 || f->content != 0 || f->amount != 0) c++;
 	return c;
 }
 
@@ -92,17 +78,16 @@ int test_isblocked(field*** m){
 	vector3 vec = { 0, 0 ,0};
 	if(is_blocked(m, vec)) c++;
 
-	vec.x = 1;
-	if(!is_blocked(m, vec)) c++;
-
+	vector3 vec2 = { 3, 0 ,3};
+	if(!is_blocked(m, vec2)) c++;
 	return c;
 }
 
-void test_market(){
+void test_market(char* path){
 	int a = 0;
 	int y, z;
 	a += test_vec_equal();
-	field*** m = test_import_market(&y, &z);
+	field*** m = test_import_market(path, &y, &z);
 	a += test_in_matrix(m);
 	a += test_isblocked(m);
 	free_market(m, y, z);

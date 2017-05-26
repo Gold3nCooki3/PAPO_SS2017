@@ -24,8 +24,7 @@ field* in_matrix(field*** const market, vector3 vec){
  * @return 			: Boolean
  */
 int is_blocked(field*** const market, vector3 vec){
-	if(market[vec.z][vec.y][vec.x].type == BLOCKVAL){
-		//!= WALKABLE
+	if(in_matrix(market, vec)->type == BLOCKVAL){
 		return TRUE;
 	}
 	return FALSE;

@@ -22,6 +22,6 @@ void print_queue(queue_t* queue);
 /*
  * Test all functions in market.c
  */
-void test_market();
+void test_market(char* path);
 
 #endif

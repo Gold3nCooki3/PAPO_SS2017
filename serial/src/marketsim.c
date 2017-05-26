@@ -16,9 +16,9 @@ int main(int argc, char *argv[]){
 	printf("y: %d\n", y);
 	printf("floor_count: %d\n", floor_count);
 	
-	test_spawn(market, queue, x, y, floor_count);
+	test_spawn(market, mmi, queue, x, y, floor_count);
 	while(!queue_empty(queue)){
-		work_queue(market, queue);
+		work_queue(market, mmi, queue);
 		print_queue(queue);
 	}
 
@@ -27,8 +27,9 @@ int main(int argc, char *argv[]){
 	return 0;
 }
 #else
-int main (){
+int main (int argc, char *argv[]){
 	printf("DEBUG\n");
-	test_market();
+	printf("DEBUG\n");
+	test_market(argv[1]);
 }
 #endif
