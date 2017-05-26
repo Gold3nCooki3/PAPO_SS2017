@@ -86,6 +86,7 @@ int test_isblocked(field*** m){
 void test_market(char* path){
 	int a = 0;
 	int y, z;
+	marketmetainfo mmi;
 	a += test_vec_equal();
 	field*** m = test_import_market(path, &y, &z);
 	a += test_in_matrix(m);
