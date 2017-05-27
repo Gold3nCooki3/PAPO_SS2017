@@ -12,7 +12,7 @@
 /*
  *Spawns 8 entities
  */
-void test_spawn(field*** market, queue_t* queue, int x, int y, int floor_count);
+void test_spawn(meta* const mmi, queue_t* queue, queue_t* const empty_shelfs);
 
 /*
  *print the whole queue of entities

@@ -4,7 +4,7 @@
 #define TRUE 1
 #define FALSE 0
 
-#define LISTL 2
+#define LISTL 10
 #define FILLVAL 10
 
 #include <stdio.h>
@@ -28,11 +28,12 @@ typedef enum EntityType {CUSTOMER, EMPLOYEE=5} EntityType;
  */
 struct
 entity{
-	int id;
 	EntityType type;
+	int id;
 	int listpos;
+	int amountItems;
 	vector3 position;
-	//vector3 list[LISTL];
+	vector3 memory_lift;
 	vector3* list;
 };
 typedef struct entity entity;
@@ -42,13 +43,13 @@ typedef struct entity entity;
  * @param position 	: position where the entity is spawned
  * @param type		: type of the entity
  */
-void spawn_entity(field*** const market, marketmetainfo* const mmi, queue_t* const queue, vector3 position, int type);
+void spawn_entity(meta* const mmi, queue_t* const queue, queue_t* const empty_shelfs, EntityType type);
 
 /*Move every entity in the queue, dequeue if entity reached final destination
  * @param market 	: fields where entities move within
  * @param queue 	: queue of all entities
  */
-void work_queue(field*** const market, queue_t* const queue);
+void work_queue(field*** const market, meta * const mmi, queue_t* const queue, queue_t* const empty_shelfs);
 
 /*Moves an entity towards their destination,
  * to pick up or fill up content from a frame
@@ -57,25 +58,5 @@ void work_queue(field*** const market, queue_t* const queue);
  * @param e			: entity
  * @return FALSE if person has reached their final destination
  */
-int move_entity(field*** const market, entity* const e);
-
-/*Generates a random shopping list by checking a random field if it is a SHELF.
- * If not the next field is tested.
- * @param market		: market in which the shoppinglist is generated
- * @param list			: returner of the generated list
- * @param amountItems	: amount of Items on the shopping list
- * @param marketinfo	: vector3 with information for rows, columns and stories
- */
-vector3* generate_shoppinglist(field*** const market, marketmetainfo* const mmi, int amountItems);
-
-/**
- * Constructor for an entity
- * @param id
- * @param type
- * @param position
- * @param listsize		: size of the shopping list
- * @param list
- */
-//void create_entity(entity e, int id, EntityType type, vector3 position, int listsize, vector3* list);
-
+int move_entity(field*** const market, queue_t* empty_shelfs,meta* const mmi, entity* const e);
 #endif

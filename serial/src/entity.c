@@ -10,19 +10,44 @@ int clamp(int d) {
   return 0;
 }
 
+vector3 get_close_vector3(vector3* const list, int listlength, vector3 start){
+	vector3 dest;
+	int mindistance = -1;
+	int distance;
+	for(int i = 0; i < listlength; i++){
+		if(list[i].z == start.z){
+			distance = abs(list[i].x - start.x)  + abs(list[i].y - start.y);
+			if(distance > mindistance || mindistance == -1) {
+				mindistance = distance;
+				dest = list[i];
+			}
+		}
+	}
+	if(mindistance == -1) exit(EXIT_FAILURE);
+	return dest;
+}
+
 /*Moves an entity towards their destination,
  * to pick up or fill up content from a frame
  * @param market	: market where entity is moving within
  * @param e			: entity
  * @return FALSE if person has reached their final destination
  */
-int move_entity(field*** const market, entity* const e){
+int move_entity(field*** const market, queue_t* empty_shelfs, meta* const mmi, entity* const e){
 	int pos = e->listpos;
 	vector3 actual_dest = {e->list[pos].x , e->list[pos].y, e->list[pos].z};
-	/*get field right, left, bottom or top of the destination,
-	 * this is the field the entity has to go */
-	if(in_matrix(market, e->list[pos]) ->type == ESCALATOR){
+
+	/*search for lift or escalator if not on one of these already and the destination is above
+	 * memorize destination of the next lift or escalator*/
+	if(e->list[pos].z != actual_dest.z  &&
+			in_matrix(market, e->position)->type != ESCALATOR){
+		if(e->memory_lift.x == -1){
+			e->memory_lift = get_close_vector3(mmi->lift_fields, mmi->lift_count, e->position);
+		}
+		actual_dest = e->memory_lift;
 	}else{
+	/*get field right, left, bottom or top of the destination,
+	 *this is the field the entity has to go */
 		actual_dest.x++;
 		if(is_blocked(market, actual_dest)){
 				actual_dest.x -= 2;
@@ -60,7 +85,7 @@ int move_entity(field*** const market, entity* const e){
 		}else{
 			e->position.z--;
 		}
-
+		e->memory_lift.x = -1; //reset memory
 	}else{
 		printf("Not on an escalator field nor moving\n");
 		exit(EXIT_FAILURE);
@@ -69,18 +94,21 @@ int move_entity(field*** const market, entity* const e){
 	//Check if entity reached destination
 	if(vec_equal(&actual_dest,&e->position)){
 		field* f = in_matrix(market, actual_dest);
+		field* shelf = in_matrix(market, e->position);
 		switch (e->type){
 			case CUSTOMER:
 				if(f->type != ESCALATOR){
-					if(f->amount  > 0) {
-						f->amount -= 1;
+					if(shelf->amount  > 0) {
+						shelf->amount -= 1;
 					}else{
+						vector3 empty_shelf = e->list[pos];
+						queue_enqueue(empty_shelfs, &empty_shelf);
 						printf("Didn't get content\n");
 					}
 				}
 				break;
 			case EMPLOYEE:
-				if(f->type != ESCALATOR)	f->amount += FILLVAL; break;
+				if(f->type != ESCALATOR)	shelf->amount += FILLVAL; break;
 			default: printf("Nether customer nor employee\n"); break;
 		}
 		if(f->type == EXIT || pos >= LISTL-1) return FALSE;
@@ -93,7 +121,7 @@ int move_entity(field*** const market, entity* const e){
  * @param market 	: fields where entities move within
  * @param queue 	: queue of all entities
  */
-void work_queue(field*** const market, queue_t* queue){
+void work_queue(field*** const market, meta * const mmi, queue_t* const queue, queue_t* const empty_shelfs){
 	if(queue_empty(queue)){
 		printf("empty!");
 		return;
@@ -102,10 +130,11 @@ void work_queue(field*** const market, queue_t* queue){
 		entity* e = first;
 		do{
 			if(!first)first = e;
-			int not_finished = move_entity(market, e);
+			int not_finished = move_entity(market, empty_shelfs, mmi, e);
 			if(not_finished){
 				queue_enqueue(queue, e);
 			}else {
+				free(e->list);
 				if(e == first) first = NULL;
 				if(queue_empty(queue)) break;
 			}
@@ -115,43 +144,44 @@ void work_queue(field*** const market, queue_t* queue){
 	}
 }
 
+/**
+ * Generates a random shopping list for each customer-entity
+ */
+vector3* generate_list(meta* const mmi, queue_t* const empty_shelfs, int* items, EntityType Type) {
+	*items = (Type == CUSTOMER) ? rand()%LISTL : LISTL;
+	vector3* list = malloc(sizeof(vector3) * (*items));
+	int shelf_count = mmi->shelf_count;
+	for(int i = 0; i < *items; i++){
+		if(Type == CUSTOMER){
+			vector3 v = mmi->shelf_fields[rand()%shelf_count];
+			list[i] = v;
+		}else{
+			vector3* v = queue_dequeue(empty_shelfs);
+			list[i] = *v;
+		}
+	}
+	return list;
+}
+
 /*Spawn an entity and enqueue it
  * @param queue 	: queue of all entities
  * @param position 	: position where the entity is spawned
  * @param type		: type of the entity
  */
-void spawn_entity(field*** const market, marketmetainfo* const mmi, queue_t* queue, vector3 position, int type){
+void spawn_entity(meta* const mmi, queue_t* const queue, queue_t* const empty_shelfs, EntityType type){
 	static int counter = 0;
-	int amountItems = rand()%18+2;		//2-20 Items on the shoppinglist
-	vector3* list= generate_shoppinglist(market, mmi, amountItems);
+	int items = 0;
+	vector3* list;
+	list= generate_list(mmi, empty_shelfs, &items, type);
+	vector3 position = mmi->exit_fields[rand()%mmi->exit_count];
 	entity* e = malloc(sizeof(*e));
 		e->id = counter;
 		e->type = type;
 		e->listpos = 0;
+		e->amountItems = items;
 		e->position= position;
+		e->memory_lift.x = -1;
 		e->list = list;
 	queue_enqueue(queue, e);
 	counter++;
-}
-
-/**
- * Generates a random shopping list for each customer-entity
- */
-vector3* generate_shoppinglist(field*** const market, marketmetainfo* const mmi, int amountItems) {
-	vector3* list = malloc(sizeof(vector3) * amountItems);
-	vector3 v;			//Single item
-	for(int i = 0; i < amountItems; i++) {
-		printf("%d", i);
-		//random field in the mall
-		v.x = rand()%rows;
-		v.y = rand()%columns;
-		v.z = rand()%stories;
-
-		if(in_matrix(market, v) ->type == SHELF) {			//IF is SHELF	 -> add field
-			list[i] = v;
-		} else {											//generate new Field
-			i--;
-		}
-	}
-	return list;
 }

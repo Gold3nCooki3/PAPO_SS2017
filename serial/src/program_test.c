@@ -43,7 +43,7 @@ int test_vec_equal(){
 field*** test_import_market(char * path,int * y, int * z){
 	int c = 0;
 	int x;
-	marketmetainfo mmi;
+	meta mmi;
 	field*** m = import_market(path, &x, y, z, &mmi);
 	if(m[0][0][0].type != 0 ||
 			m[0][0][0].content != 0 ||
@@ -86,7 +86,6 @@ int test_isblocked(field*** m){
 void test_market(char* path){
 	int a = 0;
 	int y, z;
-	marketmetainfo mmi;
 	a += test_vec_equal();
 	field*** m = test_import_market(path, &y, &z);
 	a += test_in_matrix(m);
@@ -96,12 +95,12 @@ void test_market(char* path){
 	if(a > 0) exit(EXIT_FAILURE);
 }
 
-void test_spawn(field*** market, queue_t* queue, int x, int y, int floor_count){
+void test_spawn(meta* const mmi, queue_t* queue, queue_t* const empty_shelfs){
 	for(int i= 0; i < 4; i++){
-		spawn_entity(market, queue, rand_vector3(x, y, floor_count), 0);
+		spawn_entity(mmi, queue, empty_shelfs, CUSTOMER);
 	}
 	for(int i= 0; i < 4; i++){
-		spawn_entity(market, queue, rand_vector3(x, y, floor_count), 5);
+		spawn_entity(mmi, queue, empty_shelfs, EMPLOYEE);
 	}
 	printf("\n \n");
 	print_queue(queue);

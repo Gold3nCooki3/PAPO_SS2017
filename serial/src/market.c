@@ -54,24 +54,24 @@ field*** create_market(int x, int y, int floor_count){
  * 		  width and hight of the market
  * @return 			: pointer of the filled array
  */
-field*** import_market(char* path, int* x, int* y, int* floor_count, marketmetainfo *mmi){
+field*** import_market(char* path, int* x, int* y, int* floor_count, meta *mmi){
 
 	FILE *file = fopen(path, "r");
 	if (file == NULL){
 		exit(EXIT_FAILURE);
 	}
 
-	int q, w, e, r, t;
-	fscanf(file, "%d,%d,%d,%d,%d,%d,%d,%d\n", x, y, floor_count, &q, &w, &e, &r, &t);
+	fscanf(file, "%d,%d,%d,%d,%d,%d,%d,%d\n", x, y, floor_count,
+			&mmi->shelf_count, &mmi->lift_count, &mmi->stock_count, &mmi->register_count, &mmi->exit_fields);
 
 	//Allocate pointers to specific field types
-	field** shelves = malloc(sizeof(field*)*q);
-	field** escalators_lifts = malloc(sizeof(field*)*w);
-	field** stocks = malloc(sizeof(field*)*e);
-	field** registers = malloc(sizeof(field*)*r);
-	field** exits = malloc(sizeof(field*)*t);
+	vector3* shelves = malloc(sizeof(vector3)*mmi->shelf_count);
+	vector3* lifts = malloc(sizeof(vector3)*mmi->lift_count);
+	vector3* stocks = malloc(sizeof(vector3)*mmi->stock_count);
+	vector3* registers = malloc(sizeof(vector3)*mmi->register_count);
+	vector3* exits = malloc(sizeof(vector3)*mmi->exit_count);
 
-	q = w = e = r = t = 0;
+	int q=0, w=0, e=0, r=0, t = 0;
 
 	field*** market = create_market(*x, *y, *floor_count);
 	for(int a = 0; a < (*floor_count); a++){
@@ -81,22 +81,23 @@ field*** import_market(char* path, int* x, int* y, int* floor_count, marketmetai
 					&market[a][b][c].type,
 					&market[a][b][c].content,
 					&market[a][b][c].amount);
+				vector3 v = {c,b,a};
 				switch(market[a][b][c].type) {
 				case SHELF:
-					shelves[q++] = &market[a][b][c];
+					shelves[q++] = v;
 					break;
 				case LIFT:
 				case ESCALATOR:
-					escalators_lifts[w++] = &market[a][b][c];
+					lifts[w++] = v;
 					break;
 				case REGISTER:
-					registers[e++] = &market[a][b][c];
+					registers[e++] = v;
 					break;
 				case STOCK:
-					stocks[r++] = &market[a][b][c];
+					stocks[r++] = v;
 					break;
 				case EXIT:
-					exits[t++] = &market[a][b][c];
+					exits[t++] = v;
 					break;
 				default:
 					break;

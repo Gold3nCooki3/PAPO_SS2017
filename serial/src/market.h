@@ -35,13 +35,20 @@ marketmetainfo {
 	int rows;
 	int columns;
 	int stories;
-	field** shelf_fields;
-	field** escalator_lift_fields;
-	field** stock_fields;
-	field** register_fields;
-	field** exit_fields;
+
+	int shelf_count;
+	int lift_count;
+	int stock_count;
+	int register_count;
+	int exit_count;
+
+	vector3* shelf_fields;
+	vector3* lift_fields;
+	vector3* stock_fields;
+	vector3* register_fields;
+	vector3* exit_fields;
 };
-typedef struct marketmetainfo marketmetainfo;
+typedef struct marketmetainfo meta;
 
 /* Test if Vectors are equal
  * @param vec1, vec2 address of the vectors
@@ -63,7 +70,7 @@ int vec_equal(vector3 * vec1, vector3 * vec2);
  * 		  width and hight of the market
  * @return 			: pointer of the filled array
  */
-field*** import_market(char* path, int* x, int* y, int* floor_count, marketmetainfo *mmi);
+field*** import_market(char* path, int* x, int* y, int* floor_count, meta *mmi);
 
 /*Gives back the field pointer in the field Matrix
  * described by the vector position
