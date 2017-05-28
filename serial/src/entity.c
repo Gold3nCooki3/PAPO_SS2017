@@ -39,8 +39,7 @@ int move_entity(field*** const market, meta* const mmi,queue_t* const empty_shel
 
 	/*search for lift or escalator if not on one of these already and the destination is above
 	 * memorize destination of the next lift or escalator*/
-	if(e->position.z != actual_dest.z  &&
-			in_matrix(market, e->position)->type != ESCALATOR){
+	if(e->position.z != actual_dest.z  && in_matrix(market, e->position)->type != ESCALATOR && in_matrix(market, e->position)->type != LIFT){
 		if(e->memory_lift.x == -1){
 			e->memory_lift = get_close_vector3(mmi->lift_fields, mmi->lift_count, e->position);
 		}
@@ -78,7 +77,7 @@ int move_entity(field*** const market, meta* const mmi,queue_t* const empty_shel
 			printf("No Movement");
 			exit(EXIT_FAILURE);
 		}
-	}else if(in_matrix(market, e->position)->type == ESCALATOR){
+	}else if(in_matrix(market, e->position)->type == ESCALATOR || in_matrix(market, e->position)->type == LIFT){
 		//entity is standing on an escalator
 		if(actual_dest.z > e->position.z){
 			e->position.z++;
@@ -94,10 +93,10 @@ int move_entity(field*** const market, meta* const mmi,queue_t* const empty_shel
 	//Check if entity reached destination
 	if(vec_equal(&actual_dest,&e->position)){
 		field* f = in_matrix(market, actual_dest);
-		field* shelf = in_matrix(market, e->position);
+		field* shelf = in_matrix(market, e->list[pos]);
 		switch (e->type){
 			case CUSTOMER:
-				if(f->type != ESCALATOR){
+				if(f->type != ESCALATOR && f->type != LIFT){
 					if(shelf->amount  > 0) {
 						shelf->amount -= 1;
 					}else{
@@ -109,7 +108,7 @@ int move_entity(field*** const market, meta* const mmi,queue_t* const empty_shel
 				}
 				break;
 			case EMPLOYEE:
-				if(f->type != ESCALATOR){
+				if(f->type != ESCALATOR || f->type != LIFT){
 					shelf->amount += FILLVAL;
 				}
 				break;
