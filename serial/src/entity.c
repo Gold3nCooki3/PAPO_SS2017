@@ -109,7 +109,10 @@ int move_entity(field*** const market, meta* const mmi,queue_t* const empty_shel
 				}
 				break;
 			case EMPLOYEE:
-				if(f->type != ESCALATOR)	shelf->amount += FILLVAL; break;
+				if(f->type != ESCALATOR){
+					shelf->amount += FILLVAL;
+				}
+				break;
 			default: printf("Nether customer nor employee\n"); break;
 		}
 		if(f->type == EXIT || pos >= LISTL-1) return FALSE;
