@@ -5,36 +5,36 @@ int main(int argc, char *argv[]){
 	if (argc < 2) exit(EXIT_FAILURE);
 	srand(time(NULL));
 
-	int eployeespawns = 10;
+	int maxeployees = 10;
 	int customerspawns = 50;
 	int simulations = 100;
+	int eployeespawns;
 
 	switch (argc){
-		case 5: eployeespawns = atoi(argv[4]);
+		case 5: maxeployees = atoi(argv[4]);
 		case 4:	customerspawns = atoi(argv[3]);
-		case 3: simulations = atio(argv[2]);
+		case 3: simulations = atoi(argv[2]);
 		default: break;
 	}
 
 
-	int x, y, floor_count;
 	field*** market;
-	queue_t *queue = queue_new();
-	queue_t *empty_shelfs = queue_new();
 	meta mmi;
-
-	market = import_market(argv[1], &x, &y, &floor_count, &mmi);
-	printf("x: %d\n", x);
-	printf("y: %d\n", y);
-	printf("floor_count: %d\n", floor_count);
-	
+	printf("1");
+	market = import_market(argv[1], &mmi);
+	queue_t *empty_shelfs = queue_new();
+	queue_t *queue = queue_new();
+	printf("2");
 	for(int i = 0; i < simulations; i++){
 		//test_spawn(&mmi, queue, empty_shelfs);
+		printf("3");
 		for(int c = 0; c < customerspawns; c++){
-			spawn_entity(mmi, queue, empty_shelfs, CUSTOMER);
+			spawn_entity(&mmi, queue, empty_shelfs,CUSTOMER);
 		}
+
+		eployeespawns = mmi.emtpy_count/LISTL;
 		for(int e = 0; e < eployeespawns; e++){
-			spawn_entity(mmi, queue, empty_shelfs, EMPLOYEE);
+			spawn_entity(&mmi, queue, empty_shelfs, EMPLOYEE);
 		}
 		work_queue(market, &mmi, queue, empty_shelfs);
 		print_queue(queue);
@@ -43,7 +43,9 @@ int main(int argc, char *argv[]){
 		work_queue(market, &mmi, queue, empty_shelfs);
 		print_queue(queue);
 	}
-	free_market(market, y, floor_count);
+	printf("4");
+	free_market(market, mmi.columns, mmi.stories);
+	free_meta(&mmi);
 	queue_destroy(queue);
 	queue_destroy(empty_shelfs);
 	return 0;

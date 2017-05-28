@@ -33,7 +33,7 @@ vector3 get_close_vector3(vector3* const list, int listlength, vector3 start){
  * @param e			: entity
  * @return FALSE if person has reached their final destination
  */
-int move_entity(field*** const market, queue_t* empty_shelfs, meta* const mmi, entity* const e){
+int move_entity(field*** const market, meta* const mmi,queue_t* const empty_shelfs, entity* const e){
 	int pos = e->listpos;
 	vector3 actual_dest = {e->list[pos].x , e->list[pos].y, e->list[pos].z};
 
@@ -103,6 +103,7 @@ int move_entity(field*** const market, queue_t* empty_shelfs, meta* const mmi, e
 					}else{
 						vector3 empty_shelf = e->list[pos];
 						queue_enqueue(empty_shelfs, &empty_shelf);
+						mmi->emtpy_count++;
 						printf("Didn't get content\n");
 					}
 				}
@@ -130,7 +131,7 @@ void work_queue(field*** const market, meta * const mmi, queue_t* const queue, q
 		entity* e = first;
 		do{
 			if(!first)first = e;
-			int not_finished = move_entity(market, empty_shelfs, mmi, e);
+			int not_finished = move_entity(market, mmi, empty_shelfs, e);
 			if(not_finished){
 				queue_enqueue(queue, e);
 			}else {
@@ -147,7 +148,7 @@ void work_queue(field*** const market, meta * const mmi, queue_t* const queue, q
 /**
  * Generates a random shopping list for each customer-entity
  */
-vector3* generate_list(meta* const mmi, queue_t* const empty_shelfs, int* items, EntityType Type) {
+vector3* generate_list(meta* const mmi, queue_t* empty_shelfs, int* items, EntityType Type) {
 	*items = (Type == CUSTOMER) ? rand()%LISTL : LISTL;
 	vector3* list = malloc(sizeof(vector3) * (*items));
 	int shelf_count = mmi->shelf_count;
@@ -157,6 +158,7 @@ vector3* generate_list(meta* const mmi, queue_t* const empty_shelfs, int* items,
 			list[i] = v;
 		}else{
 			vector3* v = queue_dequeue(empty_shelfs);
+			mmi->emtpy_count--;
 			list[i] = *v;
 		}
 	}

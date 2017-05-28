@@ -42,6 +42,8 @@ marketmetainfo {
 	int register_count;
 	int exit_count;
 
+	int emtpy_count;
+
 	vector3* shelf_fields;
 	vector3* lift_fields;
 	vector3* stock_fields;
@@ -66,11 +68,10 @@ int vec_equal(vector3 * vec1, vector3 * vec2);
 
 /*Import market data form textfile/csv,
  * @param path		: path to text file
- * @param x, y, floor_count : addresses for output of length,
- * 		  width and hight of the market
+ * @param mmi
  * @return 			: pointer of the filled array
  */
-field*** import_market(char* path, int* x, int* y, int* floor_count, meta *mmi);
+field*** import_market(char* path, meta *mmi);
 
 /*Gives back the field pointer in the field Matrix
  * described by the vector position
@@ -86,6 +87,7 @@ field* in_matrix(field*** const market, vector3 vec);
  */
 void free_market(field*** market, int y, int floor_count);
 
+void free_meta(meta* mmi);
 /*Test if a field is blocked by something
  * @param market 	: field matrix
  * @param vec 		: position of the field in the Matrix

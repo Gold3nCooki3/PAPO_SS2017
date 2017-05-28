@@ -44,7 +44,7 @@ field*** test_import_market(char * path,int * y, int * z){
 	int c = 0;
 	int x;
 	meta mmi;
-	field*** m = import_market(path, &x, y, z, &mmi);
+	field*** m = import_market(path, &mmi);
 	if(m[0][0][0].type != 0 ||
 			m[0][0][0].content != 0 ||
 			m[0][0][0].amount != 0)  c++;
@@ -95,9 +95,9 @@ void test_market(char* path){
 	if(a > 0) exit(EXIT_FAILURE);
 }
 
-void test_spawn(meta* const mmi, queue_t* queue, queue_t* const empty_shelfs){
+void test_spawn(meta* const mmi, queue_t* const queue,queue_t* const empty_shelfs){
 	for(int i= 0; i < 4; i++){
-		spawn_entity(mmi, queue, empty_shelfs, CUSTOMER);
+		spawn_entity(mmi, queue, empty_shelfs,  CUSTOMER);
 	}
 	for(int i= 0; i < 4; i++){
 		spawn_entity(mmi, queue, empty_shelfs, EMPLOYEE);

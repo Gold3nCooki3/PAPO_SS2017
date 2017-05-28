@@ -12,7 +12,7 @@
 /*
  *Spawns 8 entities
  */
-void test_spawn(meta* const mmi, queue_t* queue, queue_t* const empty_shelfs);
+void test_spawn(meta* const mmi, queue_t* const queue,queue_t* const empty_shelfs);
 
 /*
  *print the whole queue of entities

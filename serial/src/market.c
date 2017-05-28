@@ -54,14 +54,14 @@ field*** create_market(int x, int y, int floor_count){
  * 		  width and hight of the market
  * @return 			: pointer of the filled array
  */
-field*** import_market(char* path, int* x, int* y, int* floor_count, meta *mmi){
+field*** import_market(char* path, meta *mmi){
 
 	FILE *file = fopen(path, "r");
 	if (file == NULL){
 		exit(EXIT_FAILURE);
 	}
 
-	fscanf(file, "%d,%d,%d,%d,%d,%d,%d,%d\n", x, y, floor_count,
+	fscanf(file, "%d,%d,%d,%d,%d,%d,%d,%d\n", &mmi->rows, &mmi->columns, &mmi->stories,
 			&mmi->shelf_count, &mmi->lift_count, &mmi->stock_count, &mmi->register_count, &mmi->exit_fields);
 
 	//Allocate pointers to specific field types
@@ -73,10 +73,10 @@ field*** import_market(char* path, int* x, int* y, int* floor_count, meta *mmi){
 
 	int q=0, w=0, e=0, r=0, t = 0;
 
-	field*** market = create_market(*x, *y, *floor_count);
-	for(int a = 0; a < (*floor_count); a++){
-		for(int b = 0; b < (*y); b++){
-			for(int c = 0; c < (*x); c++){
+	field*** market = create_market(mmi->rows, mmi->columns, mmi->stories);
+	for(int a = 0; a < mmi->rows; a++){
+		for(int b = 0; b < mmi->columns; b++){
+			for(int c = 0; c < mmi->stories; c++){
 				fscanf(file, "%d,%d,%d\n",
 					&market[a][b][c].type,
 					&market[a][b][c].content,
@@ -122,4 +122,12 @@ void free_market(field*** market, int y, int floor_count){
 		free(market[o]);
 	}
 	free(market);
+}
+
+void free_meta(meta* mmi){
+	free(mmi->shelf_fields);
+	free(mmi->lift_fields);
+	free(mmi->stock_fields);
+	free(mmi->register_fields);
+	free(mmi->exit_fields);
 }

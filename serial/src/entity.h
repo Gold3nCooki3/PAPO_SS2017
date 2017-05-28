@@ -58,5 +58,5 @@ void work_queue(field*** const market, meta * const mmi, queue_t* const queue, q
  * @param e			: entity
  * @return FALSE if person has reached their final destination
  */
-int move_entity(field*** const market, queue_t* empty_shelfs,meta* const mmi, entity* const e);
+int move_entity(field*** const market, meta* const mmi, queue_t* empty_shelfs, entity* const e);
 #endif
