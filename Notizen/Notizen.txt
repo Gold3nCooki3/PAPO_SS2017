@@ -1,0 +1,4 @@
+- Um Einkaufslisten zu generieren haben wir zuerst ein Zufälliges Feld erstellt, dann geschaut, ob es ein Regal ist, und wenn es eines war, dann wurds auf den Zettel geschrieben
+	-> Scheiße ineffizient, weil idR ca höchstens 40% des Kaufhauses aus Regalen bestehen werden, Rest muss Lager/Gänge/... sein. Gab also mehr wegzuwerfen als überhaupt behalten wurde
+
+- 
