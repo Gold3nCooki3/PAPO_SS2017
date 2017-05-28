@@ -106,6 +106,13 @@ field*** import_market(char* path, meta *mmi){
 		}
 	}
 	fclose(file);
+
+	mmi->shelf_fields = shelves;
+	mmi->lift_fields = lifts;
+	mmi->stock_fields = stocks;
+	mmi->register_fields = registers;
+	mmi->exit_fields = exits;
+
 return market;
 }
 
