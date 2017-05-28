@@ -14,7 +14,7 @@ void print_queue(queue_t* queue){
 			printf(" pn: %12p",queue->front);
 			printf(" fp: %12p",node->next);
 			printf(" bp: %12p",node);
-			printf(" id: %d, type: %d, pos: (%2d,%2d,%2d), dest: (%2d,%2d,%2d) \n",
+			printf(" id: %4d, type: %d, pos: (%2d,%2d,%2d), dest: (%2d,%2d,%2d) \n",
 				e->id, e ->type, e->position.x, e->position.y, e->position.z, e->list[e->listpos].x, e->list[e->listpos].y, e->list[e->listpos].z, e);
 			node = node->next;
 		}
