@@ -1,13 +1,23 @@
-\documentclass[10pt,a4paper,oneside]{article}
+% Handbuch zu komascript
+% ftp://ftp.mpi-sb.mpg.de/pub/tex/mirror/ftp.dante.de/pub/tex/macros/latex/contrib/koma-script/doc/scrguide.pdf
+
+\documentclass[10pt,a4paper,oneside]{scrartcl}
 \usepackage[utf8]{inputenc}
-\usepackage[german]{babel}
+%\usepackage[latin1]{inputenc} %für linux
+\usepackage[ngerman]{babel}
 \usepackage[T1]{fontenc}
 \usepackage{amsmath}
 \usepackage{amsfonts}
 \usepackage{amssymb}
 \usepackage{graphicx}
 \author{Daniel Bremer, Nils Meier}
+\setkomafont{title}{\LARGE}
 \title{SMITH}
+\setkomafont{subtitle}{\large}
+\subtitle{\textbf{S}imulate \textbf{M}alls \textbf{i}n \textbf{t}he \textbf{H}ood\\ Dokumentation zum parallelen Praktikum SS 2017}
 \begin{document}
-
+\maketitle
+\newpage
+\tableofcontents
+\include{Einleitung/WasistSmith}
 \end{document}
