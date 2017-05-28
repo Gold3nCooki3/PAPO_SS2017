@@ -155,11 +155,25 @@ vector3* generate_list(meta* const mmi, queue_t* empty_shelfs, int* items, Entit
 	vector3* list = malloc(sizeof(vector3) * (*items));
 	int shelf_count = mmi->shelf_count;
 	for(int i = 0; i < *items; i++){
+		vector3* v;
 		if(Type == CUSTOMER){
-			vector3 v = mmi->shelf_fields[rand()%shelf_count];
+			if(i == *items-2){
+				//Kasse
+				v = get_close_vector3(mmi->register_fields, mmi->register_count, list[i-1]);
+			}else if(i == *items-1){
+				//Exit
+				v = get_close_vector3(mmi->exit_fields, mmi->exit_count, list[i-1]);
+			}else{
+				v = mmi->shelf_fields[(i * rand())%shelf_count];
+			}
 			list[i] = v;
 		}else{
-			vector3* v = queue_dequeue(empty_shelfs);
+			if(i == *items-1){
+				//Exit
+				v = &get_close_vector3(mmi->exit_fields, mmi->exit_count, list[i-1]);
+			}else{
+				v = queue_dequeue(empty_shelfs);
+			}
 			mmi->emtpy_count--;
 			list[i] = *v;
 		}
@@ -177,7 +191,7 @@ void spawn_entity(meta* const mmi, queue_t* const queue, queue_t* const empty_sh
 	int items = 0;
 	vector3* list;
 	list= generate_list(mmi, empty_shelfs, &items, type);
-	vector3 position = mmi->exit_fields[rand()%mmi->exit_count];
+	vector3 position = (type == CUSTOMER) ? mmi->exit_fields[rand()%mmi->exit_count] : mmi->stock_fields[rand()%mmi->stock_count];
 	entity* e = malloc(sizeof(*e));
 		e->id = counter;
 		e->type = type;
