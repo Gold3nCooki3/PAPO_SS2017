@@ -155,8 +155,8 @@ vector3* generate_list(meta* const mmi, queue_t* empty_shelfs, int* items, Entit
 	vector3* list = malloc(sizeof(vector3) * (*items));
 	int shelf_count = mmi->shelf_count;
 	for(int i = 0; i < *items; i++){
-		vector3* v;
 		if(Type == CUSTOMER){
+			vector3 v;
 			if(i == *items-2){
 				//Kasse
 				v = get_close_vector3(mmi->register_fields, mmi->register_count, list[i-1]);
@@ -168,6 +168,7 @@ vector3* generate_list(meta* const mmi, queue_t* empty_shelfs, int* items, Entit
 			}
 			list[i] = v;
 		}else{
+			vector3* v;
 			if(i == *items-1){
 				//Exit
 				v = &get_close_vector3(mmi->exit_fields, mmi->exit_count, list[i-1]);
