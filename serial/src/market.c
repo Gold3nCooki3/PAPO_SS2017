@@ -74,9 +74,9 @@ field*** import_market(char* path, meta *mmi){
 	int q=0, w=0, e=0, r=0, t = 0;
 
 	field*** market = create_market(mmi->rows, mmi->columns, mmi->stories);
-	for(int a = 0; a < mmi->rows; a++){
+	for(int a = 0; a < mmi->stories; a++){
 		for(int b = 0; b < mmi->columns; b++){
-			for(int c = 0; c < mmi->stories; c++){
+			for(int c = 0; c < mmi->rows; c++){
 				fscanf(file, "%d,%d,%d\n",
 					&market[a][b][c].type,
 					&market[a][b][c].content,
