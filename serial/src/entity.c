@@ -39,7 +39,7 @@ int move_entity(field*** const market, meta* const mmi,queue_t* const empty_shel
 
 	/*search for lift or escalator if not on one of these already and the destination is above
 	 * memorize destination of the next lift or escalator*/
-	if(e->list[pos].z != actual_dest.z  &&
+	if(e->position.z != actual_dest.z  &&
 			in_matrix(market, e->position)->type != ESCALATOR){
 		if(e->memory_lift.x == -1){
 			e->memory_lift = get_close_vector3(mmi->lift_fields, mmi->lift_count, e->position);
