@@ -31,7 +31,7 @@ public class WindowManager {
 	/**
 	 * Fenster und Layout
 	 */
-	JFrame f = new JFrame("Franc v2.0");
+	JFrame f = new JFrame("SMITH Builder");
 	GridBagLayout gbl = new GridBagLayout();
 	Container c = f.getContentPane();
 
