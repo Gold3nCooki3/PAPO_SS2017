@@ -62,7 +62,7 @@ field*** import_market(char* path, meta *mmi){
 	}
 
 	fscanf(file, "%d,%d,%d,%d,%d,%d,%d,%d\n", &mmi->rows, &mmi->columns, &mmi->stories,
-			&mmi->shelf_count, &mmi->lift_count, &mmi->stock_count, &mmi->register_count, &mmi->exit_count);
+			&mmi->shelf_count, &mmi->lift_count, &mmi->register_count, &mmi->stock_count, &mmi->exit_count);
 
 	//Allocate pointers to specific field types
 	vector3* shelves = malloc(sizeof(vector3)*mmi->shelf_count);
@@ -82,6 +82,7 @@ field*** import_market(char* path, meta *mmi){
 					&market[a][b][c].content,
 					&market[a][b][c].amount);
 				vector3 v = {c,b,a};
+				//printf("(%d, %d, %d)\n",c,b,a);
 				switch(market[a][b][c].type) {
 				case SHELF:
 					shelves[q++] = v;
