@@ -5,9 +5,9 @@ int main(int argc, char *argv[]){
 	if (argc < 2) exit(EXIT_FAILURE);
 	srand(time(NULL));
 
-	int maxeployees = 10;
-	int customerspawns = 50;
-	int simulations = 100;
+	int maxeployees = 5;
+	int customerspawns = 10;
+	int simulations = 10;
 	int eployeespawns;
 
 	switch (argc){
@@ -31,9 +31,11 @@ int main(int argc, char *argv[]){
 		for(int c = 0; c < customerspawns; c++){
 			spawn_entity(&mmi, queue, empty_shelfs,CUSTOMER);
 		}
-
+		printf("to spawn ?: %d", eployeespawns);
 		eployeespawns = mmi.emtpy_count/LISTL;
+		printf("to spawn ?: %d", eployeespawns);
 		for(int e = 0; e < eployeespawns; e++){
+			printf("spawning");
 			spawn_entity(&mmi, queue, empty_shelfs, EMPLOYEE);
 		}
 		work_queue(market, &mmi, queue, empty_shelfs);

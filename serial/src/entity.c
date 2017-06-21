@@ -210,7 +210,7 @@ void spawn_entity(meta* const mmi, queue_t* const queue, queue_t* const empty_sh
 		e->position= position;
 		e->memory_lift.x = -1;
 		e->list = list;
-	printf("qeue\n");
+	printf("C: %d\n", counter);
 	queue_enqueue(queue, e);
 	counter++;
 }
