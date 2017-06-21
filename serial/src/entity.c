@@ -15,16 +15,13 @@ vector3 get_close_vector3(vector3* const list, int listlength, vector3 start){
 	int mindistance = -1;
 	int distance;
 	for(int i = 0; i < listlength; i++){
-		printf("%d,%d,%d\n",list[i].x,list[i].y,list[i].z);
-		if(list[i].z == start.z){
-			distance = abs(list[i].x - start.x)  + abs(list[i].y - start.y);
-			if(distance > mindistance || mindistance == -1) {
-				mindistance = distance;
-				dest = list[i];
-			}
+		distance = abs(list[i].x - start.x)  + abs(list[i].y - start.y) + 10*abs(list[i].z - start.z);
+		if(distance > mindistance || mindistance == -1) {
+			mindistance = distance;
+			dest = list[i];
 		}
 	}
-	if(mindistance == -1) exit(EXIT_FAILURE);
+	if(mindistance == -1){printf("error"); exit(EXIT_FAILURE);}
 	return dest;
 }
 
@@ -152,7 +149,7 @@ void work_queue(field*** const market, meta * const mmi, queue_t* const queue, q
  * Generates a random shopping list for each customer-entity
  */
 vector3* generate_list(meta* const mmi, queue_t* empty_shelfs, int* items, EntityType Type) {
-	*items = (Type == CUSTOMER) ? rand()%LISTL : LISTL;
+	*items = (Type == CUSTOMER) ? rand()%LISTL+2 : LISTL+1;
 	vector3* list = malloc(sizeof(vector3) * (*items));
 	int shelf_count = mmi->shelf_count;
 	for(int i = 0; i < *items; i++){
