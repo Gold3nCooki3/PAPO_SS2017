@@ -167,7 +167,8 @@ vector3* generate_list(meta* const mmi, queue_t* empty_shelfs, int* items, Entit
 				printf("go to exit\n");
 			}else{
 				printf("normal\n");
-				v = mmi->shelf_fields[(i * rand())%shelf_count];
+				int r = abs((i*rand())%shelf_count);
+				v = mmi->shelf_fields[r];
 				printf("normal 2\n");
 			}
 			list[i] = v;
