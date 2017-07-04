@@ -116,7 +116,7 @@ int move_entity(field*** const market, meta* const mmi,queue_t* const empty_shel
 				break;
 			default: printf("Nether customer nor employee\n"); break;
 		}
-		if(f->type == EXIT || pos >= LISTL-1) return FALSE;
+		if(f->type == EXIT || pos >= LISTL-1) return FALSE; //TODO: e wird nicht  korrekt entfernt, da Listl jetzt dynamisch ist und actual_dest das exacte Feld sein muss
 		e->listpos++;
 	}
 	return TRUE;
