@@ -10,14 +10,17 @@ int clamp(int d) {
   return 0;
 }
 
-vector3 get_close_vector3(vector3* const list, int listlength, vector3 start){
+vector3 get_close_vector3(vector3* const list, int listlength, vector3 start, int forceSameLevel){
 	vector3 dest;
 	int mindistance = -1;
 	int distance;
 	for(int i = 0; i < listlength; i++){
 		/*TODO: 10 * delta(z) nicht das beste*/
 		distance = abs(list[i].x - start.x)  + abs(list[i].y - start.y) + 10*abs(list[i].z - start.z);
-		if(distance > mindistance || mindistance == -1) {
+		if(!forceSameLevel && (distance > mindistance || mindistance == -1)) {
+			mindistance = distance;
+			dest = list[i];
+		}else if(forceSameLevel && list[i].z == start.z && (distance > mindistance || mindistance == -1)){
 			mindistance = distance;
 			dest = list[i];
 		}
@@ -40,7 +43,7 @@ int move_entity(field*** const market, meta* const mmi,queue_t* const empty_shel
 	 * memorize destination of the next lift or escalator*/
 	if(e->position.z != actual_dest.z  && in_matrix(market, e->position)->type != ESCALATOR && in_matrix(market, e->position)->type != LIFT){
 		if(e->memory_lift.x == -1){
-			e->memory_lift = get_close_vector3(mmi->lift_fields, mmi->lift_count, e->position);
+			e->memory_lift = get_close_vector3(mmi->lift_fields, mmi->lift_count, e->position, TRUE);
 		}
 		actual_dest = e->memory_lift;
 	}else{
@@ -158,10 +161,10 @@ vector3* generate_list(meta* const mmi, queue_t* empty_shelfs, int* items, Entit
 			vector3 v;
 			if(i == *items-2){
 				//Kasse
-				v = get_close_vector3(mmi->register_fields, mmi->register_count, list[i-1]);
+				v = get_close_vector3(mmi->register_fields, mmi->register_count, list[i-1], FALSE);
 			}else if(i == *items-1){
 				//Exit
-				v = get_close_vector3(mmi->exit_fields, mmi->exit_count, list[i-1]);
+				v = get_close_vector3(mmi->exit_fields, mmi->exit_count, list[i-1], FALSE);
 			}else{
 				int r = abs((i*rand())%shelf_count);
 				v = mmi->shelf_fields[r];
@@ -171,7 +174,7 @@ vector3* generate_list(meta* const mmi, queue_t* empty_shelfs, int* items, Entit
 			vector3* v;
 			if(i == *items-1){
 				//Exit
-				vector3 h = get_close_vector3(mmi->stock_fields, mmi->stock_count, list[i-1]);
+				vector3 h = get_close_vector3(mmi->stock_fields, mmi->stock_count, list[i-1], FALSE);
 				v = &h;
 			}else{
 				v = queue_dequeue(empty_shelfs);
