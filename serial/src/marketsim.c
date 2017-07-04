@@ -31,9 +31,8 @@ int main(int argc, char *argv[]){
 		for(int c = 0; c < customerspawns; c++){
 			spawn_entity(&mmi, queue, empty_shelfs,CUSTOMER);
 		}
-		printf("to spawn ?: %d", eployeespawns);
 		eployeespawns = mmi.emtpy_count/LISTL;
-		printf("to spawn ?: %d", eployeespawns);
+		printf("to spawn ?: %d \n", eployeespawns);
 		for(int e = 0; e < eployeespawns; e++){
 			printf("spawning");
 			spawn_entity(&mmi, queue, empty_shelfs, EMPLOYEE);

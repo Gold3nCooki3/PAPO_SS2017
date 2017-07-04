@@ -15,6 +15,7 @@ vector3 get_close_vector3(vector3* const list, int listlength, vector3 start){
 	int mindistance = -1;
 	int distance;
 	for(int i = 0; i < listlength; i++){
+		/*TODO: 10 * delta(z) nicht das beste*/
 		distance = abs(list[i].x - start.x)  + abs(list[i].y - start.y) + 10*abs(list[i].z - start.z);
 		if(distance > mindistance || mindistance == -1) {
 			mindistance = distance;
@@ -156,27 +157,21 @@ vector3* generate_list(meta* const mmi, queue_t* empty_shelfs, int* items, Entit
 		if(Type == CUSTOMER){
 			vector3 v;
 			if(i == *items-2){
-				printf("get to register\n");
 				//Kasse
 				v = get_close_vector3(mmi->register_fields, mmi->register_count, list[i-1]);
-				printf("got to reg\n");
 			}else if(i == *items-1){
 				//Exit
-				printf("get to exit\n");
 				v = get_close_vector3(mmi->exit_fields, mmi->exit_count, list[i-1]);
-				printf("go to exit\n");
 			}else{
-				printf("normal\n");
 				int r = abs((i*rand())%shelf_count);
 				v = mmi->shelf_fields[r];
-				printf("normal 2\n");
 			}
 			list[i] = v;
 		}else{
 			vector3* v;
 			if(i == *items-1){
 				//Exit
-				vector3 h = get_close_vector3(mmi->exit_fields, mmi->exit_count, list[i-1]);
+				vector3 h = get_close_vector3(mmi->stock_fields, mmi->stock_count, list[i-1]);
 				v = &h;
 			}else{
 				v = queue_dequeue(empty_shelfs);
@@ -198,11 +193,8 @@ void spawn_entity(meta* const mmi, queue_t* const queue, queue_t* const empty_sh
 	static int counter = 0;
 	int items = 0;
 	vector3* list;
-	printf("make list");
 	list= generate_list(mmi, empty_shelfs, &items, type);
-	printf("ERROR hier ->");
-	vector3 position = (type == CUSTOMER) ? mmi->exit_fields[rand()%mmi->exit_count] : mmi->stock_fields[rand()%mmi->stock_count];
-	printf("made position\n");
+	vector3 position = (type == CUSTOMER) ? mmi->exit_fields[abs(rand()%mmi->exit_count)] : mmi->stock_fields[abs(rand()%mmi->stock_count)];
 	entity* e = malloc(sizeof(*e));
 		e->id = counter;
 		e->type = type;
@@ -211,7 +203,6 @@ void spawn_entity(meta* const mmi, queue_t* const queue, queue_t* const empty_sh
 		e->position= position;
 		e->memory_lift.x = -1;
 		e->list = list;
-	printf("C: %d\n", counter);
 	queue_enqueue(queue, e);
 	counter++;
 }
