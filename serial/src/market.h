@@ -80,7 +80,7 @@ field*** import_market(char* path, meta *mmi);
  * @return 			: Field Pointer
  */
 field* in_matrix(field*** const market, vector3 vec);
-
+field* in_secret_matrix(vector3 vec);
 /*Deallocate 3d field array
  * @param market	: address of 3d field array
  * @param y, floor_count	: width, hight of the market

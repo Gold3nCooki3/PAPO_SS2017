@@ -24,7 +24,6 @@ int main(int argc, char *argv[]){
 	market = import_market(argv[1], &mmi);
 	queue_t *empty_shelfs = queue_new();
 	queue_t *queue = queue_new();
-	printf("2");
 	for(int i = 0; i < simulations; i++){
 		//test_spawn(&mmi, queue, empty_shelfs);
 		printf("3");

@@ -1,5 +1,7 @@
 #include "market.h"
 
+field*** secret_market;
+
 /* Test if Vectors are equal
  * @param vec1, vec2 address of the vectors
  * @return Boolean
@@ -16,6 +18,15 @@ int vec_equal(vector3 * vec1, vector3 * vec2){
  */
 field* in_matrix(field*** const market, vector3 vec){
 	return &market[vec.z][vec.y][vec.x];
+}
+
+field* in_secret_matrix(vector3 vec){
+	if(secret_market){
+		return &secret_market[vec.z][vec.y][vec.x];
+	}else{
+		printf("Error: 0x0");
+		exit(EXIT_FAILURE);
+	}
 }
 
 /*Test if a field is blocked by something
@@ -45,6 +56,7 @@ field*** create_market(int x, int y, int floor_count){
 			floor[j] = malloc(x * sizeof(field));
 		}
 	}
+	secret_market = market;
 	return market;
 }
 
