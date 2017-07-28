@@ -1,0 +1,20 @@
+\section{Funktionsweise des Simulators}
+
+\subsection{Kaufhausgenerierung}
+Die Generierung eines Kaufhauses erfolgt über ein Java Programm mit GUI mit dem man leicht eigene Kaufhäuser anlegen kann. \# TODO Screenshot
+Dieses erlaubt das Erzeugen von verschiedenen Stockwerklayouts, die Einrichtung von verschiedenen Abteilungen, dem Parametrisieren der Regale und das Einrichten von Standpunkten für Kassen, Lager und Aufzüge. Weiterhin können Grundflächengröße und Stockwerkanzahl angepasst werden.\\Eine Zufallsgenerierung von Kaufhäusern wird nicht unterstützt. Weiterhin wird nicht geprüft ob jedes Regal erreichbar ist, dies führt jedoch zu keinen weiteren Problemen, das das Listenelement in diesem Fall übersprungen wird-
+
+\subsection{Kunden}
+Beim Erzeugen eines Kunden wird eine zufallsgenerierte Einkaufsliste erzeugt, die aus Positionen von Regalen im Kaufhaus besteht. Anschließend wird der Kunde auf einem Eingangsfeld positioniert und beginnt die Einkaufsliste abzuarbeiten. Zur Navigation innerhalb eines Stockwerkes wird der A*-Algorithmus eingesetzt. Sollten sich aufeinanderfolgende Elemente der Einkaufsliste in verschiedenen Stockwerken befinden, so wird zwischen beiden automatisch ein Aufzug-Feld als Element eingefügt, damit der Stockwerkwechsel gewährleistet ist.
+
+Während der Abarbeitung seiner Einkaufsliste geht ein Kunde von Regal zu Regal und entnimmt diesen dabei an den Positionen der Einkaufsliste Waren. Hier kann es auch passieren, dass ein Regal leer ist, der Kunde also ein Element nicht einkaufen kann.
+
+Ist der Kunde am Ende seiner Einkaufsliste angelangt, so begibt er sich zu einer Kasse (\# TODO: Schlangen und verschiedene Anstellalgorithmen?), bezahlt und verlässt das Kaufhaus über einen Ausgang.
+
+\subsection{Mitarbeiter}
+Mitarbeiter haben zwei Aufgaben: Das Besetzen von Kassen und das Auffüllen der Regale. Im Gegensatz zu Kunden werden Mitarbeiter nicht an Eingängen erzeugt sondern im Lager, werden mit einer Aufgabe versehen arbeiten diese ab und werden im Lager wieder eliminiert.
+
+Das Besetzen einer Kasse ist eine Position (die einer Kasse im Kaufhaus), die ein Mitarbeiter für eine bestimmt Zeitspanne einnehmen muss. Ist eine Kasse besetzt kann ein Kunde an dieser bezahlen. Das Auffüllen eines Regals erfolgt, indem ein Mitarbeiter erzeugt wird, aus dem Lager heraus ein benötigtes Element holt, zum entsprechenden Regal bringt, dort ablegt, die Warenmenge dort also wieder erhöht und anschließend zurück ins Lager läuft. Alle Mitarbeiter müssen lediglich unter der Beachtung der Höchstmitarbeiterzahl erzeugt werden.
+
+\subsection{Darstellung der Ergebnisse}
+...

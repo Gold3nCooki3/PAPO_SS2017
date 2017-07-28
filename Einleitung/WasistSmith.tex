@@ -1,1 +1,5 @@
 \section{Über das Projekt}
+SMITH ist eines der Ergebnisse des Praktikums \enquote{Parallele Programmierung} im Sommersemester 2017. Löst man das Akronym auf, so ergibt sich der Name \enquote{Simulate Malls in the Hood}, der schon verrät, wovon das Projekt handelt: Vom Simulieren von Kaufhäusern.
+
+Aufgabenstellung war es ein Programm zu schreiben, welches mit MPI parallelisiert wurde und auf mehreren Rechenknoten lauffähig ist.
+Dies erreicht SMITH, indem er eine große Matrix als Eingabe erhält, diese auf verschiedene Prozesse aufteilt und anschließend Kunden und Mitarbeiter in dieser Matrix, die ein Kaufhaus darstellt erzeugt und deren Aktivitätenliste abarbeitet. Die Parallelisierung findet also in der Verteilung der Daten statt, Kunden und Mitarbeiter werden anhand Ihrer Position im Kaufhaus den Rechenknoten zugeteilt.
