@@ -37,16 +37,16 @@ static void PathNodeNeighbors(ASNeighborList neighbors, void *node, void *contex
 
 	PathNode *pathNode = (PathNode *)node;
 
-	if (is_blocked((PathNode){pathNode->x+1, pathNode->y, pathNode->z})){
+	if (!is_blocked((PathNode){pathNode->x+1, pathNode->y, pathNode->z})){
 		ASNeighborListAdd(neighbors, &(PathNode){pathNode->x+1, pathNode->y,pathNode->z}, 1);
 	}
-	if (is_blocked((PathNode){pathNode->x-1, pathNode->y, pathNode->z})){
+	if (!is_blocked((PathNode){pathNode->x-1, pathNode->y, pathNode->z})){
 		ASNeighborListAdd(neighbors, &(PathNode){pathNode->x-1, pathNode->y,pathNode->z}, 1);
 	 }
-	if (is_blocked((PathNode){pathNode->x, pathNode->y+1, pathNode->z})){
+	if (!is_blocked((PathNode){pathNode->x, pathNode->y+1, pathNode->z})){
 		ASNeighborListAdd(neighbors, &(PathNode){pathNode->x, pathNode->y+1,pathNode->z}, 1);
 	}
-	if (is_blocked((PathNode){pathNode->x, pathNode->y-1, pathNode->z})){
+	if (!is_blocked((PathNode){pathNode->x, pathNode->y-1, pathNode->z})){
 		ASNeighborListAdd(neighbors, &(PathNode){pathNode->x, pathNode->y-1,pathNode->z}, 1);
 	}
 }
@@ -80,7 +80,7 @@ int has_path(entity* const e){
  * @param market	: market where entity is moving within
  * @param e			: entity
  * @return FALSE if person has reached their final destination
- */
+ */6
 int move_entity(field*** const market, meta* const mmi,queue_t* const empty_shelfs, entity* const e){
 	if (!has_path(e)){
 		PathNode pathFrom = (PathNode)e->position;
