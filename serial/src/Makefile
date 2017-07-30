@@ -1,11 +1,11 @@
 CC = gcc
-CFLAGS = -g -Wall
+CFLAGS = -std=c99 -g -Wall
 BIN=prog
 
-OBJ = marketsim.o market.o entity.o queue.o AStar.o program_test.o
+OBJ = marketsim.o market.o entity.o queue.o  program_test.o AStar.o
 
 prog: $(OBJ)
-	$(CC) $(CLFAGS) -o prog $(OBJ)
+	$(CC) $(CLFAGS) -lm -o prog $(OBJ)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $<

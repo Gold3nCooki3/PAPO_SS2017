@@ -1,3 +1,4 @@
+
 #ifndef ENTITY_H
 #define ENTITY_H
 
@@ -10,11 +11,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <setjmp.h>
 
 #include "market.h"
 #include "queue.h"
 #include "program_test.h"
 #include "AStar.h"
+
+#define TRY do{ jmp_buf ex_buf__; if( !setjmp(ex_buf__) ){
+#define CATCH } else {
+#define ETRY } }while(0)
+#define THROW longjmp(ex_buf__, 1)
 
 typedef enum EntityType {CUSTOMER, EMPLOYEE=5} EntityType;
 

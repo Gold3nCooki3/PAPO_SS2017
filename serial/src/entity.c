@@ -36,19 +36,30 @@ static void PathNodeNeighbors(ASNeighborList neighbors, void *node, void *contex
 {
 
 	PathNode *pathNode = (PathNode *)node;
-
-    if (in_matrix_g((PathNode){pathNode->x+1, pathNode->y,pathNode->z}) == CORRIDOR) {
-        ASNeighborListAdd(neighbors, &(PathNode){pathNode->x+1, pathNode->y,pathNode->z}, 1);
-    }
-    if (in_matrix_g((PathNode){pathNode->x-1, pathNode->y,pathNode->z}) == CORRIDOR) {
-        ASNeighborListAdd(neighbors, &(PathNode){pathNode->x-1, pathNode->y,pathNode->z}, 1);
-    }
-    if (in_matrix_g((PathNode){pathNode->x, pathNode->y+1,pathNode->z}) == CORRIDOR) {
-        ASNeighborListAdd(neighbors, &(PathNode){pathNode->x, pathNode->y+1,pathNode->z}, 1);
-    }
-    if (in_matrix_g((PathNode){pathNode->x, pathNode->y-1,pathNode->z}) == CORRIDOR) {
-        ASNeighborListAdd(neighbors, &(PathNode){pathNode->x, pathNode->y-1,pathNode->z}, 1);
-    }
+	TRY{
+		if (in_matrix_g((PathNode){pathNode->x+1, pathNode->y,pathNode->z})->type == CORRIDOR) {
+			ASNeighborListAdd(neighbors, &(PathNode){pathNode->x+1, pathNode->y,pathNode->z}, 1);
+		}
+	}
+	ETRY;
+	TRY{
+   		if (in_matrix_g((PathNode){pathNode->x-1, pathNode->y,pathNode->z})->type == CORRIDOR) {
+       			ASNeighborListAdd(neighbors, &(PathNode){pathNode->x-1, pathNode->y,pathNode->z}, 1);
+   		 }
+	}
+	ETRY;
+    	TRY{
+		if (in_matrix_g((PathNode){pathNode->x, pathNode->y+1,pathNode->z})->type == CORRIDOR) {
+        		ASNeighborListAdd(neighbors, &(PathNode){pathNode->x, pathNode->y+1,pathNode->z}, 1);
+    		}
+	}
+	ETRY;
+	TRY{
+    		if (in_matrix_g((PathNode){pathNode->x, pathNode->y-1,pathNode->z})->type == CORRIDOR) {
+        		ASNeighborListAdd(neighbors, &(PathNode){pathNode->x, pathNode->y-1,pathNode->z}, 1);
+    		}
+	}
+	ETRY;
 }
 
 static float PathNodeHeuristic(void *fromNode, void *toNode, void *context)
@@ -189,7 +200,7 @@ vector3* generate_list(meta* const mmi, queue_t* empty_shelfs, int* items, Entit
 				//Exit
 				v = get_close_vector3(mmi->exit_fields, mmi->exit_count, list[i-1], FALSE);
 			}else{
-				int r = abs((i*rand())%shelf_count);
+				int r = abs(rand()%shelf_count);
 				v = mmi->shelf_fields[r];
 			}
 			list[i] = v;
@@ -221,7 +232,7 @@ void spawn_entity(meta* const mmi, queue_t* const queue, queue_t* const empty_sh
 	vector3* list;
 	list= generate_list(mmi, empty_shelfs, &items, type);
 	vector3 position = (type == CUSTOMER) ? mmi->exit_fields[abs(rand()%mmi->exit_count)] : mmi->stock_fields[abs(rand()%mmi->stock_count)];
-	entity* e = malloc(sizeof(*e));
+	entity* e = calloc(1, sizeof(*e));
 		e->id = counter;
 		e->type = type;
 		e->listpos = 0;
