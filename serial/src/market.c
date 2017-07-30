@@ -1,6 +1,7 @@
 #include "market.h"
 
-field*** secret_market;
+field*** global__market;
+meta* global__mmi;
 
 /* Test if Vectors are equal
  * @param vec1, vec2 address of the vectors
@@ -21,12 +22,18 @@ field* in_matrix(field*** const market, vector3 vec){
 }
 
 field* in_matrix_g(vector3 vec){
-	if(secret_market){
-		return &secret_market[vec.z][vec.y][vec.x];
+	if(global__market){
+		if(vec.z > global__mmi->stories -1 || vec.y > global__mmi->columns -1 || vec.x > global__mmi->rows -1) return 0;
+		return &global__market[vec.z][vec.y][vec.x];
 	}else{
-		printf("Error: 0x0");
+		printf("Error: no global matrix");
 		exit(EXIT_FAILURE);
 	}
+}
+
+int isFieldType(vector3 vec, FieldType type){
+	if(in_matrix_g(vec) && in_matrix_g(vec)->type == type) return TRUE;
+	return FALSE;
 }
 
 /*Test if a field is blocked by something
@@ -56,7 +63,7 @@ field*** create_market(int x, int y, int floor_count){
 			floor[j] = malloc(x * sizeof(field));
 		}
 	}
-	secret_market = market;
+	global__market = market;
 	return market;
 }
 
@@ -125,7 +132,7 @@ field*** import_market(char* path, meta *mmi){
 	mmi->stock_fields = stocks;
 	mmi->register_fields = registers;
 	mmi->exit_fields = exits;
-
+	global__mmi = mmi;
 return market;
 }
 

@@ -36,30 +36,19 @@ static void PathNodeNeighbors(ASNeighborList neighbors, void *node, void *contex
 {
 
 	PathNode *pathNode = (PathNode *)node;
-	TRY{
-		if (in_matrix_g((PathNode){pathNode->x+1, pathNode->y,pathNode->z})->type == CORRIDOR) {
-			ASNeighborListAdd(neighbors, &(PathNode){pathNode->x+1, pathNode->y,pathNode->z}, 1);
-		}
+
+	if (isFieldType((PathNode){pathNode->x+1, pathNode->y,pathNode->z}, CORRIDOR)){
+		ASNeighborListAdd(neighbors, &(PathNode){pathNode->x+1, pathNode->y,pathNode->z}, 1);
 	}
-	ETRY;
-	TRY{
-   		if (in_matrix_g((PathNode){pathNode->x-1, pathNode->y,pathNode->z})->type == CORRIDOR) {
-       			ASNeighborListAdd(neighbors, &(PathNode){pathNode->x-1, pathNode->y,pathNode->z}, 1);
-   		 }
+	if (in_matrix_g((PathNode){pathNode->x-1, pathNode->y,pathNode->z})->type == CORRIDOR) {
+			ASNeighborListAdd(neighbors, &(PathNode){pathNode->x-1, pathNode->y,pathNode->z}, 1);
+	 }
+	if (in_matrix_g((PathNode){pathNode->x, pathNode->y+1,pathNode->z})->type == CORRIDOR) {
+		ASNeighborListAdd(neighbors, &(PathNode){pathNode->x, pathNode->y+1,pathNode->z}, 1);
 	}
-	ETRY;
-    	TRY{
-		if (in_matrix_g((PathNode){pathNode->x, pathNode->y+1,pathNode->z})->type == CORRIDOR) {
-        		ASNeighborListAdd(neighbors, &(PathNode){pathNode->x, pathNode->y+1,pathNode->z}, 1);
-    		}
+	if (in_matrix_g((PathNode){pathNode->x, pathNode->y-1,pathNode->z})->type == CORRIDOR) {
+		ASNeighborListAdd(neighbors, &(PathNode){pathNode->x, pathNode->y-1,pathNode->z}, 1);
 	}
-	ETRY;
-	TRY{
-    		if (in_matrix_g((PathNode){pathNode->x, pathNode->y-1,pathNode->z})->type == CORRIDOR) {
-        		ASNeighborListAdd(neighbors, &(PathNode){pathNode->x, pathNode->y-1,pathNode->z}, 1);
-    		}
-	}
-	ETRY;
 }
 
 static float PathNodeHeuristic(void *fromNode, void *toNode, void *context)

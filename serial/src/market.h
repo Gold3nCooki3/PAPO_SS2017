@@ -94,5 +94,6 @@ void free_meta(meta* mmi);
  * @return 			: Boolean
  */
 int is_blocked(field*** const market, vector3 vec);
+int isFieldType(vector3 vec, FieldType type);
 
 #endif
