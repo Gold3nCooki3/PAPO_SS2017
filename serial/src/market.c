@@ -42,18 +42,20 @@ int isFieldType(vector3 vec, FieldType type){
  * @return 			: Boolean
  */
 int is_blocked(vector3 vec){
-	switch (in_matrix_g(vec)->type){
-		case CORRIDOR:
-		case ESCALATOR:
-		case LIFT:
-		case REGISTER:
-		case STOCK:
-		case EXIT: return TRUE; break;
-		case SHELF:
-		case BLOCKVAL:
-		default: return FALSE; break;
+	if(in_matrix_g(vec)){
+		switch (in_matrix_g(vec)->type){
+			case CORRIDOR:
+			case ESCALATOR:
+			case LIFT:
+			case REGISTER:
+			case STOCK:
+			case EXIT: return TRUE; break;
+			case SHELF:
+			case BLOCKVAL:
+			default: return FALSE; break;
+		}
 	}
-
+	return FALSE;
 }
 
 /*Initializes an 3d field array
