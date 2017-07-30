@@ -20,7 +20,7 @@ field* in_matrix(field*** const market, vector3 vec){
 	return &market[vec.z][vec.y][vec.x];
 }
 
-field* in_secret_matrix(vector3 vec){
+field* in_matrix_g(vector3 vec){
 	if(secret_market){
 		return &secret_market[vec.z][vec.y][vec.x];
 	}else{

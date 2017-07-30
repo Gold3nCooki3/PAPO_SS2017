@@ -1,5 +1,7 @@
 #include "entity.h"
 
+typedef struct vector3 PathNode;
+
 /*Clamps a value to -1, 0, 1
  * @param d 	: input value
  * @return 		: -1, 0, 1
@@ -29,6 +31,50 @@ vector3 get_close_vector3(vector3* const list, int listlength, vector3 start, in
 	return dest;
 }
 
+
+static void PathNodeNeighbors(ASNeighborList neighbors, void *node, void *context)
+{
+
+	PathNode *pathNode = (PathNode *)node;
+
+    if (in_matrix_g((PathNode){pathNode->x+1, pathNode->y,pathNode->z}) == CORRIDOR) {
+        ASNeighborListAdd(neighbors, &(PathNode){pathNode->x+1, pathNode->y,pathNode->z}, 1);
+    }
+    if (in_matrix_g((PathNode){pathNode->x-1, pathNode->y,pathNode->z}) == CORRIDOR) {
+        ASNeighborListAdd(neighbors, &(PathNode){pathNode->x-1, pathNode->y,pathNode->z}, 1);
+    }
+    if (in_matrix_g((PathNode){pathNode->x, pathNode->y+1,pathNode->z}) == CORRIDOR) {
+        ASNeighborListAdd(neighbors, &(PathNode){pathNode->x, pathNode->y+1,pathNode->z}, 1);
+    }
+    if (in_matrix_g((PathNode){pathNode->x, pathNode->y-1,pathNode->z}) == CORRIDOR) {
+        ASNeighborListAdd(neighbors, &(PathNode){pathNode->x, pathNode->y-1,pathNode->z}, 1);
+    }
+}
+
+static float PathNodeHeuristic(void *fromNode, void *toNode, void *context)
+{
+    PathNode *from = (PathNode *)fromNode;
+    PathNode *to = (PathNode *)toNode;
+    if(from->z != to->z) exit(EXIT_FAILURE);
+    // using the manhatten distance since this is a simple grid and you can only move in 4 directions
+    return (fabs(from->x - to->x) + fabs(from->y - to->y));
+}
+
+static const ASPathNodeSource PathNodeSource = {
+    sizeof(PathNode),
+    &PathNodeNeighbors,
+    &PathNodeHeuristic,
+    NULL,
+    NULL
+};
+
+int has_path(entity* const e){
+	if(ASPathGetCount(e->path) > 0){
+		return TRUE;
+	}else{
+		return FALSE;
+	}
+}
 /*Moves an entity towards their destination,
  * to pick up or fill up content from a frame
  * @param market	: market where entity is moving within
@@ -36,88 +82,65 @@ vector3 get_close_vector3(vector3* const list, int listlength, vector3 start, in
  * @return FALSE if person has reached their final destination
  */
 int move_entity(field*** const market, meta* const mmi,queue_t* const empty_shelfs, entity* const e){
-	int pos = e->listpos;
-	vector3 actual_dest = {e->list[pos].x , e->list[pos].y, e->list[pos].z};
+	if (!has_path(e)){
+		PathNode pathFrom = (PathNode)e->position;
+		vector3 pathTo_v = e->list[e->listpos];
 
-	/*search for lift or escalator if not on one of these already and the destination is above
-	 * memorize destination of the next lift or escalator*/
-	if(e->position.z != actual_dest.z  && in_matrix(market, e->position)->type != ESCALATOR && in_matrix(market, e->position)->type != LIFT){
-		if(e->memory_lift.x == -1){
-			e->memory_lift = get_close_vector3(mmi->lift_fields, mmi->lift_count, e->position, TRUE);
+		if(pathTo_v.z != e->position.z){
+			pathTo_v = get_close_vector3(mmi->lift_fields, mmi->lift_count, e->position,1);
 		}
-		actual_dest = e->memory_lift;
-	}else{
-	/*get field right, left, bottom or top of the destination,
-	 *this is the field the entity has to go */
-		actual_dest.x++;
-		if(is_blocked(market, actual_dest)){
-				actual_dest.x -= 2;
-			if (is_blocked(market, actual_dest)){
-				actual_dest.x++;
-				actual_dest.y++;
-				if (is_blocked(market, actual_dest)){
-					actual_dest.y -= 2;
-				}else{
-					printf("Not valid!\n");
-					exit(EXIT_FAILURE);
-				}
-			}
-		}
-	}
 
-	//move if entity is on the same floor as the destination
-	if(actual_dest.z == e->position.z){
-		int move_in_x = clamp(actual_dest.x - e->position.x);
-		int move_in_y = clamp(actual_dest.y - e->position.y);
-		vector3 vec_x = {e->position.x  + move_in_x, e->position.y, e->position.z};
-		vector3 vec_y = {e->position.x, e->position.y + move_in_y, e->position.z};
-		if(move_in_x != 0 && !is_blocked(market, vec_x)){
-			e->position = vec_x;
-		}else if(move_in_y != 0 && !is_blocked(market, vec_y)){
-			e->position  = vec_y;
-		}else{
-			printf("No Movement");
+		switch (in_matrix_g(e->list[e->listpos])->type){
+			case REGISTER:
+			case SHELF: pathTo_v.x++;
+				if(is_blocked(market, pathTo_v)){
+					pathTo_v.x-=2;
+					if(is_blocked(market, pathTo_v)){
+						pathTo_v.x+=1;
+						pathTo_v.y+=1;
+						if(is_blocked(market, pathTo_v)){
+							pathTo_v.y-=2;
+							if(is_blocked(market, pathTo_v)){
+								exit(EXIT_FAILURE);
+							}
+						}
+					}
+				}break;
+			default: break;
+		}
+		PathNode pathTo = (PathNode)pathTo_v;
+		e->path = ASPathCreate(&PathNodeSource, NULL, &pathFrom, &pathTo);
+		e->memory_dest = pathTo_v;
+		if(ASPathGetCount(e->path) == 0){ //not vaild
+			printf("No path");
 			exit(EXIT_FAILURE);
 		}
-	}else if(in_matrix(market, e->position)->type == ESCALATOR || in_matrix(market, e->position)->type == LIFT){
-		//entity is standing on an escalator
-		if(actual_dest.z > e->position.z){
-			e->position.z++;
-		}else{
-			e->position.z--;
-		}
-		e->memory_lift.x = -1; //reset memory
-	}else{
-		printf("Not on an escalator field nor moving\n");
-		exit(EXIT_FAILURE);
 	}
 
-	//Check if entity reached destination
-	if(vec_equal(&actual_dest,&e->position)){
-		field* f = in_matrix(market, actual_dest);
-		field* shelf = in_matrix(market, e->list[pos]);
-		switch (e->type){
-			case CUSTOMER:
-				if(f->type != ESCALATOR && f->type != LIFT){
-					if(shelf->amount  > 0) {
-						shelf->amount -= 1;
-					}else{
-						vector3 empty_shelf = e->list[pos];
-						queue_enqueue(empty_shelfs, &empty_shelf);
-						mmi->emtpy_count++;
-						printf("Didn't get content\n");
-					}
-				}
-				break;
-			case EMPLOYEE:
-				if(f->type != ESCALATOR || f->type != LIFT){
-					shelf->amount += FILLVAL;
-				}
-				break;
-			default: printf("Nether customer nor employee\n"); break;
+	//Get to new Position
+	PathNode* new_pos = ASPathGetNode(e->path, e->path_position);
+	e->position = *new_pos;
+	e->path_position++;
+
+	// exit
+	if(ASPathGetCount(e->path) == e->path_position+1){
+		field* f;
+		switch (in_matrix_g(e->memory_dest)->type){
+			case STOCK:
+			case EXIT: return FALSE; break;
+			case ESCALATOR:
+			case LIFT: e->position.z++; break;
+			case CORRIDOR:
+				f = in_matrix_g(e->list[e->listpos]);
+				if(f->amount > 0 && e->type == CUSTOMER) f -= 1;
+				if(e->type == EMPLOYEE) f += FILLVAL;
+			default: break;
 		}
-		if(f->type == EXIT || pos >= LISTL-1) return FALSE; //TODO: e wird nicht  korrekt entfernt, da Listl jetzt dynamisch ist und actual_dest das exacte Feld sein muss
+		ASPathDestroy(e->path);
 		e->listpos++;
+	}else if(e->listpos == e->amountItems -1){ //
+		printf("Error: no exit");
+		exit(EXIT_FAILURE);
 	}
 	return TRUE;
 }
@@ -202,9 +225,10 @@ void spawn_entity(meta* const mmi, queue_t* const queue, queue_t* const empty_sh
 		e->id = counter;
 		e->type = type;
 		e->listpos = 0;
+		e->path_position = 0;
 		e->amountItems = items;
 		e->position= position;
-		e->memory_lift.x = -1;
+		e->memory_dest.x = -1;
 		e->list = list;
 	queue_enqueue(queue, e);
 	counter++;

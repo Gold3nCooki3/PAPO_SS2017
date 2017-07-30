@@ -9,10 +9,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include "market.h"
 #include "queue.h"
 #include "program_test.h"
+#include "AStar.h"
 
 typedef enum EntityType {CUSTOMER, EMPLOYEE=5} EntityType;
 
@@ -32,8 +34,10 @@ entity{
 	int id;
 	int listpos;
 	int amountItems;
+	int path_position;
+	ASPath path;
 	vector3 position;
-	vector3 memory_lift;
+	vector3 memory_dest;
 	vector3* list;
 };
 typedef struct entity entity;
