@@ -40,13 +40,13 @@ static void PathNodeNeighbors(ASNeighborList neighbors, void *node, void *contex
 	if (isFieldType((PathNode){pathNode->x+1, pathNode->y,pathNode->z}, CORRIDOR)){
 		ASNeighborListAdd(neighbors, &(PathNode){pathNode->x+1, pathNode->y,pathNode->z}, 1);
 	}
-	if (isFieldType((PathNode){pathNode->x-1, pathNode->y,pathNode->z}, CORRIDOR) {
+	if (isFieldType((PathNode){pathNode->x-1, pathNode->y,pathNode->z}, CORRIDOR)) {
 			ASNeighborListAdd(neighbors, &(PathNode){pathNode->x-1, pathNode->y,pathNode->z}, 1);
 	 }
-	if (isFieldType((PathNode){pathNode->x, pathNode->y+1,pathNode->z}, CORRIDOR) {
+	if (isFieldType((PathNode){pathNode->x, pathNode->y+1,pathNode->z}, CORRIDOR)) {
 		ASNeighborListAdd(neighbors, &(PathNode){pathNode->x, pathNode->y+1,pathNode->z}, 1);
 	}
-	if (isFieldType((PathNode){pathNode->x, pathNode->y-1,pathNode->z}, CORRIDOR) {
+	if (isFieldType((PathNode){pathNode->x, pathNode->y-1,pathNode->z}, CORRIDOR)) {
 		ASNeighborListAdd(neighbors, &(PathNode){pathNode->x, pathNode->y-1,pathNode->z}, 1);
 	}
 }

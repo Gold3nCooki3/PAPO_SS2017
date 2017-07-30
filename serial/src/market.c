@@ -23,7 +23,7 @@ field* in_matrix(field*** const market, vector3 vec){
 
 field* in_matrix_g(vector3 vec){
 	if(global__market){
-		if(vec.z > global__mmi->stories -1 || vec.y > global__mmi->columns -1 || vec.x > global__mmi->rows -1) return 0;
+		if(vec.z > global__mmi->stories -1 || vec.z < 0 || vec.y > global__mmi->columns -1|| vec.y < 0 || vec.x > global__mmi->rows -1 || vec.z < 0) return 0;
 		return &global__market[vec.z][vec.y][vec.x];
 	}else{
 		printf("Error: no global matrix");
