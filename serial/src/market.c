@@ -41,13 +41,19 @@ int isFieldType(vector3 vec, FieldType type){
  * @param vec 		: position of the field in the Matrix
  * @return 			: Boolean
  */
-int is_blocked(field*** const market, vector3 vec){
-	if(in_matrix(market, vec)->type == SHELF
-		|| in_matrix(market, vec)->type == REGISTER
-		|| in_matrix(market, vec)->type == BLOCKVAL){
-		return TRUE;
+int is_blocked(vector3 vec){
+	switch (in_matrix_g(vec)->type){
+		case CORRIDOR:
+		case ESCALATOR:
+		case LIFT:
+		case REGISTER:
+		case STOCK:
+		case EXIT: return TRUE; break;
+		case SHELF:
+		case BLOCKVAL:
+		default: return FALSE; break;
 	}
-	return FALSE;
+
 }
 
 /*Initializes an 3d field array

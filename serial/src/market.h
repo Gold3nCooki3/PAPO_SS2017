@@ -93,7 +93,7 @@ void free_meta(meta* mmi);
  * @param vec 		: position of the field in the Matrix
  * @return 			: Boolean
  */
-int is_blocked(field*** const market, vector3 vec);
-int isFieldType(vector3 vec, FieldType type);
+int is_blocked(vector3 vec);
+//int isFieldType(vector3 vec, FieldType type);
 
 #endif

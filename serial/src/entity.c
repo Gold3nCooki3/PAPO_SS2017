@@ -37,16 +37,16 @@ static void PathNodeNeighbors(ASNeighborList neighbors, void *node, void *contex
 
 	PathNode *pathNode = (PathNode *)node;
 
-	if (isFieldType((PathNode){pathNode->x+1, pathNode->y,pathNode->z}, CORRIDOR)){
+	if (is_blocked((PathNode){pathNode->x+1, pathNode->y, pathNode->z})){
 		ASNeighborListAdd(neighbors, &(PathNode){pathNode->x+1, pathNode->y,pathNode->z}, 1);
 	}
-	if (isFieldType((PathNode){pathNode->x-1, pathNode->y,pathNode->z}, CORRIDOR)) {
-			ASNeighborListAdd(neighbors, &(PathNode){pathNode->x-1, pathNode->y,pathNode->z}, 1);
+	if (is_blocked((PathNode){pathNode->x-1, pathNode->y, pathNode->z})){
+		ASNeighborListAdd(neighbors, &(PathNode){pathNode->x-1, pathNode->y,pathNode->z}, 1);
 	 }
-	if (isFieldType((PathNode){pathNode->x, pathNode->y+1,pathNode->z}, CORRIDOR)) {
+	if (is_blocked((PathNode){pathNode->x, pathNode->y+1, pathNode->z})){
 		ASNeighborListAdd(neighbors, &(PathNode){pathNode->x, pathNode->y+1,pathNode->z}, 1);
 	}
-	if (isFieldType((PathNode){pathNode->x, pathNode->y-1,pathNode->z}, CORRIDOR)) {
+	if (is_blocked((PathNode){pathNode->x, pathNode->y-1, pathNode->z})){
 		ASNeighborListAdd(neighbors, &(PathNode){pathNode->x, pathNode->y-1,pathNode->z}, 1);
 	}
 }
@@ -93,14 +93,14 @@ int move_entity(field*** const market, meta* const mmi,queue_t* const empty_shel
 		switch (in_matrix_g(e->list[e->listpos])->type){
 			case REGISTER:
 			case SHELF: pathTo_v.x++;
-				if(is_blocked(market, pathTo_v)){
+				if(is_blocked(pathTo_v)){
 					pathTo_v.x-=2;
-					if(is_blocked(market, pathTo_v)){
+					if(is_blocked(pathTo_v)){
 						pathTo_v.x+=1;
 						pathTo_v.y+=1;
-						if(is_blocked(market, pathTo_v)){
+						if(is_blocked(pathTo_v)){
 							pathTo_v.y-=2;
-							if(is_blocked(market, pathTo_v)){
+							if(is_blocked(pathTo_v)){
 								exit(EXIT_FAILURE);
 							}
 						}
