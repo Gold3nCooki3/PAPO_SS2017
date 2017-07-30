@@ -80,7 +80,7 @@ int has_path(entity* const e){
  * @param market	: market where entity is moving within
  * @param e			: entity
  * @return FALSE if person has reached their final destination
- */6
+ */
 int move_entity(field*** const market, meta* const mmi,queue_t* const empty_shelfs, entity* const e){
 	if (!has_path(e)){
 		PathNode pathFrom = (PathNode)e->position;
