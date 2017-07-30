@@ -22,6 +22,7 @@ void print_queue(queue_t* queue){
 }
 
 
+/*
 int test_vec_equal(){
 	int c = 0;
 	vector3 vec1 = {1,1,1};
@@ -106,5 +107,5 @@ void test_spawn(meta* const mmi, queue_t* const queue,queue_t* const empty_shelf
 	print_queue(queue);
 	printf("\n \n");
 }
-
+*/
 
