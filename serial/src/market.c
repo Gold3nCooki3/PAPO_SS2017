@@ -49,10 +49,10 @@ int is_blocked(vector3 vec){
 			case LIFT:
 			case REGISTER:
 			case STOCK:
-			case EXIT: return TRUE; break;
+			case EXIT: return FALSE; break;
 			case SHELF:
 			case BLOCKVAL:
-			default: return FALSE; break;
+			default: return TRUE; break;
 		}
 	}
 	return FALSE;
