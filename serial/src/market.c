@@ -42,7 +42,9 @@ int isFieldType(vector3 vec, FieldType type){
  * @return 			: Boolean
  */
 int is_blocked(field*** const market, vector3 vec){
-	if(in_matrix(market, vec)->type == BLOCKVAL){
+	if(in_matrix(market, vec)->type == SHELF
+		|| in_matrix(market, vec)->type == REGISTER
+		|| in_matrix(market, vec)->type == BLOCKVAL){
 		return TRUE;
 	}
 	return FALSE;

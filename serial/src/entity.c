@@ -88,7 +88,7 @@ int move_entity(field*** const market, meta* const mmi,queue_t* const empty_shel
 
 		if(pathTo_v.z != e->position.z){
 			pathTo_v = get_close_vector3(mmi->lift_fields, mmi->lift_count, e->position,1);
-		}
+		}else{
 
 		switch (in_matrix_g(e->list[e->listpos])->type){
 			case REGISTER:
@@ -108,6 +108,9 @@ int move_entity(field*** const market, meta* const mmi,queue_t* const empty_shel
 				}break;
 			default: break;
 		}
+
+		}
+
 		PathNode pathTo = (PathNode)pathTo_v;
 		e->path = ASPathCreate(&PathNodeSource, NULL, &pathFrom, &pathTo);
 		e->memory_dest = pathTo_v;
@@ -176,7 +179,7 @@ void work_queue(field*** const market, meta * const mmi, queue_t* const queue, q
  * Generates a random shopping list for each customer-entity
  */
 vector3* generate_list(meta* const mmi, queue_t* empty_shelfs, int* items, EntityType Type) {
-	*items = (Type == CUSTOMER) ? rand()%LISTL+2 : LISTL+1;
+	*items = (Type == CUSTOMER) ? rand()%LISTL+5 : LISTL+2;
 	vector3* list = malloc(sizeof(vector3) * (*items));
 	int shelf_count = mmi->shelf_count;
 	for(int i = 0; i < *items; i++){
