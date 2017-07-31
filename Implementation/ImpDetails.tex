@@ -1,3 +1,11 @@
 \section{Implementation}
+
 \subsection{Navigation}
+Wegfindungsalgorithmen sind in der Regel nicht für parallele Anwendungen implementiert. Um doch noch einfache Navigation gewährleisten zu können wird der A*-Algorithmus auf Kaufhausabschnitte angewandt. Mit der vorliegenden Implementation wird garantiert ein Weg gefunden, jedoch setzt die verwendete Version nicht auf das Kriterium der Optimalität des Weges, sondern auf die schnelle Berechenbarkeit eines Weges und Dateneffizienz. In gewisser Weise liefert dies einen zusätzlichen Realitätsbezug, da Menschen in der Regel nicht den kürzesten Weg wählen, sondern auch gerne mal einen Umweg durch die Süßwarenabteilung machen.
+
+Im Falle von SMITH wird eine serielle Implementation des A*-Algorithmus von jedem Knoten ausgeführt. Knoten bekommen einen Teil eines Stockwerkes im Kaufhaus zugeteilt und besitzen lediglich diese Daten. Weiterhin kennt jeder Knoten die Position seines Teilstückes im Kaufhaus und kann dadurch auf globale Koordinaten der Felder zurückschließen.\\
+Soll ein Weg zwischen den Punkten A und B gefunden werden, so berechnet ein Knoten die Hamming-Distanz seiner Randfelder zum Ziel. Die Hamming-Distanz ergibt sich dabei nach $\Delta H = |Pos_x(Start)-Pos_x(Ziel)| + |Pos_y(Start)-Pos_y(Ziel)|$ und ist ein Indikator für die Nähe zum Ziel.
+Ist nun die Hamming-Distanz der Randfelder bekannt, so wird ein Feld mit minimalem $\Delta H$ und einem begehbaren Feld im Nachbarknoten als Ziel ausgewählt.
+
+Von diesem Punkt an wird dieses Vorgehen so lange wiederholt, bis das Ziel gefunden wurde. Sollten alle Randfelder erfolglos getestet worden sein, so wird die Suche abgebrochen, da das Zielfeld nicht erreicht werden kann. [Kann noch ausformuliert werden]
 
