@@ -8,6 +8,7 @@
 #include "queue.h"
 #include "marketsim.h"
 #include "entity.h"
+#include "AStar.h"
 
 /*
  *Spawns 8 entities
