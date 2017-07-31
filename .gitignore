@@ -35,3 +35,4 @@
 *.dSYM/
 *.su
 .\project
+/project/
