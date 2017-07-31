@@ -112,9 +112,6 @@ int move_entity(field*** const market, meta* const mmi,queue_t* const empty_shel
 		}
 
 		PathNode pathTo = (PathNode)pathTo_v;
-		if(vec_equal(&pathTo_v)(&e->position)){
-			printf("Taking the lift\n");
-		}
 		e->path = ASPathCreate(&PathNodeSource, NULL, &pathFrom, &pathTo);
 		e->memory_dest = pathTo_v;
 		if(ASPathGetCount(e->path) == 0){ //not vaild
