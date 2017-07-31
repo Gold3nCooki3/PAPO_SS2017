@@ -112,6 +112,9 @@ int move_entity(field*** const market, meta* const mmi,queue_t* const empty_shel
 		}
 
 		PathNode pathTo = (PathNode)pathTo_v;
+		if(vec_equal(&pathTo_v)(&e->position)){
+			printf("Taking the lift\n");
+		}
 		e->path = ASPathCreate(&PathNodeSource, NULL, &pathFrom, &pathTo);
 		e->memory_dest = pathTo_v;
 		if(ASPathGetCount(e->path) == 0){ //not vaild
@@ -133,7 +136,7 @@ int move_entity(field*** const market, meta* const mmi,queue_t* const empty_shel
 			case STOCK:
 			case EXIT: return FALSE; break;
 			case ESCALATOR:
-			case LIFT: e->position.z++; break;
+			case LIFT: e->position.z = (e->position.z > e->list[e->listpos].z) ?  e->position.z-- : e->position.z++; break;
 			case CORRIDOR:
 				f = in_matrix_g(e->list[e->listpos]);
 				if(f->amount > 0 && e->type == CUSTOMER) f -= 1;
