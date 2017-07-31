@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -std=c99 -g -Wall
-BIN=prog
+BIN=prog.exe
 
 OBJ = marketsim.o market.o entity.o queue.o  program_test.o AStar.o
 

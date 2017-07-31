@@ -126,7 +126,8 @@ int move_entity(field*** const market, meta* const mmi,queue_t* const empty_shel
 	e->path_position++;
 
 	// exit
-	if(ASPathGetCount(e->path) == e->path_position+1){
+	if(ASPathGetCount(e->path) == e->path_position){
+		printf("in exit part send Nudes.\n");
 		field* f;
 		switch (in_matrix_g(e->memory_dest)->type){
 			case STOCK:
@@ -140,6 +141,7 @@ int move_entity(field*** const market, meta* const mmi,queue_t* const empty_shel
 			default: break;
 		}
 		ASPathDestroy(e->path);
+		e->path_position = 0;
 		e->listpos++;
 	}else if(e->listpos == e->amountItems -1){ //
 		printf("Error: no exit");
