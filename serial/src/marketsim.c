@@ -37,11 +37,11 @@ int main(int argc, char *argv[]){
 			spawn_entity(&mmi, queue, empty_shelfs, EMPLOYEE);
 		}
 		work_queue(market, &mmi, queue, empty_shelfs);
-		print_queue(queue);
+		//print_queue(queue);
 	}
 	while(!queue_empty(queue)){
 		work_queue(market, &mmi, queue, empty_shelfs);
-		print_queue(queue);
+		//print_queue(queue);
 	}
 	printf("4");
 	free_market(market, mmi.columns, mmi.stories);

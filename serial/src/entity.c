@@ -19,10 +19,10 @@ vector3 get_close_vector3(vector3* const list, int listlength, vector3 start, in
 	for(int i = 0; i < listlength; i++){
 		/*TODO: 10 * delta(z) nicht das beste*/
 		distance = abs(list[i].x - start.x)  + abs(list[i].y - start.y) + 10*abs(list[i].z - start.z);
-		if(!forceSameLevel && (distance > mindistance || mindistance == -1)) {
+		if(!forceSameLevel && (distance < mindistance || mindistance == -1)) {
 			mindistance = distance;
 			dest = list[i];
-		}else if(forceSameLevel && list[i].z == start.z && (distance > mindistance || mindistance == -1)){
+		}else if(forceSameLevel && list[i].z == start.z && (distance < mindistance || mindistance == -1)){
 			mindistance = distance;
 			dest = list[i];
 		}
@@ -69,7 +69,7 @@ static const ASPathNodeSource PathNodeSource = {
 };
 
 int has_path(entity* const e){
-	if(ASPathGetCount(e->path) > 0){
+	if(ASPathGetCount(e->path) > 0 && e->path_position > 0){
 		return TRUE;
 	}else{
 		return FALSE;
@@ -127,23 +127,22 @@ int move_entity(field*** const market, meta* const mmi,queue_t* const empty_shel
 
 	// exit
 	if(ASPathGetCount(e->path) == e->path_position){
-		printf("in exit part send Nudes.\n");
 		field* f;
 		switch (in_matrix_g(e->memory_dest)->type){
 			case STOCK:
 			case EXIT: return FALSE; break;
 			case ESCALATOR:
-			case LIFT: e->position.z = (e->position.z > e->list[e->listpos].z) ?  e->position.z-- : e->position.z++; break;
+			case LIFT: e->position.z = (e->position.z > e->list[e->listpos].z) ?  e->position.z-1 : e->position.z+1; break;
 			case CORRIDOR:
 				f = in_matrix_g(e->list[e->listpos]);
-				if(f->amount > 0 && e->type == CUSTOMER) f -= 1;
+				if(f->amount > 0 && e->type == CUSTOMER) f -= 1; //TODO: List in queue when empty
 				if(e->type == EMPLOYEE) f += FILLVAL;
+				e->listpos++;
 			default: break;
 		}
 		ASPathDestroy(e->path);
 		e->path_position = 0;
-		e->listpos++;
-	}else if(e->listpos == e->amountItems -1){ //
+	}else if(e->listpos >= e->amountItems){ //
 		printf("Error: no exit");
 		exit(EXIT_FAILURE);
 	}
