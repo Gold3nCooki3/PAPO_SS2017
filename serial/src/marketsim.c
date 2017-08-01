@@ -9,6 +9,7 @@ int main(int argc, char *argv[]){
 	int customerspawns = 10;
 	int simulations = 10;
 	int eployeespawns = 1;
+	int employeebag = 10;
 
 	switch (argc){
 		case 5: maxeployees = atoi(argv[4]);
@@ -32,12 +33,12 @@ int main(int argc, char *argv[]){
 		for(int c = 0; c < customerspawns; c++){
 			spawn_entity(&mmi, queue, empty_shelfs,CUSTOMER);
 		}
-		/*eployeespawns = mmi.emtpy_count/LISTL;
+		eployeespawns = mmi.emtpy_count/employeebag;
 		printf("to spawn ?: %d \n", eployeespawns);
 		for(int e = 0; e < eployeespawns; e++){
 			printf("spawning");
 			spawn_entity(&mmi, queue, empty_shelfs, EMPLOYEE);
-		}*/
+		}
 		work_queue(market, &mmi, queue, empty_shelfs);
 		print_queue(queue);
 	}
