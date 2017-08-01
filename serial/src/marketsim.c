@@ -29,22 +29,17 @@ int main(int argc, char *argv[]){
 	queue_t *empty_shelfs = queue_new();
 	queue_t *queue = queue_new();
 	for(int i = 0; i < simulations; i++){
-		//test_spawn(&mmi, queue, empty_shelfs);
-		//printf("3");
+		eployeespawns = mmi.emtpy_count/employeebag;
 		for(int c = 0; c < customerspawns; c++){
 			spawn_entity(&mmi, queue, empty_shelfs,CUSTOMER);
-		}
-		eployeespawns = mmi.emtpy_count/employeebag;
-		//printf("to spawn ?: %d \n", eployeespawns);
-		for(int e = 0; e < eployeespawns; e++){
-			//printf("spawning");
-			emp_count++;
-			spawn_entity(&mmi, queue, empty_shelfs, EMPLOYEE);
+			if(i < eployeespawns)spawn_entity(&mmi, queue, empty_shelfs, EMPLOYEE);
 		}
 		work_queue(market, &mmi, queue, empty_shelfs);
 		print_queue(queue);
 	}
 	while(!queue_empty(queue)){
+		eployeespawns = mmi.emtpy_count/employeebag;
+		if(i < eployeespawns)spawn_entity(&mmi, queue, empty_shelfs, EMPLOYEE);
 		work_queue(market, &mmi, queue, empty_shelfs);
 		print_queue(queue);
 	}
