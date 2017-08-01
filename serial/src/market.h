@@ -49,10 +49,12 @@ marketmetainfo {
 	vector3* stock_fields;
 	vector3* register_fields;
 	vector3* exit_fields;
+	
+	field* matrix;
 };
 typedef struct marketmetainfo meta;
 
-static field*** global__market;
+static field**** global__market;
 static meta* global__mmi;
 
 /* Test if Vectors are equal
@@ -66,7 +68,7 @@ int vec_equal(vector3 * vec1, vector3 * vec2);
  * @param mmi
  * @return 			: pointer of the filled array
  */
-field*** import_market(char* path, meta *mmi);
+field**** import_market(char* path, meta *mmi);
 
 /*Gives back the field pointer in the field Matrix
  * described by the vector position

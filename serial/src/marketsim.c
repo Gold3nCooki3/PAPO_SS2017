@@ -19,7 +19,7 @@ int main(int argc, char *argv[]){
 
 	int emp_count = 0;
 
-	field*** market;
+	field**** market;
 	meta mmi;
 	mmi.empty_count = 0;
 
@@ -33,7 +33,7 @@ int main(int argc, char *argv[]){
 			spawn_entity(&mmi, queue, empty_shelfs,CUSTOMER);
 			if(c < eployeespawns)spawn_entity(&mmi, queue, empty_shelfs, EMPLOYEE);
 		}
-		work_queue(market, &mmi, queue, empty_shelfs);
+		work_queue(&mmi, queue, empty_shelfs);
 		print_queue(queue);
 	}
 	while(!queue_empty(queue)){ //Auslaufen
@@ -41,7 +41,7 @@ int main(int argc, char *argv[]){
 		for(int c = 0; c < eployeespawns; c++){
 			spawn_entity(&mmi, queue, empty_shelfs, EMPLOYEE);
 		}
-		work_queue(market, &mmi, queue, empty_shelfs);
+		work_queue(&mmi, queue, empty_shelfs);
 		print_queue(queue);
 	}
 	while(!queue_empty(empty_shelfs)){

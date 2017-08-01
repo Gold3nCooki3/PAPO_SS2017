@@ -104,7 +104,7 @@ void generate_path(entity* const e, meta* const mmi){
  * @param e			: entity
  * @return FALSE if person has reached their final destination
  */
-int move_entity(field*** const market, meta* const mmi,queue_t* const empty_shelfs, entity* const e){
+int move_entity(meta* const mmi,queue_t* const empty_shelfs, entity* const e){
 	if (!has_path(e)){
 		generate_path(e, mmi);
 	}
@@ -156,7 +156,7 @@ int move_entity(field*** const market, meta* const mmi,queue_t* const empty_shel
  * @param market 	: fields where entities move within
  * @param entity_queue 	: queue of all entities
  */
-void work_queue(field*** const market, meta * const mmi, queue_t* const entity_queue, queue_t* const empty_shelfs){
+void work_queue(meta * const mmi, queue_t* const entity_queue, queue_t* const empty_shelfs){
 	if(queue_empty(entity_queue)){
 		printf("empty!");
 		return;
@@ -165,7 +165,7 @@ void work_queue(field*** const market, meta * const mmi, queue_t* const entity_q
 		entity* e = first;
 		do{
 			if(!first)first = e;
-			int not_finished = move_entity(market, mmi, empty_shelfs, e);
+			int not_finished = move_entity(mmi, empty_shelfs, e);
 			if(not_finished){
 				queue_enqueue(entity_queue, e);
 			}else {

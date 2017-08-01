@@ -16,17 +16,13 @@ int vec_equal(vector3 * vec1, vector3 * vec2){
 field* in_matrix_g(vector3 vec){
 	if(global__market){
 		if(vec.z > global__mmi->stories -1 || vec.z < 0 || vec.y > global__mmi->columns -1|| vec.y < 0 || vec.x > global__mmi->rows -1 || vec.x < 0) return 0;
-		return &global__market[vec.z][vec.y][vec.x];
+		return global__market[vec.z][vec.y][vec.x];
 	}else{
 		printf("Error: no global matrix");
 		exit(EXIT_FAILURE);
 	}
 }
 
-int isFieldType(vector3 vec, FieldType type){
-	if(in_matrix_g(vec) && in_matrix_g(vec)->type == type) return TRUE;
-	return FALSE;
-}
 
 /*Test if a field is blocked by something
  * @param vec 		: position of the field in the Matrix
@@ -56,13 +52,13 @@ int is_blocked(vector3 vec){
  * @param x, y, floor_count : length, width and hight of the market
  * @return 			: pointer of allocated field array
  */
-field*** create_market(int x, int y, int floor_count){
-	field *** market = malloc(floor_count * sizeof(field**));
-	for(int i = 0; i < floor_count; i++){
-		field** floor = malloc(y * sizeof(field*));
+field**** create_market(int rows, int columns, int stories){
+	field **** market = malloc(stories * sizeof(field***));
+	for(int i = 0; i < stories; i++){
+		field*** floor = malloc(columns * sizeof(field**));
 		market[i] = floor;
-		for(int j = 0; j < y; j++){
-			floor[j] = malloc(x * sizeof(field));
+		for(int j = 0; j < columns; j++){
+			floor[j] = malloc(rows * sizeof(field*));
 		}
 	}
 	global__market = market;
@@ -74,7 +70,7 @@ field*** create_market(int x, int y, int floor_count){
  * @param mmi		; pointer to meta struct
  * @return 			: pointer of the filled array
  */
-field*** import_market(char* path, meta *mmi){
+field**** import_market(char* path, meta *mmi){
 
 	FILE *file = fopen(path, "r");
 	if (file == NULL){
@@ -91,19 +87,22 @@ field*** import_market(char* path, meta *mmi){
 	vector3* registers = malloc(sizeof(vector3)*mmi->register_count);
 	vector3* exits = malloc(sizeof(vector3)*mmi->exit_count);
 
-	int q=0, w=0, e=0, r=0, t = 0;
-
-	field*** market = create_market(mmi->rows, mmi->columns, mmi->stories);
+	int q=0, w=0, e=0, r=0, t = 0, temp = 0;
+	
+	field* matrix = calloc(mmi->rows * mmi->columns * mmi->stories, sizeof(field));
+	field**** market = create_market(mmi->rows, mmi->columns, mmi->stories);
 	for(int a = 0; a < mmi->stories; a++){
 		for(int b = 0; b < mmi->columns; b++){
 			for(int c = 0; c < mmi->rows; c++){
 				fscanf(file, "%d,%d,%d\n",
-					&market[a][b][c].type,
-					&market[a][b][c].content,
-					&market[a][b][c].amount);
+					&matrix[temp].type,
+					&matrix[temp].content,
+					&matrix[temp].amount);
+				market[a][b][c] = &matrix[temp];
 				vector3 v = {c,b,a};
+				temp++;
 				//printf("(%d, %d, %d)\n",c,b,a);
-				switch(market[a][b][c].type) {
+				switch(market[a][b][c]->type) {
 				case SHELF:
 					shelves[q++] = v;
 					break;
@@ -134,6 +133,7 @@ field*** import_market(char* path, meta *mmi){
 	mmi->register_fields = registers;
 	mmi->exit_fields = exits;
 	global__mmi = mmi;
+	global__mmi->matrix = matrix;
 return market;
 }
 
@@ -152,6 +152,7 @@ void free_market(){
 }
 
 void free_meta(){
+	free(global__mmi->matrix);
 	free(global__mmi->shelf_fields);
 	free(global__mmi->lift_fields);
 	free(global__mmi->stock_fields);
