@@ -1,39 +1,9 @@
 #include "entity.h"
 
+/*============================================HELP FUNCTIONS PATHFINDING======================================*/
 typedef struct vector3 PathNode;
 
-/*Clamps a value to -1, 0, 1
- * @param d 	: input value
- * @return 		: -1, 0, 1
- */
-int clamp(int d) {
-  if(d >= 1) return 1;
-  if(d <= -1) return -1;
-  return 0;
-}
-
-vector3 get_close_vector3(vector3* const list, int listlength, vector3 start, int forceSameLevel){
-	vector3 dest;
-	int mindistance = -1;
-	int distance;
-	for(int i = 0; i < listlength; i++){
-		/*TODO: 10 * delta(z) nicht das beste*/
-		distance = abs(list[i].x - start.x)  + abs(list[i].y - start.y) + 10*abs(list[i].z - start.z);
-		if(!forceSameLevel && (distance < mindistance || mindistance == -1)) {
-			mindistance = distance;
-			dest = list[i];
-		}else if(forceSameLevel && list[i].z == start.z && (distance < mindistance || mindistance == -1)){
-			mindistance = distance;
-			dest = list[i];
-		}
-	}
-	if(mindistance == -1){printf("error"); exit(EXIT_FAILURE);}
-	return dest;
-}
-
-
-static void PathNodeNeighbors(ASNeighborList neighbors, void *node, void *context)
-{
+static void PathNodeNeighbors(ASNeighborList neighbors, void *node, void *context){
 
 	PathNode *pathNode = (PathNode *)node;
 
@@ -51,13 +21,19 @@ static void PathNodeNeighbors(ASNeighborList neighbors, void *node, void *contex
 	}
 }
 
-static float PathNodeHeuristic(void *fromNode, void *toNode, void *context)
-{
-    PathNode *from = (PathNode *)fromNode;
+static float PathNodeHeuristic(void *fromNode, void *toNode, void *context){
+	PathNode *from = (PathNode *)fromNode;
     PathNode *to = (PathNode *)toNode;
     if(from->z != to->z) exit(EXIT_FAILURE);
-    // using the manhatten distance since this is a simple grid and you can only move in 4 directions
     return (fabs(from->x - to->x) + fabs(from->y - to->y));
+}
+
+int has_path(entity* const e){
+	if(e->path_position > 0 && ASPathGetCount(e->path) > 0){
+		return TRUE;
+	}else{
+		return FALSE;
+	}
 }
 
 static const ASPathNodeSource PathNodeSource = {
@@ -67,14 +43,61 @@ static const ASPathNodeSource PathNodeSource = {
     NULL,
     NULL
 };
+/*===================================================================================================*/
 
-int has_path(entity* const e){
-	if(e->path_position > 0 && ASPathGetCount(e->path) > 0){
-		return TRUE;
+
+vector3 get_close_vector3(vector3* const list, int listlength, vector3 start, int forceSameLevel){
+	vector3 dest;
+	int mindistance = -1;
+	int distance;
+	for(int i = 0; i < listlength; i++){
+		distance = abs(list[i].x - start.x)  + abs(list[i].y - start.y) + 10 + abs(list[i].z - start.z);
+		if((!forceSameLevel || list[i].z == start.z) && (distance < mindistance || mindistance == -1)) {
+			mindistance = distance;
+			dest = list[i];
+		}
+	}
+	if(mindistance == -1){printf("error"); exit(EXIT_FAILURE);}
+	return dest;
+}
+
+void generate_path(entity* const e, meta* const mmi){
+	PathNode pathFrom = (PathNode)e->position;
+	vector3 pathTo_v = e->list[e->listpos];
+
+	if(pathTo_v.z != e->position.z){
+		pathTo_v = get_close_vector3(mmi->lift_fields, mmi->lift_count, e->position, TRUE);
 	}else{
-		return FALSE;
+		switch (in_matrix_g(e->list[e->listpos])->type){
+			case REGISTER:
+			case SHELF: pathTo_v.x++;
+				if(is_blocked(pathTo_v)){
+					pathTo_v.x-=2;
+					if(is_blocked(pathTo_v)){
+						pathTo_v.x+=1;
+						pathTo_v.y+=1;
+						if(is_blocked(pathTo_v)){
+							pathTo_v.y-=2;
+							if(is_blocked(pathTo_v)){
+								exit(EXIT_FAILURE);
+							}
+						}
+					}
+				}
+				break;
+			default: break;
+		}
+	}
+
+	PathNode pathTo = (PathNode)pathTo_v;
+	e->path = ASPathCreate(&PathNodeSource, NULL, &pathFrom, &pathTo);
+	e->memory_dest = pathTo_v;
+	if(ASPathGetCount(e->path) == 0){ //not vaild
+		printf("No path");
+		exit(EXIT_FAILURE);
 	}
 }
+
 /*Moves an entity towards their destination,
  * to pick up or fill up content from a frame
  * @param market	: market where entity is moving within
@@ -83,40 +106,7 @@ int has_path(entity* const e){
  */
 int move_entity(field*** const market, meta* const mmi,queue_t* const empty_shelfs, entity* const e){
 	if (!has_path(e)){
-		PathNode pathFrom = (PathNode)e->position;
-		vector3 pathTo_v = e->list[e->listpos];
-
-		if(pathTo_v.z != e->position.z){
-			pathTo_v = get_close_vector3(mmi->lift_fields, mmi->lift_count, e->position,1);
-		}else{
-			switch (in_matrix_g(e->list[e->listpos])->type){
-				case REGISTER:
-				case SHELF: pathTo_v.x++;
-					if(is_blocked(pathTo_v)){
-						pathTo_v.x-=2;
-						if(is_blocked(pathTo_v)){
-							pathTo_v.x+=1;
-							pathTo_v.y+=1;
-							if(is_blocked(pathTo_v)){
-								pathTo_v.y-=2;
-								if(is_blocked(pathTo_v)){
-									exit(EXIT_FAILURE);
-								}
-							}
-						}
-					}
-					break;
-				default: break;
-			}
-		}
-
-		PathNode pathTo = (PathNode)pathTo_v;
-		e->path = ASPathCreate(&PathNodeSource, NULL, &pathFrom, &pathTo);
-		e->memory_dest = pathTo_v;
-		if(ASPathGetCount(e->path) == 0){ //not vaild
-			printf("No path");
-			exit(EXIT_FAILURE);
-		}
+		generate_path(e, mmi);
 	}
 
 	//Get to new Position
@@ -144,7 +134,7 @@ int move_entity(field*** const market, meta* const mmi,queue_t* const empty_shel
 						f->amount = -1;
 						temp_vec = malloc(sizeof(vector3));
 						memcpy(temp_vec, &e->list[e->listpos], sizeof(vector3));
-						mmi->emtpy_count++;
+						mmi->empty_count++;
 						queue_enqueue(empty_shelfs, temp_vec);
 					}
 				}else if(e->type == EMPLOYEE){
@@ -162,31 +152,31 @@ int move_entity(field*** const market, meta* const mmi,queue_t* const empty_shel
 	return TRUE;
 }
 
-/*Move every entity in the queue, dequeue if entity reached final destination
+/*Move every entity in the entity_queue, dequeue if entity reached final destination
  * @param market 	: fields where entities move within
- * @param queue 	: queue of all entities
+ * @param entity_queue 	: queue of all entities
  */
-void work_queue(field*** const market, meta * const mmi, queue_t* const queue, queue_t* const empty_shelfs){
-	if(queue_empty(queue)){
+void work_queue(field*** const market, meta * const mmi, queue_t* const entity_queue, queue_t* const empty_shelfs){
+	if(queue_empty(entity_queue)){
 		printf("empty!");
 		return;
 	}else{
-		entity* first = queue_dequeue(queue);
+		entity* first = queue_dequeue(entity_queue);
 		entity* e = first;
 		do{
 			if(!first)first = e;
 			int not_finished = move_entity(market, mmi, empty_shelfs, e);
 			if(not_finished){
-				queue_enqueue(queue, e);
+				queue_enqueue(entity_queue, e);
 			}else {
 				free(e->list);
 				if(e == first) first = NULL;
 				free(e);
-				if(queue_empty(queue)) break;
+				if(queue_empty(entity_queue)) break;
 			}
-			e = queue_dequeue(queue);
+			e = queue_dequeue(entity_queue);
 		}while(first != e);
-		if(first == e) queue_enqueue(queue, e); // otherwise one element gets lost
+		if(first == e) queue_enqueue(entity_queue, e); // otherwise one element gets lost
 	}
 }
 
@@ -223,20 +213,19 @@ vector3* generate_list(meta* const mmi, queue_t* empty_shelfs, int* items, Entit
 			list[i] = *v;
 			if(i < *items-1){
 				free(v);
-				mmi->emtpy_count--;
+				mmi->empty_count--;
 			}
 		}
 	}
-//printf("made list\n");
 	return list;
 }
 
 /*Spawn an entity and enqueue it
- * @param queue 	: queue of all entities
+ * @param entity_queue 	: queue of all entities
  * @param position 	: position where the entity is spawned
  * @param type		: type of the entity
  */
-void spawn_entity(meta* const mmi, queue_t* const queue, queue_t* const empty_shelfs, EntityType type){
+void spawn_entity(meta* const mmi, queue_t* const entity_queue, queue_t* const empty_shelfs, EntityType type){
 	static int counter = 0;
 	int items = 0;
 	vector3* list;
@@ -251,6 +240,6 @@ void spawn_entity(meta* const mmi, queue_t* const queue, queue_t* const empty_sh
 		e->position= position;
 		e->memory_dest.x = -1;
 		e->list = list;
-	queue_enqueue(queue, e);
+	queue_enqueue(entity_queue, e);
 	counter++;
 }

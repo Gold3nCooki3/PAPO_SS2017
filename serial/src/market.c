@@ -1,8 +1,5 @@
 #include "market.h"
 
-field*** global__market;
-meta* global__mmi;
-
 /* Test if Vectors are equal
  * @param vec1, vec2 address of the vectors
  * @return Boolean
@@ -13,14 +10,9 @@ int vec_equal(vector3 * vec1, vector3 * vec2){
 
 /*Gives back the field pointer in the field Matrix
  * described by the vector position
- * @param market 	: field matrix
  * @param vec 		: position of the field in the Matrix
  * @return 			: Field Pointer
  */
-field* in_matrix(field*** const market, vector3 vec){
-	return &market[vec.z][vec.y][vec.x];
-}
-
 field* in_matrix_g(vector3 vec){
 	if(global__market){
 		if(vec.z > global__mmi->stories -1 || vec.z < 0 || vec.y > global__mmi->columns -1|| vec.y < 0 || vec.x > global__mmi->rows -1 || vec.x < 0) return 0;
@@ -37,7 +29,6 @@ int isFieldType(vector3 vec, FieldType type){
 }
 
 /*Test if a field is blocked by something
- * @param market 	: field matrix
  * @param vec 		: position of the field in the Matrix
  * @return 			: Boolean
  */
@@ -80,8 +71,7 @@ field*** create_market(int x, int y, int floor_count){
 
 /*Import market data form textfile/csv,
  * @param path		: path to text file
- * @param x, y, floor_count : addresses for output of length,
- * 		  width and hight of the market
+ * @param mmi		; pointer to meta struct
  * @return 			: pointer of the filled array
  */
 field*** import_market(char* path, meta *mmi){
@@ -149,23 +139,22 @@ return market;
 
 /*Deallocate 3d field array
  * TODO: needs to be extended when create_market is optimized
- * @param market	: address of 3d field array
- * @param y, floor_count	: width, hight of the market
+ * @param global_market
  */
-void free_market(field*** market, int y, int floor_count){
-	for(int o = 0; o < floor_count; o++ ){
-		for(int i = 0; i < y; i++){
-			free(market[o][i]);
+void free_market(){
+	for(int o = 0; o < global__mmi->stories; o++ ){
+		for(int i = 0; i < global__mmi->columns; i++){
+			free(global__market[o][i]);
 		}
-		free(market[o]);
+		free(global__market[o]);
 	}
-	free(market);
+	free(global__market);
 }
 
-void free_meta(meta* mmi){
-	free(mmi->shelf_fields);
-	free(mmi->lift_fields);
-	free(mmi->stock_fields);
-	free(mmi->register_fields);
-	free(mmi->exit_fields);
+void free_meta(){
+	free(global__mmi->shelf_fields);
+	free(global__mmi->lift_fields);
+	free(global__mmi->stock_fields);
+	free(global__mmi->register_fields);
+	free(global__mmi->exit_fields);
 }

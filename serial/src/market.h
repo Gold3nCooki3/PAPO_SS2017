@@ -42,7 +42,7 @@ marketmetainfo {
 	int register_count;
 	int exit_count;
 
-	int emtpy_count;
+	int empty_count;
 
 	vector3* shelf_fields;
 	vector3* lift_fields;
@@ -52,19 +52,14 @@ marketmetainfo {
 };
 typedef struct marketmetainfo meta;
 
+static field*** global__market;
+static meta* global__mmi;
+
 /* Test if Vectors are equal
  * @param vec1, vec2 address of the vectors
  * @return Boolean
  */
 int vec_equal(vector3 * vec1, vector3 * vec2);
-
-/*Initializes an 3d field array
- * TODO: later generator function
- * field array only for access
- * @param x, y, floor_count : length, width and hight of the market
- * @return 			: pointer of allocated field array
- */
-//field*** create_market(int x, int y, int floor_count);
 
 /*Import market data form textfile/csv,
  * @param path		: path to text file
@@ -75,25 +70,25 @@ field*** import_market(char* path, meta *mmi);
 
 /*Gives back the field pointer in the field Matrix
  * described by the vector position
- * @param market 	: field matrix
  * @param vec 		: position of the field in the Matrix
  * @return 			: Field Pointer
  */
-field* in_matrix(field*** const market, vector3 vec);
 field* in_matrix_g(vector3 vec);
-/*Deallocate 3d field array
- * @param market	: address of 3d field array
- * @param y, floor_count	: width, hight of the market
- */
-void free_market(field*** market, int y, int floor_count);
 
-void free_meta(meta* mmi);
+/*Deallocate 3d field array
+ * @param global__market
+ */
+void free_market();
+
+/*Deallocates the meta object
+ * @param global__mmi
+ */
+void free_meta();
+
 /*Test if a field is blocked by something
- * @param market 	: field matrix
  * @param vec 		: position of the field in the Matrix
  * @return 			: Boolean
  */
 int is_blocked(vector3 vec);
-//int isFieldType(vector3 vec, FieldType type);
 
 #endif

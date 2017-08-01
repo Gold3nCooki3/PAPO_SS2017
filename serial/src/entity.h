@@ -46,25 +46,19 @@ entity{
 };
 typedef struct entity entity;
 
+
 /*Spawn an entity and enqueue it
  * @param queue 	: queue of all entities
  * @param position 	: position where the entity is spawned
  * @param type		: type of the entity
  */
-void spawn_entity(meta* const mmi, queue_t* const queue, queue_t* const empty_shelfs, EntityType type);
+void spawn_entity(meta* const mmi, queue_t* const entity_queue, queue_t* const empty_shelfs, EntityType type);
 
 /*Move every entity in the queue, dequeue if entity reached final destination
  * @param market 	: fields where entities move within
  * @param queue 	: queue of all entities
+ *
  */
-void work_queue(field*** const market, meta * const mmi, queue_t* const queue, queue_t* const empty_shelfs);
+void work_queue(field*** const market, meta * const mmi, queue_t* const entity_queue, queue_t* const empty_shelfs);
 
-/*Moves an entity towards their destination,
- * to pick up or fill up content from a frame
- * ONLY FOR TESTING
- * @param market	: market where entity is moving within
- * @param e			: entity
- * @return FALSE if person has reached their final destination
- */
-int move_entity(field*** const market, meta* const mmi, queue_t* empty_shelfs, entity* const e);
 #endif

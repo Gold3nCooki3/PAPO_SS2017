@@ -1,6 +1,5 @@
 #include "marketsim.h"
 
-#ifndef DEBUG
 int main(int argc, char *argv[]){
 	if (argc < 2) exit(EXIT_FAILURE);
 	srand(time(NULL));
@@ -22,14 +21,14 @@ int main(int argc, char *argv[]){
 
 	field*** market;
 	meta mmi;
-	mmi.emtpy_count = 0;
+	mmi.empty_count = 0;
 
 	printf("1");
 	market = import_market(argv[1], &mmi);
 	queue_t *empty_shelfs = queue_new();
 	queue_t *queue = queue_new();
 	for(int i = 0; i < simulations; i++){//Anlaufen
-		eployeespawns = mmi.emtpy_count/employeebag;
+		eployeespawns = mmi.empty_count/employeebag;
 		for(int c = 0; c < customerspawns; c++){
 			spawn_entity(&mmi, queue, empty_shelfs,CUSTOMER);
 			if(c < eployeespawns)spawn_entity(&mmi, queue, empty_shelfs, EMPLOYEE);
@@ -38,30 +37,20 @@ int main(int argc, char *argv[]){
 		print_queue(queue);
 	}
 	while(!queue_empty(queue)){ //Auslaufen
-		eployeespawns = mmi.emtpy_count/employeebag;
+		eployeespawns = mmi.empty_count/employeebag;
 		for(int c = 0; c < eployeespawns; c++){
 			spawn_entity(&mmi, queue, empty_shelfs, EMPLOYEE);
 		}
 		work_queue(market, &mmi, queue, empty_shelfs);
 		print_queue(queue);
-		printf("\nc: %d\n", mmi.emtpy_count);
 	}
 	while(!queue_empty(empty_shelfs)){
 		free(queue_dequeue(empty_shelfs));
 	}
-	printf("\nc: %d\n", mmi.emtpy_count);
-	printf("\n4\n");
-	free_market(market, mmi.columns, mmi.stories);
-	free_meta(&mmi);
+	free_market();
+	free_meta();
 	queue_destroy(queue);
 	queue_destroy(empty_shelfs);
-	printf("winnig!");
 	return 0;
 }
-#else
-int main (int argc, char *argv[]){
-	printf("DEBUG\n");
-	printf("DEBUG\n");
-	test_market(argv[1]);
-}
-#endif
+
