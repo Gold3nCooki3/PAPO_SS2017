@@ -28,18 +28,20 @@ int main(int argc, char *argv[]){
 	market = import_market(argv[1], &mmi);
 	queue_t *empty_shelfs = queue_new();
 	queue_t *queue = queue_new();
-	for(int i = 0; i < simulations; i++){
+	for(int i = 0; i < simulations; i++){//Anlaufen
 		eployeespawns = mmi.emtpy_count/employeebag;
 		for(int c = 0; c < customerspawns; c++){
 			spawn_entity(&mmi, queue, empty_shelfs,CUSTOMER);
-			if(i < eployeespawns)spawn_entity(&mmi, queue, empty_shelfs, EMPLOYEE);
+			if(c < eployeespawns)spawn_entity(&mmi, queue, empty_shelfs, EMPLOYEE);
 		}
 		work_queue(market, &mmi, queue, empty_shelfs);
 		print_queue(queue);
 	}
-	while(!queue_empty(queue)){
+	while(!queue_empty(queue)){ //Auslaufen
 		eployeespawns = mmi.emtpy_count/employeebag;
-		if(i < eployeespawns)spawn_entity(&mmi, queue, empty_shelfs, EMPLOYEE);
+		for(int c = 0; c < eployeespawns; c++){
+			spawn_entity(&mmi, queue, empty_shelfs, EMPLOYEE)
+		};
 		work_queue(market, &mmi, queue, empty_shelfs);
 		print_queue(queue);
 	}
