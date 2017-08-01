@@ -14,7 +14,7 @@ void print_queue(queue_t* queue){
 			//printf(" pn: %12p",queue->front);
 			//printf(" fp: %12p",node->next);
 			printf(" bp: %12p",node);
-			int p = ASPathGetCount(e->path);
+			int p = (e->path_position > 0) ? ASPathGetCount(e->path) : 0;
 			printf(" pp: %2d",e->path_position);
 			printf(" pc: %2d",p);
 			printf(" id: %4d, type: %d, pos: (%2d,%2d,%2d), dest: (%2d,%2d,%2d) \n",

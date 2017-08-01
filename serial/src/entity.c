@@ -69,7 +69,7 @@ static const ASPathNodeSource PathNodeSource = {
 };
 
 int has_path(entity* const e){
-	if(ASPathGetCount(e->path) > 0 && e->path_position > 0){
+	if(e->path_position > 0 && ASPathGetCount(e->path) > 0){
 		return TRUE;
 	}else{
 		return FALSE;
@@ -130,7 +130,9 @@ int move_entity(field*** const market, meta* const mmi,queue_t* const empty_shel
 		field* f;
 		switch (in_matrix_g(e->memory_dest)->type){
 			case STOCK:
-			case EXIT: return FALSE; break;
+			case EXIT:
+				ASPathDestroy(e->path);
+				return FALSE; break;
 			case ESCALATOR:
 			case LIFT: e->position.z = (e->position.z > e->list[e->listpos].z) ?  e->position.z-1 : e->position.z+1; break;
 			case CORRIDOR:
@@ -168,6 +170,7 @@ void work_queue(field*** const market, meta * const mmi, queue_t* const queue, q
 			}else {
 				free(e->list);
 				if(e == first) first = NULL;
+				free(e);
 				if(queue_empty(queue)) break;
 			}
 			e = queue_dequeue(queue);
@@ -210,7 +213,7 @@ vector3* generate_list(meta* const mmi, queue_t* empty_shelfs, int* items, Entit
 			list[i] = *v;
 		}
 	}
-printf("made list\n");
+//printf("made list\n");
 	return list;
 }
 

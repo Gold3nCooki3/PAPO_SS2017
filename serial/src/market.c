@@ -23,7 +23,7 @@ field* in_matrix(field*** const market, vector3 vec){
 
 field* in_matrix_g(vector3 vec){
 	if(global__market){
-		if(vec.z > global__mmi->stories -1 || vec.z < 0 || vec.y > global__mmi->columns -1|| vec.y < 0 || vec.x > global__mmi->rows -1 || vec.z < 0) return 0;
+		if(vec.z > global__mmi->stories -1 || vec.z < 0 || vec.y > global__mmi->columns -1|| vec.y < 0 || vec.x > global__mmi->rows -1 || vec.x < 0) return 0;
 		return &global__market[vec.z][vec.y][vec.x];
 	}else{
 		printf("Error: no global matrix");
@@ -42,8 +42,9 @@ int isFieldType(vector3 vec, FieldType type){
  * @return 			: Boolean
  */
 int is_blocked(vector3 vec){
-	if(in_matrix_g(vec)){
-		switch (in_matrix_g(vec)->type){
+	field* f= in_matrix_g(vec);
+	if(f != NULL){
+		switch (f->type){
 			case CORRIDOR:
 			case ESCALATOR:
 			case LIFT:
@@ -55,7 +56,7 @@ int is_blocked(vector3 vec){
 			default: return TRUE; break;
 		}
 	}
-	return FALSE;
+	return TRUE;
 }
 
 /*Initializes an 3d field array
