@@ -40,8 +40,8 @@ int main(int argc, char *argv[]){
 	while(!queue_empty(queue)){ //Auslaufen
 		eployeespawns = mmi.emtpy_count/employeebag;
 		for(int c = 0; c < eployeespawns; c++){
-			spawn_entity(&mmi, queue, empty_shelfs, EMPLOYEE)
-		};
+			spawn_entity(&mmi, queue, empty_shelfs, EMPLOYEE);
+		}
 		work_queue(market, &mmi, queue, empty_shelfs);
 		print_queue(queue);
 	}
