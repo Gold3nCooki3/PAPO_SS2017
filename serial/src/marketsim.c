@@ -44,8 +44,12 @@ int main(int argc, char *argv[]){
 		}
 		work_queue(market, &mmi, queue, empty_shelfs);
 		print_queue(queue);
+		printf("\nc: %d\n", mmi.emtpy_count);
 	}
-	printf("\nc: %d\n", emp_count);
+	while(!queue_empty(empty_shelfs)){
+		free(queue_dequeue(empty_shelfs));
+	}
+	printf("\nc: %d\n", mmi.emtpy_count);
 	printf("\n4\n");
 	free_market(market, mmi.columns, mmi.stories);
 	free_meta(&mmi);

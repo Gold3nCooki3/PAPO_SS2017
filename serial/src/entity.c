@@ -127,6 +127,7 @@ int move_entity(field*** const market, meta* const mmi,queue_t* const empty_shel
 	// exit
 	if(ASPathGetCount(e->path) == e->path_position){
 		field* f;
+		vector3* temp_vec;
 		switch (in_matrix_g(e->memory_dest)->type){
 			case STOCK:
 			case EXIT:
@@ -136,13 +137,19 @@ int move_entity(field*** const market, meta* const mmi,queue_t* const empty_shel
 			case LIFT: e->position.z = (e->position.z > e->list[e->listpos].z) ?  e->position.z-1 : e->position.z+1; break;
 			case CORRIDOR:
 				f = in_matrix_g(e->list[e->listpos]);
-				if(f->amount > 0 && e->type == CUSTOMER){
-					f -= 1;
-				}else{
-					mmi->emtpy_count++;
-					queue_enqueue(empty_shelfs, &e->list[e->listpos]);
+				if(e->type == CUSTOMER){
+					if(f->amount > 0){
+						f->amount -= 1;
+					}else if(f->amount == 0){ //collect empty fields
+						f->amount = -1;
+						temp_vec = malloc(sizeof(vector3));
+						memcpy(temp_vec, &e->list[e->listpos], sizeof(vector3));
+						mmi->emtpy_count++;
+						queue_enqueue(empty_shelfs, temp_vec);
+					}
+				}else if(e->type == EMPLOYEE){
+					 f += FILLVAL;
 				}
-				if(e->type == EMPLOYEE) f += FILLVAL;
 				e->listpos++;
 			default: break;
 		}
@@ -187,7 +194,7 @@ void work_queue(field*** const market, meta * const mmi, queue_t* const queue, q
  * Generates a random shopping list for each customer-entity
  */
 vector3* generate_list(meta* const mmi, queue_t* empty_shelfs, int* items, EntityType Type) {
-	*items = (Type == CUSTOMER) ? rand()%LISTL+5 : LISTL+2;
+	*items = (Type == CUSTOMER) ? rand()%LISTL+5 : LISTL;
 	vector3* list = malloc(sizeof(vector3) * (*items));
 	int shelf_count = mmi->shelf_count;
 	for(int i = 0; i < *items; i++){
@@ -213,8 +220,11 @@ vector3* generate_list(meta* const mmi, queue_t* empty_shelfs, int* items, Entit
 			}else{
 				v = queue_dequeue(empty_shelfs);
 			}
-			mmi->emtpy_count--;
 			list[i] = *v;
+			if(i < *items-1){
+				free(v);
+				mmi->emtpy_count--;
+			}
 		}
 	}
 //printf("made list\n");
