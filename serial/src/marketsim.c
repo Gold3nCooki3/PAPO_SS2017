@@ -18,6 +18,7 @@ int main(int argc, char *argv[]){
 		default: break;
 	}
 
+	int emp_count = 0;
 
 	field*** market;
 	meta mmi;
@@ -34,9 +35,10 @@ int main(int argc, char *argv[]){
 			spawn_entity(&mmi, queue, empty_shelfs,CUSTOMER);
 		}
 		eployeespawns = mmi.emtpy_count/employeebag;
-		printf("to spawn ?: %d \n", eployeespawns);
+		//printf("to spawn ?: %d \n", eployeespawns);
 		for(int e = 0; e < eployeespawns; e++){
-			printf("spawning");
+			//printf("spawning");
+			emp_count++;
 			spawn_entity(&mmi, queue, empty_shelfs, EMPLOYEE);
 		}
 		work_queue(market, &mmi, queue, empty_shelfs);
@@ -46,7 +48,8 @@ int main(int argc, char *argv[]){
 		work_queue(market, &mmi, queue, empty_shelfs);
 		print_queue(queue);
 	}
-	printf("\n 4 \n");
+	printf("\nc: %d\n", emp_count);
+	printf("\n4\n");
 	free_market(market, mmi.columns, mmi.stories);
 	free_meta(&mmi);
 	queue_destroy(queue);

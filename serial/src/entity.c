@@ -126,6 +126,7 @@ int move_entity(field*** const market, meta* const mmi,queue_t* const empty_shel
 
 	// exit
 	if(ASPathGetCount(e->path) == e->path_position){
+		field* f;
 		switch (in_matrix_g(e->memory_dest)->type){
 			case STOCK:
 			case EXIT:
@@ -134,11 +135,12 @@ int move_entity(field*** const market, meta* const mmi,queue_t* const empty_shel
 			case ESCALATOR:
 			case LIFT: e->position.z = (e->position.z > e->list[e->listpos].z) ?  e->position.z-1 : e->position.z+1; break;
 			case CORRIDOR:
-				field* f = in_matrix_g(e->list[e->listpos]);
+				f = in_matrix_g(e->list[e->listpos]);
 				if(f->amount > 0 && e->type == CUSTOMER){
 					f -= 1;
 				}else{
-					queue_enqueue(empty_shelfs, e->list[e->listpos]);
+					mmi->emtpy_count++;
+					queue_enqueue(empty_shelfs, &e->list[e->listpos]);
 				}
 				if(e->type == EMPLOYEE) f += FILLVAL;
 				e->listpos++;
