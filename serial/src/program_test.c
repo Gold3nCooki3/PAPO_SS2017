@@ -10,10 +10,13 @@ void print_queue(queue_t* queue){
 	struct queue_node_s *node = queue->front;
 		while(node != NULL){
 			entity* e = node->data;
-			printf("p: %12p",queue);
-			printf(" pn: %12p",queue->front);
-			printf(" fp: %12p",node->next);
+			//printf("p: %12p",queue);
+			//printf(" pn: %12p",queue->front);
+			//printf(" fp: %12p",node->next);
 			printf(" bp: %12p",node);
+			int p = (e->path_position > 0) ? ASPathGetCount(e->path) : 0;
+			printf(" pp: %2d",e->path_position);
+			printf(" pc: %2d",p);
 			printf(" id: %4d, type: %d, pos: (%2d,%2d,%2d), dest: (%2d,%2d,%2d) \n",
 				e->id, e ->type, e->position.x, e->position.y, e->position.z, e->list[e->listpos].x, e->list[e->listpos].y, e->list[e->listpos].z, e);
 			node = node->next;
@@ -22,6 +25,7 @@ void print_queue(queue_t* queue){
 }
 
 
+/*
 int test_vec_equal(){
 	int c = 0;
 	vector3 vec1 = {1,1,1};
@@ -106,5 +110,5 @@ void test_spawn(meta* const mmi, queue_t* const queue,queue_t* const empty_shelf
 	print_queue(queue);
 	printf("\n \n");
 }
-
+*/
 

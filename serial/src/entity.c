@@ -1,26 +1,58 @@
 #include "entity.h"
 
-/*Clamps a value to -1, 0, 1
- * @param d 	: input value
- * @return 		: -1, 0, 1
- */
-int clamp(int d) {
-  if(d >= 1) return 1;
-  if(d <= -1) return -1;
-  return 0;
+/*============================================HELP FUNCTIONS PATHFINDING======================================*/
+typedef struct vector3 PathNode;
+
+static void PathNodeNeighbors(ASNeighborList neighbors, void *node, void *context){
+
+	PathNode *pathNode = (PathNode *)node;
+
+	if (!is_blocked((PathNode){pathNode->x+1, pathNode->y, pathNode->z})){
+		ASNeighborListAdd(neighbors, &(PathNode){pathNode->x+1, pathNode->y,pathNode->z}, 1);
+	}
+	if (!is_blocked((PathNode){pathNode->x-1, pathNode->y, pathNode->z})){
+		ASNeighborListAdd(neighbors, &(PathNode){pathNode->x-1, pathNode->y,pathNode->z}, 1);
+	 }
+	if (!is_blocked((PathNode){pathNode->x, pathNode->y+1, pathNode->z})){
+		ASNeighborListAdd(neighbors, &(PathNode){pathNode->x, pathNode->y+1,pathNode->z}, 1);
+	}
+	if (!is_blocked((PathNode){pathNode->x, pathNode->y-1, pathNode->z})){
+		ASNeighborListAdd(neighbors, &(PathNode){pathNode->x, pathNode->y-1,pathNode->z}, 1);
+	}
 }
+
+static float PathNodeHeuristic(void *fromNode, void *toNode, void *context){
+	PathNode *from = (PathNode *)fromNode;
+    PathNode *to = (PathNode *)toNode;
+    if(from->z != to->z) exit(EXIT_FAILURE);
+    return (fabs(from->x - to->x) + fabs(from->y - to->y));
+}
+
+int has_path(entity* const e){
+	if(e->path_position > 0 && ASPathGetCount(e->path) > 0){
+		return TRUE;
+	}else{
+		return FALSE;
+	}
+}
+
+static const ASPathNodeSource PathNodeSource = {
+    sizeof(PathNode),
+    &PathNodeNeighbors,
+    &PathNodeHeuristic,
+    NULL,
+    NULL
+};
+/*===================================================================================================*/
+
 
 vector3 get_close_vector3(vector3* const list, int listlength, vector3 start, int forceSameLevel){
 	vector3 dest;
 	int mindistance = -1;
 	int distance;
 	for(int i = 0; i < listlength; i++){
-		/*TODO: 10 * delta(z) nicht das beste*/
-		distance = abs(list[i].x - start.x)  + abs(list[i].y - start.y) + 10*abs(list[i].z - start.z);
-		if(!forceSameLevel && (distance > mindistance || mindistance == -1)) {
-			mindistance = distance;
-			dest = list[i];
-		}else if(forceSameLevel && list[i].z == start.z && (distance > mindistance || mindistance == -1)){
+		distance = abs(list[i].x - start.x)  + abs(list[i].y - start.y) + 10 + abs(list[i].z - start.z);
+		if((!forceSameLevel || list[i].z == start.z) && (distance < mindistance || mindistance == -1)) {
 			mindistance = distance;
 			dest = list[i];
 		}
@@ -29,123 +61,122 @@ vector3 get_close_vector3(vector3* const list, int listlength, vector3 start, in
 	return dest;
 }
 
+void generate_path(entity* const e, meta* const mmi){
+	PathNode pathFrom = (PathNode)e->position;
+	vector3 pathTo_v = e->list[e->listpos];
+
+	if(pathTo_v.z != e->position.z){
+		pathTo_v = get_close_vector3(mmi->lift_fields, mmi->lift_count, e->position, TRUE);
+	}else{
+		switch (in_matrix_g(e->list[e->listpos])->type){
+			case REGISTER:
+			case SHELF: pathTo_v.x++;
+				if(is_blocked(pathTo_v)){
+					pathTo_v.x-=2;
+					if(is_blocked(pathTo_v)){
+						pathTo_v.x+=1;
+						pathTo_v.y+=1;
+						if(is_blocked(pathTo_v)){
+							pathTo_v.y-=2;
+							if(is_blocked(pathTo_v)){
+								exit(EXIT_FAILURE);
+							}
+						}
+					}
+				}
+				break;
+			default: break;
+		}
+	}
+
+	PathNode pathTo = (PathNode)pathTo_v;
+	e->path = ASPathCreate(&PathNodeSource, NULL, &pathFrom, &pathTo);
+	e->memory_dest = pathTo_v;
+	if(ASPathGetCount(e->path) == 0){ //not vaild
+		printf("No path");
+		exit(EXIT_FAILURE);
+	}
+}
+
 /*Moves an entity towards their destination,
  * to pick up or fill up content from a frame
  * @param market	: market where entity is moving within
  * @param e			: entity
  * @return FALSE if person has reached their final destination
  */
-int move_entity(field*** const market, meta* const mmi,queue_t* const empty_shelfs, entity* const e){
-	int pos = e->listpos;
-	vector3 actual_dest = {e->list[pos].x , e->list[pos].y, e->list[pos].z};
-
-	/*search for lift or escalator if not on one of these already and the destination is above
-	 * memorize destination of the next lift or escalator*/
-	if(e->position.z != actual_dest.z  && in_matrix(market, e->position)->type != ESCALATOR && in_matrix(market, e->position)->type != LIFT){
-		if(e->memory_lift.x == -1){
-			e->memory_lift = get_close_vector3(mmi->lift_fields, mmi->lift_count, e->position, TRUE);
-		}
-		actual_dest = e->memory_lift;
-	}else{
-	/*get field right, left, bottom or top of the destination,
-	 *this is the field the entity has to go */
-		actual_dest.x++;
-		if(is_blocked(market, actual_dest)){
-				actual_dest.x -= 2;
-			if (is_blocked(market, actual_dest)){
-				actual_dest.x++;
-				actual_dest.y++;
-				if (is_blocked(market, actual_dest)){
-					actual_dest.y -= 2;
-				}else{
-					printf("Not valid!\n");
-					exit(EXIT_FAILURE);
-				}
-			}
-		}
+int move_entity(meta* const mmi,queue_t* const empty_shelfs, entity* const e){
+	if (!has_path(e)){
+		generate_path(e, mmi);
 	}
 
-	//move if entity is on the same floor as the destination
-	if(actual_dest.z == e->position.z){
-		int move_in_x = clamp(actual_dest.x - e->position.x);
-		int move_in_y = clamp(actual_dest.y - e->position.y);
-		vector3 vec_x = {e->position.x  + move_in_x, e->position.y, e->position.z};
-		vector3 vec_y = {e->position.x, e->position.y + move_in_y, e->position.z};
-		if(move_in_x != 0 && !is_blocked(market, vec_x)){
-			e->position = vec_x;
-		}else if(move_in_y != 0 && !is_blocked(market, vec_y)){
-			e->position  = vec_y;
-		}else{
-			printf("No Movement");
-			exit(EXIT_FAILURE);
-		}
-	}else if(in_matrix(market, e->position)->type == ESCALATOR || in_matrix(market, e->position)->type == LIFT){
-		//entity is standing on an escalator
-		if(actual_dest.z > e->position.z){
-			e->position.z++;
-		}else{
-			e->position.z--;
-		}
-		e->memory_lift.x = -1; //reset memory
-	}else{
-		printf("Not on an escalator field nor moving\n");
-		exit(EXIT_FAILURE);
-	}
+	//Get to new Position
+	PathNode* new_pos = ASPathGetNode(e->path, e->path_position);
+	e->position = *new_pos;
+	e->path_position++;
 
-	//Check if entity reached destination
-	if(vec_equal(&actual_dest,&e->position)){
-		field* f = in_matrix(market, actual_dest);
-		field* shelf = in_matrix(market, e->list[pos]);
-		switch (e->type){
-			case CUSTOMER:
-				if(f->type != ESCALATOR && f->type != LIFT){
-					if(shelf->amount  > 0) {
-						shelf->amount -= 1;
-					}else{
-						vector3 empty_shelf = e->list[pos];
-						queue_enqueue(empty_shelfs, &empty_shelf);
-						mmi->emtpy_count++;
-						printf("Didn't get content\n");
+	// exit
+	if(ASPathGetCount(e->path) == e->path_position){
+		field* f;
+		vector3* temp_vec;
+		switch (in_matrix_g(e->memory_dest)->type){
+			case STOCK:
+			case EXIT:
+				ASPathDestroy(e->path);
+				return FALSE; break;
+			case ESCALATOR:
+			case LIFT: e->position.z = (e->position.z > e->list[e->listpos].z) ?  e->position.z-1 : e->position.z+1; break;
+			case CORRIDOR:
+				f = in_matrix_g(e->list[e->listpos]);
+				if(e->type == CUSTOMER){
+					if(f->amount > 0){
+						f->amount -= 1;
+					}else if(f->amount == 0){ //collect empty fields
+						f->amount = -1;
+						temp_vec = malloc(sizeof(vector3));
+						memcpy(temp_vec, &e->list[e->listpos], sizeof(vector3));
+						mmi->empty_count++;
+						queue_enqueue(empty_shelfs, temp_vec);
 					}
+				}else if(e->type == EMPLOYEE){
+					 f += FILLVAL;
 				}
-				break;
-			case EMPLOYEE:
-				if(f->type != ESCALATOR || f->type != LIFT){
-					shelf->amount += FILLVAL;
-				}
-				break;
-			default: printf("Nether customer nor employee\n"); break;
+				e->listpos++;
+			default: break;
 		}
-		if(f->type == EXIT || pos >= LISTL-1) return FALSE; //TODO: e wird nicht  korrekt entfernt, da Listl jetzt dynamisch ist und actual_dest das exacte Feld sein muss
-		e->listpos++;
+		ASPathDestroy(e->path);
+		e->path_position = 0;
+	}else if(e->listpos >= e->amountItems){ //
+		printf("Error: no exit");
+		exit(EXIT_FAILURE);
 	}
 	return TRUE;
 }
 
-/*Move every entity in the queue, dequeue if entity reached final destination
+/*Move every entity in the entity_queue, dequeue if entity reached final destination
  * @param market 	: fields where entities move within
- * @param queue 	: queue of all entities
+ * @param entity_queue 	: queue of all entities
  */
-void work_queue(field*** const market, meta * const mmi, queue_t* const queue, queue_t* const empty_shelfs){
-	if(queue_empty(queue)){
+void work_queue(meta * const mmi, queue_t* const entity_queue, queue_t* const empty_shelfs){
+	if(queue_empty(entity_queue)){
 		printf("empty!");
 		return;
 	}else{
-		entity* first = queue_dequeue(queue);
+		entity* first = queue_dequeue(entity_queue);
 		entity* e = first;
 		do{
 			if(!first)first = e;
-			int not_finished = move_entity(market, mmi, empty_shelfs, e);
+			int not_finished = move_entity(mmi, empty_shelfs, e);
 			if(not_finished){
-				queue_enqueue(queue, e);
+				queue_enqueue(entity_queue, e);
 			}else {
 				free(e->list);
 				if(e == first) first = NULL;
-				if(queue_empty(queue)) break;
+				free(e);
+				if(queue_empty(entity_queue)) break;
 			}
-			e = queue_dequeue(queue);
+			e = queue_dequeue(entity_queue);
 		}while(first != e);
-		if(first == e) queue_enqueue(queue, e); // otherwise one element gets lost
+		if(first == e) queue_enqueue(entity_queue, e); // otherwise one element gets lost
 	}
 }
 
@@ -153,7 +184,7 @@ void work_queue(field*** const market, meta * const mmi, queue_t* const queue, q
  * Generates a random shopping list for each customer-entity
  */
 vector3* generate_list(meta* const mmi, queue_t* empty_shelfs, int* items, EntityType Type) {
-	*items = (Type == CUSTOMER) ? rand()%LISTL+2 : LISTL+1;
+	*items = (Type == CUSTOMER) ? rand()%LISTL+5 : LISTL;
 	vector3* list = malloc(sizeof(vector3) * (*items));
 	int shelf_count = mmi->shelf_count;
 	for(int i = 0; i < *items; i++){
@@ -166,7 +197,7 @@ vector3* generate_list(meta* const mmi, queue_t* empty_shelfs, int* items, Entit
 				//Exit
 				v = get_close_vector3(mmi->exit_fields, mmi->exit_count, list[i-1], FALSE);
 			}else{
-				int r = abs((i*rand())%shelf_count);
+				int r = abs(rand()%shelf_count);
 				v = mmi->shelf_fields[r];
 			}
 			list[i] = v;
@@ -179,33 +210,36 @@ vector3* generate_list(meta* const mmi, queue_t* empty_shelfs, int* items, Entit
 			}else{
 				v = queue_dequeue(empty_shelfs);
 			}
-			mmi->emtpy_count--;
 			list[i] = *v;
+			if(i < *items-1){
+				free(v);
+				mmi->empty_count--;
+			}
 		}
 	}
-printf("made list\n");
 	return list;
 }
 
 /*Spawn an entity and enqueue it
- * @param queue 	: queue of all entities
+ * @param entity_queue 	: queue of all entities
  * @param position 	: position where the entity is spawned
  * @param type		: type of the entity
  */
-void spawn_entity(meta* const mmi, queue_t* const queue, queue_t* const empty_shelfs, EntityType type){
+void spawn_entity(meta* const mmi, queue_t* const entity_queue, queue_t* const empty_shelfs, EntityType type){
 	static int counter = 0;
 	int items = 0;
 	vector3* list;
 	list= generate_list(mmi, empty_shelfs, &items, type);
 	vector3 position = (type == CUSTOMER) ? mmi->exit_fields[abs(rand()%mmi->exit_count)] : mmi->stock_fields[abs(rand()%mmi->stock_count)];
-	entity* e = malloc(sizeof(*e));
+	entity* e = calloc(1, sizeof(*e));
 		e->id = counter;
 		e->type = type;
 		e->listpos = 0;
+		e->path_position = 0;
 		e->amountItems = items;
 		e->position= position;
-		e->memory_lift.x = -1;
+		e->memory_dest.x = -1;
 		e->list = list;
-	queue_enqueue(queue, e);
+	queue_enqueue(entity_queue, e);
 	counter++;
 }
