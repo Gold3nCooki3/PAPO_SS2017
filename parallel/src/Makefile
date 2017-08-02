@@ -1,4 +1,4 @@
-CC = gcc
+CC = mpicc
 CFLAGS = -std=c99 -g -Wall
 BIN=prog.exe
 

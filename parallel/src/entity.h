@@ -14,6 +14,7 @@
 #include <math.h>
 #include <setjmp.h>
 
+#include "mpi.h"
 #include "market.h"
 #include "queue.h"
 #include "program_test.h"

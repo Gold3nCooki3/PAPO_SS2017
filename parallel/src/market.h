@@ -6,6 +6,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include "mpi.h"
 
 typedef enum FieldType {CORRIDOR, SHELF, ESCALATOR, LIFT, REGISTER, BLOCKVAL, STOCK, EXIT=7} FieldType;
 

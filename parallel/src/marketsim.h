@@ -7,9 +7,11 @@
 #include <time.h>    // time()
 #include <stdio.h>
 
+#include "mpi.h"
 #include "market.h"
 #include "queue.h"
 #include "entity.h"
+
 
 #include "program_test.h"
 
