@@ -46,9 +46,51 @@ int is_blocked(vector3 vec){
 	return TRUE;
 }
 
+/*
+ *
+ */
+void parprocess(MPI_File *in, const int rank, const int size, const int overlap) {
+	MPI_Offset globalstart;
+    int mysize;
+    char *chunk;
+
+    /* read in relevant chunk of file into "chunk",
+     * which starts at location in the file globalstart
+     * and has size mysize
+     */
+        MPI_Offset globalend;
+        MPI_Offset filesize;
+
+        /* figure out who reads what */
+        MPI_File_get_size(*in, &filesize);
+        filesize--;  /* get rid of text file eof */
+        mysize = filesize/size;
+        globalstart = rank * mysize;
+        globalend   = globalstart + mysize - 1;
+        if (rank == size-1) globalend = filesize-1;
+
+        /* add overlap to the end of everyone's chunk except last proc... */
+        if (rank != size-1)
+            globalend += overlap;
+
+        mysize =  globalend - globalstart + 1;
+
+        /* allocate memory */
+        chunk = malloc( (mysize + 1)*sizeof(char));
+
+        /* everyone reads in their part */
+        MPI_File_read_at_all(*in, globalstart, chunk, mysize, MPI_CHAR, MPI_STATUS_IGNORE);
+        chunk[mysize] = '\0';
+
+        for(int i = 0; i < mysize; i++){
+        	printf("r: %d, %c\n",size, chunk[i]);
+        }
+
+        free(chunk);
+}
+
 /*Initializes an 3d field array
- * TODO: Arrange values to one Memory Block
- * 	 field array only for access
+ *	field array only for access
  * @param x, y, floor_count : length, width and hight of the market
  * @return 			: pointer of allocated field array
  */

@@ -78,6 +78,8 @@ field**** import_market(char* path, meta *mmi);
  */
 field* in_matrix_g(vector3 vec);
 
+void parprocess(MPI_File *in, const int rank, const int size, const int overlap)
+
 /*Deallocate 3d field array
  * @param global__market
  */
