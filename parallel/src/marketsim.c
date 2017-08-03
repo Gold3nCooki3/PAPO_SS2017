@@ -17,8 +17,8 @@ int main(int argc, char *argv[]){
 		default: break;
 	}*/
 
-	field**** market;
-	meta mmi;
+	//field**** market;
+	//meta mmi;
 	int rank, size;
 	MPI_File in;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -48,8 +48,8 @@ int main(int argc, char *argv[]){
 	while(!queue_empty(empty_shelfs)){
 		free(queue_dequeue(empty_shelfs));
 	}*/
-	free_market();
-	free_meta();
+	//free_market();
+	//free_meta();
 	//queue_destroy(entity_queue);
 	//queue_destroy(empty_shelfs);
 	MPI_Finalize();
