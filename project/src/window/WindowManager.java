@@ -26,6 +26,8 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+import stuff.EntityGen;
+
 
 public class WindowManager {
 	/**
@@ -46,6 +48,7 @@ public class WindowManager {
 	JButton loadButton = new JButton("Lade Map"); // Lade Map Button
 	JButton saveButton = new JButton("Speichere Map"); // Speichere Map Button
 	JButton dupButton = new JButton("Dupliziere Stockwerk nach oben"); //Generiere eine Map
+	JButton entButton = new JButton("Erzeuge Kunden");
 	JSlider storySlider = new JSlider(JSlider.VERTICAL, 0, 1337, 0); // Slider
 																		// zum
 																		// Scrollen
@@ -76,10 +79,10 @@ public class WindowManager {
 		storySlider.setPaintLabels(true);
 		// Fill Window with first Elements
 		// addComponent(c, gbl, c, x, y, width, height, weightx, weighty);
-		addComponent(c, gbl, dp, 0, 0, 2, 8, 90, 10);
-		addComponent(c, gbl, dupButton, 0, 8, 1, 1, 30, 10);
-		addComponent(c, gbl, loadButton, 1, 8, 1, 1, 30, 10);
-		addComponent(c, gbl, saveButton, 2, 8, 1, 1, 30, 10);
+		addComponent(c, gbl, dp, 0, 0, 2, 9, 90, 10);
+		addComponent(c, gbl, dupButton, 0, 9, 1, 1, 30, 10);
+		addComponent(c, gbl, loadButton, 1, 9, 1, 1, 30, 10);
+		addComponent(c, gbl, saveButton, 2, 9, 1, 1, 30, 10);
 		addComponent(c, gbl, columnsSetterInfo, 2, 0, 1, 1, 10, 10);
 		addComponent(c, gbl, columnsSetter, 2, 1, 1, 1, 10, 10);
 		addComponent(c, gbl, rowSetterInfo, 2, 2, 1, 1, 10, 10);
@@ -88,6 +91,7 @@ public class WindowManager {
 		addComponent(c, gbl, storySetter, 2, 5, 1, 1, 10, 10);
 		addComponent(c, gbl, curStoryInfo, 2, 6, 1, 1, 10, 10);
 		addComponent(c, gbl, storySlider, 2, 7, 1, 1, 10, 10);
+		addComponent(c, gbl, entButton, 2, 8, 1, 1, 10, 10);
 
 		// Show Window
 		f.setVisible(true);
@@ -161,10 +165,17 @@ public class WindowManager {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if(dp.duplicateStory()) {
-					System.out.println("true");
 					dp.setCurrentStory(dp.getCurrentStory()+1);
 					storySlider.setValue(dp.getCurrentStory()+1);
 				}
+			}
+		});
+		
+		entButton.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				EntityGenPopup ep = new EntityGenPopup(dp);
 			}
 		});
 	}

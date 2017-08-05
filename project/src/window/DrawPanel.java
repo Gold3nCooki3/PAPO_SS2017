@@ -21,7 +21,7 @@ public class DrawPanel extends JPanel {
 	int stories = 5;					//#Etagen
 	int currentStory = 0;				//Aktuelle Etage
 	
-	StoryContainer shoppingMall[];
+	public StoryContainer shoppingMall[];
 	StoryContainer workingData;								//Aktuelles Stockwerk in Datenform
 	
 	int x = 0, y = 0;
