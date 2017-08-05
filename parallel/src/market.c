@@ -52,9 +52,9 @@ int is_blocked(vector3 vec){
 void parprocess(MPI_File *fh, const int rank, const int size, const int overlap) {
 	MPI_Offset globalstart;
     int mysize;
-    char *chunk;
-	printf("\n%d\n", rank);
-    /* read in relevant chunk of file into "chunk",
+    char *chunk, *chunk2;
+    MPI_Request   req;
+	  /* read in relevant chunk of file into "chunk",
      * which starts at location in the file globalstart
      * and has size mysize
      */
@@ -62,10 +62,10 @@ void parprocess(MPI_File *fh, const int rank, const int size, const int overlap)
         MPI_Offset filesize;
 
         /* figure out who reads what */
-        MPI_File_get_size(*in, &filesize);
+        MPI_File_get_size(*fh, &filesize);
         filesize--;  /* get rid of text file eof */
         mysize = filesize/size;
-        globalstart = rank * mysize + 1;
+        globalstart = rank * mysize + 28;
         globalend   = globalstart + mysize - 1;
         if (rank == size-1) globalend = filesize-1;
 
@@ -80,29 +80,34 @@ void parprocess(MPI_File *fh, const int rank, const int size, const int overlap)
         chunk2 = malloc(28*sizeof(char));
 
         /* everyone reads in their part */
-        MPI_File_read_all(*fh, chunkz , 28, MPI_CHAR, MPI_STATUS_IGNORE);
+        MPI_File_read_all(*fh, chunk2 , 28, MPI_CHAR, MPI_STATUS_IGNORE);
         MPI_File_read_at_all(*fh, globalstart, chunk, mysize, MPI_CHAR, MPI_STATUS_IGNORE);
         chunk[mysize] = '\0';
 
-	int a = 1;
-	int source = rank-1;
-	int dest = rank + 1;
 	MPI_Barrier(MPI_COMM_WORLD);
 
-	if( rank != 0 ) MPI_Recv(&a, 1, MPI_INT, source, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	if( rank == 0 ){
+		printf("\n %d: \n", rank);
+                for(int i = 0; i < 28; i++){
+                        printf("%c", chunk2[i]);
+                }
+                for(int i = 0; i < 200; i++){
+                        printf("%c", chunk[i]);
+                }
+                printf("\n");printf("...\n");
+		int b = 1;
+		for(; b < size; b++){
+			int ieee = MPI_Recv(chunk, mysize+1, MPI_CHAR, b, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+       			for(int i = 0; i < 20; i++){
+       				printf("%c", chunk[i]);
+       			}
+			printf("\n");printf("...\n");
+		}
+	}else{
+	 	MPI_Isend(chunk, mysize, MPI_CHAR, 0, 1, MPI_COMM_WORLD, &req);
 
-	printf("%d: \n", rank);
-	for(int i = 0; i < 28; i++){
-	       		printf("%c", chunk2[i]);
-	       	}
-       	for(int i = 0; i < 200; i++){
-       		printf("%c", chunk[i]);
-       	}
-	printf("\n");
-
-	printf("...");
-	if( rank != size-1) MPI_Send(&a, 1, MPI_INT, dest, 1, MPI_COMM_WORLD);
-
+	}
+	free(chunk2);
         free(chunk);
 }
 
