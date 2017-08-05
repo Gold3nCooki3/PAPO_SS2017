@@ -13,8 +13,8 @@ import stuff.StoryContainer;
 
 @SuppressWarnings("serial")
 public class DrawPanel extends JPanel {
-	private int rows = 10;		//#horizontale Felder
-	private int columns = 10;	//#vertikale Felder
+	public int rows = 10;		//#horizontale Felder
+	public int columns = 10;	//#vertikale Felder
 	private float vlinesGap; 
 	private float hlinesGap;
 	

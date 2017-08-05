@@ -42,7 +42,7 @@ public class EntityGenPopup {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				EntityGen eg = new EntityGen(dp.x, dp.y, dp.stories, dp);
+				EntityGen eg = new EntityGen(dp.rows, dp.columns, dp.stories, dp);
 				for(int i = 0; i < (int) eCount.getValue(); i++) {
 					Coord[] a = eg.generateEntity((int) eMin.getValue(), (int) eMax.getValue());
 					for(int u = 0; u < a.length; u++) {
