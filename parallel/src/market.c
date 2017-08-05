@@ -49,7 +49,7 @@ int is_blocked(vector3 vec){
 /*
  *
  */
-void parprocess(MPI_File *in, const int rank, const int size, const int overlap) {
+void parprocess(MPI_File *fh, const int rank, const int size, const int overlap) {
 	MPI_Offset globalstart;
     int mysize;
     char *chunk;
@@ -65,7 +65,7 @@ void parprocess(MPI_File *in, const int rank, const int size, const int overlap)
         MPI_File_get_size(*in, &filesize);
         filesize--;  /* get rid of text file eof */
         mysize = filesize/size;
-        globalstart = rank * mysize;
+        globalstart = rank * mysize + 1;
         globalend   = globalstart + mysize - 1;
         if (rank == size-1) globalend = filesize-1;
 
@@ -77,9 +77,11 @@ void parprocess(MPI_File *in, const int rank, const int size, const int overlap)
 
         /* allocate memory */
         chunk = malloc( (mysize + 1)*sizeof(char));
+        chunk2 = malloc(28*sizeof(char));
 
         /* everyone reads in their part */
-        MPI_File_read_at_all(*in, globalstart, chunk, mysize, MPI_CHAR, MPI_STATUS_IGNORE);
+        MPI_File_read_all(*fh, chunkz , 28, MPI_CHAR, MPI_STATUS_IGNORE);
+        MPI_File_read_at_all(*fh, globalstart, chunk, mysize, MPI_CHAR, MPI_STATUS_IGNORE);
         chunk[mysize] = '\0';
 
 	int a = 1;
@@ -90,6 +92,9 @@ void parprocess(MPI_File *in, const int rank, const int size, const int overlap)
 	if( rank != 0 ) MPI_Recv(&a, 1, MPI_INT, source, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
 	printf("%d: \n", rank);
+	for(int i = 0; i < 28; i++){
+	       		printf("%c", chunk2[i]);
+	       	}
        	for(int i = 0; i < 200; i++){
        		printf("%c", chunk[i]);
        	}
