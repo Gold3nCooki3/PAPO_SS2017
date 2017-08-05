@@ -2,6 +2,7 @@
 
 int main(int argc, char *argv[]){
 	MPI_Init(&argc, &argv);
+	printf("Hello Word\n");
 	if (argc < 2) exit(EXIT_FAILURE);
 	srand(time(NULL));
 	/*int maxeployees = 5;
@@ -10,7 +11,7 @@ int main(int argc, char *argv[]){
 	int eployeespawns = 1;
 	int employeebag = 10;
 
-	/*switch (argc){
+	switch (argc){
 		case 5: maxeployees = atoi(argv[4]);
 		case 4:	customerspawns = atoi(argv[3]);
 		case 3: simulations = atoi(argv[2]);
@@ -23,8 +24,9 @@ int main(int argc, char *argv[]){
 	MPI_File in;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
-	MPI_File_open(MPI_COMM_WORLD, &argv[1], MPI_MODE_RDONLY, MPI_INFO_NULL, &in);
-	parprocess(MPI_File *in, rank, size, 0);
+	printf("r: %d\n", rank);
+	MPI_File_open(MPI_COMM_WORLD, argv[1], MPI_MODE_RDONLY, MPI_INFO_NULL, &in);
+	parprocess(&in, rank, size, 0);
 	//market = import_market(argv[1], &mmi);
 	/*queue_t *empty_shelfs = queue_new();
 	queue_t *entity_queue = queue_new();

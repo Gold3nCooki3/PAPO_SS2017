@@ -53,7 +53,7 @@ void parprocess(MPI_File *in, const int rank, const int size, const int overlap)
 	MPI_Offset globalstart;
     int mysize;
     char *chunk;
-
+	printf("\n%d\n", rank);
     /* read in relevant chunk of file into "chunk",
      * which starts at location in the file globalstart
      * and has size mysize
@@ -82,9 +82,21 @@ void parprocess(MPI_File *in, const int rank, const int size, const int overlap)
         MPI_File_read_at_all(*in, globalstart, chunk, mysize, MPI_CHAR, MPI_STATUS_IGNORE);
         chunk[mysize] = '\0';
 
-        for(int i = 0; i < mysize; i++){
-        	printf("r: %d, %c\n",size, chunk[i]);
-        }
+	int a = 1;
+	int source = rank-1;
+	int dest = rank + 1;
+	MPI_Barrier(MPI_COMM_WORLD);
+
+	if( rank != 0 ) MPI_Recv(&a, 1, MPI_INT, source, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+	printf("%d: \n", rank);
+       	for(int i = 0; i < 200; i++){
+       		printf("%c", chunk[i]);
+       	}
+	printf("\n");
+
+	printf("...");
+	if( rank != size-1) MPI_Send(&a, 1, MPI_INT, dest, 1, MPI_COMM_WORLD);
 
         free(chunk);
 }
