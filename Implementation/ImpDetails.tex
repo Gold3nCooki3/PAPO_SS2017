@@ -1,11 +1,32 @@
 \section{Implementation}
 
-\subsection{Navigation}
-Wegfindungsalgorithmen sind in der Regel nicht für parallele Anwendungen implementiert. Um doch noch einfache Navigation gewährleisten zu können wird der A*-Algorithmus auf Kaufhausabschnitte angewandt. Mit der vorliegenden Implementation wird garantiert ein Weg gefunden, jedoch setzt die verwendete Version nicht auf das Kriterium der Optimalität des Weges, sondern auf die schnelle Berechenbarkeit eines Weges und Dateneffizienz. In gewisser Weise liefert dies einen zusätzlichen Realitätsbezug, da Menschen in der Regel nicht den kürzesten Weg wählen, sondern auch gerne mal einen Umweg durch die Süßwarenabteilung machen.
+\subsection{Navigation von Kunden im Kaufhaus}
+\label{kundne:nav}
+Zur Navigation im Kaufhaus wird eine serielle Implementierung des A*-Algorithmus von Sean Heber verwendet.
+Mit der vorliegenden Implementation wird garantiert ein Weg gefunden, jedoch setzt die verwendete Version nicht auf das Kriterium der Optimalität des Weges, sondern auf die schnelle Berechenbarkeit eines Weges und Dateneffizienz. In gewisser Weise liefert dies einen zusätzlichen Realitätsbezug, da Menschen in der Regel nicht den kürzesten Weg wählen, sondern auch gerne mal einen Umweg durch die Süßwarenabteilung machen.
 
-Im Falle von SMITH wird eine serielle Implementation des A*-Algorithmus von jedem Knoten ausgeführt. Knoten bekommen einen Teil eines Stockwerkes im Kaufhaus zugeteilt und besitzen lediglich diese Daten. Weiterhin kennt jeder Knoten die Position seines Teilstückes im Kaufhaus und kann dadurch auf globale Koordinaten der Felder zurückschließen.\\
+Im Falle von SMITH wird eine serielle Implementation des A*-Algorithmus von jedem Knoten ausgeführt. Knoten bekommen einen Teil eines Stockwerkes im Kaufhaus zugeteilt und besitzen lediglich diese Daten, benötigen also nicht gesammte Stockwerke. Weiterhin kennt jeder Knoten die Position seines Teilstückes im Kaufhaus und kann dadurch auf globale Koordinaten der Felder zurückschließen.\\
 Soll ein Weg zwischen den Punkten A und B gefunden werden, so berechnet ein Knoten die Hamming-Distanz seiner Randfelder zum Ziel. Die Hamming-Distanz ergibt sich dabei nach $\Delta H = |Pos_x(Start)-Pos_x(Ziel)| + |Pos_y(Start)-Pos_y(Ziel)|$ und ist ein Indikator für die Nähe zum Ziel.
 Ist nun die Hamming-Distanz der Randfelder bekannt, so wird ein Feld mit minimalem $\Delta H$ und einem begehbaren Feld im Nachbarknoten als Ziel ausgewählt.
 
-Von diesem Punkt an wird dieses Vorgehen so lange wiederholt, bis das Ziel gefunden wurde. Sollten alle Randfelder erfolglos getestet worden sein, so wird die Suche abgebrochen, da das Zielfeld nicht erreicht werden kann. [Kann noch ausformuliert werden]
+Das begehbare Nachbarfeld ist nun der Startpunkt für eine weitere Wegsuche. Hierbei kann ein einem Prozess zugeteilter Stockwerksabschnitt durchlaufen werden oder es befindet sich das Ziel in diesem. In erstem Fall sucht der Prozess einen Weg vom Startpunkt innerhalb seines Stockwerkabschnitts bis zu einem Randfeld mit geringster Hamming-Distanz. Ist das Ziel innerhalb des Abschnitts, so wird versucht einen Weg vom Startpunkt bis zum Ziel zu finden. (\#TODO: Ziel nicht erreichbar, Wechsel in nächsten Prozess?)
 
+Wird kein Weg zwischen einem Startpunkt und einem Randfeld oder dem Ziel gefunden, so liefert der Algorithmus eine entsprechende Nachricht zurück und im letzten Rechenknoten vor dem Nichtfinden eines Weges wird ein anderes Randfeld gewählt und es wird versucht einen Weg bis zum Ziel zu finden. Scheitert dies von allen Randfeldern aus, so wird wieder eine Rechenstufe zurück gegangen. Die Wegfindung erfolgt also rekursiv.
+
+Sind ist jeder Aufruf des A*-Algorithmus mit dem Finden eines Weges zurückgekehrt, so werden in jedem Knoten der lokale Start- und Zielknoten lokal gespeichert und mit der ID der Kunden-Entity versehen. Wenn der Kunde nun an den Prozess geschickt wird kann kurzerhand der Weg zwischen den beiden Punkten berechnet werden, im Kunden abgelegt werden und in den nächsten Simulationsschritten zurückgelegt werden. Dieses Vorgehen wurde gewählt um die Menge an Kommunikation von Prozessen gering zu halten.
+
+Um in jedem Fall eine Wegfindung zu ermöglichen sollten nicht nur keine unerreichbaren Felder existieren (Felder, die von Mauern oder Regalen umgeben sind), sondern auch ein Ring von Gangfeldern am Rand des Kaufhauses  sollte eingebaut sein, dass ein erreichen jedes Ganges möglich ist.
+
+\subsection{Bearbeitung der Kunden im Prozess}
+Die Standardoperation, die an einem Kunden ausgeführt wird ist das Bewegen um ein Feld pro Simulationsschritt. Zusätzlich muss Sorge getragen werden, dass Kunden, wie ihr Zielfeld erreicht haben einen Weg zu ihrem nächsten Ziel bekommen und dass solche, die neu an den Prozess geschickt wurden einen Weg zum Ziel oder einem Randknoten bekommen. Weiterhin, wie im vorigen Abschnitt beschrieben, muss die rekursive Wegfindung bearbeitet werden.
+
+Die Verwaltung aller Aufgaben für einen Simulationsschritt wird über einen Queue gelöst. Diese wird mit allen Kunden-Entities befüllt, die einer Behandlung durch den Prozess bedürfen.
+Es gibt verschiedene Operationen, die ausgeführt werden müssen:
+\begin{itemize}
+\item Bewegungsoperationen
+\item Durchführen einer Wegberechnung innerhalb des Stockwerksabschnittes als Teil der Prüfung, ob ein Weg existiert
+\item Durchführen einer Wegberechnung innerhalb des Stockwerksabschnittes für einen in den Prozess gewechselten Kunden
+\item Rückmelden des (nicht-)Finden eines Weges oder des Andauerns der Berechnung an einen Prozess
+\end{itemize}
+Operationen wie eine Kundenbewegung werden ausgeführt und anschließend aus der Queue entfernt.\\
+Ist eine Berechnung eines Weges erforderlich, so wird diese ausgeführt. Ist die Berechnung erforderlich, wenn geprüft werden soll, ob ein Weg existiert, so wird zum gegebenen Startknoten ein passender Zielknoten gesucht (Siehe \ref{kundne:nav}) und der nächste Prozess wird benachrichtigt, dass eine Wegsuche durchzuführen ist. Während der Prozess auf eine Rückmeldung des nächsten Prozesses wartet wird die Kunden-Entity immer wieder erneut zur Queue hinzugefügt, bis eine Rückmeldung vorliegt, ob ein Weg gefunden wurde oder nicht. Wurde kein Weg gefunden, so wird die Suche mit einem neuen Randknoten als Zielknoten angestoßen, wurde einer gefunden, so wird das Startknoten-Zielknoten-Paar zur späteren Verwendung abgespeichert und eine Meldung an den vorigen Prozess geschickt. Wird die Wegberechnung gestartet, da ein Kunde einen Weg zur Navigation innerhalb des Bereichs eines Prozessors benötigt, wird dieser berechnet, im Kunden in einer Datestruktur abgelegt und der kunde wird aus der Queue entfernt.

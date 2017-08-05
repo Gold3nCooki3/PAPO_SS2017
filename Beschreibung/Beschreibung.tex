@@ -16,5 +16,9 @@ Mitarbeiter haben zwei Aufgaben: Das Besetzen von Kassen und das Auffüllen der 
 
 Das Besetzen einer Kasse ist eine Position (die einer Kasse im Kaufhaus), die ein Mitarbeiter für eine bestimmt Zeitspanne einnehmen muss. Ist eine Kasse besetzt kann ein Kunde an dieser bezahlen. Das Auffüllen eines Regals erfolgt, indem ein Mitarbeiter erzeugt wird, aus dem Lager heraus ein benötigtes Element holt, zum entsprechenden Regal bringt, dort ablegt, die Warenmenge dort also wieder erhöht und anschließend zurück ins Lager läuft. Alle Mitarbeiter müssen lediglich unter der Beachtung der Höchstmitarbeiterzahl erzeugt werden.
 
-\subsection{Darstellung der Ergebnisse}
-... Entweder iwie oder Ausgabe über GUI ...
+\subsection{Ergebnisse}
+Der Benchmark liefert zwei Arten von Ergebnissen. Zum einen die Laufzeit, die für gegebene Kaufhäuser und Kunden-Einkaufslisten-Konfigurationen interessant ist, und zum andere die durchschnittliche Dauer eines Simulationsschrittes.
+
+Bei gegebenen Eingabedaten ist ein direkter Vergleich verschiedener Systeme möglich, da diese gleiche Berechnungen durchführen müssen und somit höher performante Systeme hier geringere Zeiten erreichen.
+Die durchschnittliche Dauer eines Simulationsschritts erlaubt weiterhin Langzeittests und kann ein System auf Stabilität testen.
+Wie eingangs erwähnt können mithilfe der Eingaben und verwendeten Prozesse weiterhin die Performance von Rechenhardware und MPI Implementationen verglichen werden.
