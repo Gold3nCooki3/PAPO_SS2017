@@ -3,6 +3,7 @@ package stuff;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -10,6 +11,7 @@ import java.io.PrintWriter;
 public class DataIO {
 	private PrintWriter out;
 	private BufferedReader buf;
+	private FileOutputStream fos;
 	private String curline;
 	private String[] splitted = new String[3];
 	int a, b, c;
@@ -17,10 +19,13 @@ public class DataIO {
 	int i = 0;
 	
 	public void initWriter(File f) throws IOException {
+		File fb = new File(f.toString().concat(".hex"));
 		if(!f.exists()) {
 			f.createNewFile();
+			fb.createNewFile();
 		}
 		out = new PrintWriter(f);
+		fos = new FileOutputStream(fb);
 	}
 	
 	public void initReader(File f) throws FileNotFoundException {
@@ -36,6 +41,16 @@ public class DataIO {
 	 */
 	public void writeLevelInit(int rows, int columns, int stories, int[] curcount) throws IOException {
 		out.println(rows+","+columns+","+stories+","+curcount[0]+","+curcount[1]+","+curcount[2]+","+curcount[3]+","+curcount[4]);
+		fos.write(rows);
+		fos.write(columns);
+		fos.write(stories);
+		fos.write(curcount[0]);
+		fos.write(curcount[1]);
+		fos.write(curcount[2]);
+		fos.write(curcount[3]);
+		fos.write(curcount[4]);
+		fos.write(System.getProperty("line.separator").getBytes());
+		fos.flush();
 	}
 
 	/**
@@ -46,10 +61,21 @@ public class DataIO {
 	 */
 	public void writeDataLine(int[] data) throws IOException{
 		out.println(data[0]+","+data[1]+","+data[2]);
+		fos.write(data[0]);
+		fos.write(data[1]);
+		fos.write(data[2]);
+		fos.write(System.getProperty("line.separator").getBytes());
+		fos.flush();
 	}
 	
 	public void closeWriter() {
 		out.close();
+		try {
+			fos.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	/**
@@ -83,5 +109,31 @@ public class DataIO {
 
 	public void closeReader() throws IOException {
 		buf.close();
+	}
+	
+	public void initEntityWriter(File f) throws IOException {
+		if(!f.exists()) {
+			f.createNewFile();
+		}
+		out = new PrintWriter(f);
+	}
+	
+	public void writeEntity(int id, Coord list[], int listlength) {
+		out.print(id);
+		for(int i = 0; i < listlength; i++) {
+			if(i == listlength-1) {
+				out.println(",0,0");
+				break;
+			}
+			if(i >= list.length) {
+				out.print(",0,0");
+				continue;
+			}
+			out.print(","+list[i].x()+","+list[i].y());
+		}
+	}
+	
+	public void closeEntityWriter() {
+		out.close();
 	}
 }

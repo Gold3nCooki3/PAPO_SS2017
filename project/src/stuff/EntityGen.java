@@ -5,7 +5,6 @@ import java.util.Random;
 import window.DrawPanel;
 
 public class EntityGen {
-	private StoryContainer mall[];
 	private int storyX;
 	private int storyY;
 	private int storyZ;

@@ -3,13 +3,17 @@ package window;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.IOException;
 
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JSpinner;
 
 import stuff.Coord;
+import stuff.DataIO;
 import stuff.EntityGen;
 
 public class EntityGenPopup {
@@ -23,6 +27,8 @@ public class EntityGenPopup {
 	private JSpinner eCount = new JSpinner();
 	private JLabel platzhalter = new JLabel("");
 	private JButton gen = new JButton("Crash inbound!");
+	DataIO dio = new DataIO();
+	private int id = 0;
 	
 	public EntityGenPopup(DrawPanel dp) {
 		f.setSize(700, 200);
@@ -43,12 +49,25 @@ public class EntityGenPopup {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				EntityGen eg = new EntityGen(dp.rows, dp.columns, dp.stories, dp);
-				for(int i = 0; i < (int) eCount.getValue(); i++) {
-					Coord[] a = eg.generateEntity((int) eMin.getValue(), (int) eMax.getValue());
-					for(int u = 0; u < a.length; u++) {
-						System.out.println(a[u].x()+" "+a[u].y()+" "+a[u].z());
+				JFileChooser speicher = new JFileChooser();
+				int action = speicher.showSaveDialog(null);
+				if(action == JFileChooser.APPROVE_OPTION) {
+					try {
+						if(!speicher.getSelectedFile().getName().endsWith(".elist")) {
+							dio.initEntityWriter(new File(speicher.getSelectedFile().toString().concat(".elist")));
+						} else {
+							dio.initEntityWriter(speicher.getSelectedFile());
+						}
+					} catch (IOException ioe) {
+						System.err.println(ioe);
 					}
 				}
+				for(int i = 0; i < (int) eCount.getValue(); i++) {
+					Coord[] a = eg.generateEntity((int) eMin.getValue(), (int) eMax.getValue());
+					dio.writeEntity(id++, a, (int) eMax.getValue());
+				}
+				dio.closeEntityWriter();
+				f.dispose();
 			}
 		});
 	}

@@ -26,8 +26,6 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-import stuff.EntityGen;
-
 
 public class WindowManager {
 	/**
@@ -175,6 +173,7 @@ public class WindowManager {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				@SuppressWarnings("unused")
 				EntityGenPopup ep = new EntityGenPopup(dp);
 			}
 		});
