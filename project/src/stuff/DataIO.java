@@ -1,6 +1,7 @@
 package stuff;
 
 import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -11,7 +12,7 @@ import java.io.PrintWriter;
 public class DataIO {
 	private PrintWriter out;
 	private BufferedReader buf;
-	private FileOutputStream fos;
+	private DataOutputStream dos;
 	private String curline;
 	private String[] splitted = new String[3];
 	int a, b, c;
@@ -25,7 +26,7 @@ public class DataIO {
 			fb.createNewFile();
 		}
 		out = new PrintWriter(f);
-		fos = new FileOutputStream(fb);
+		dos = new DataOutputStream(new FileOutputStream(fb));
 	}
 	
 	public void initReader(File f) throws FileNotFoundException {
@@ -41,16 +42,16 @@ public class DataIO {
 	 */
 	public void writeLevelInit(int rows, int columns, int stories, int[] curcount) throws IOException {
 		out.println(rows+","+columns+","+stories+","+curcount[0]+","+curcount[1]+","+curcount[2]+","+curcount[3]+","+curcount[4]);
-		fos.write(rows);
-		fos.write(columns);
-		fos.write(stories);
-		fos.write(curcount[0]);
-		fos.write(curcount[1]);
-		fos.write(curcount[2]);
-		fos.write(curcount[3]);
-		fos.write(curcount[4]);
-		fos.write(System.getProperty("line.separator").getBytes());
-		fos.flush();
+		dos.writeInt(rows);
+		dos.writeInt(columns);
+		dos.writeInt(stories);
+		dos.writeInt(curcount[0]);
+		dos.writeInt(curcount[1]);
+		dos.writeInt(curcount[2]);
+		dos.writeInt(curcount[3]);
+		dos.writeInt(curcount[4]);
+//		dos.write(System.getProperty("line.separator").getBytes());
+		dos.flush();
 	}
 
 	/**
@@ -61,17 +62,17 @@ public class DataIO {
 	 */
 	public void writeDataLine(int[] data) throws IOException{
 		out.println(data[0]+","+data[1]+","+data[2]);
-		fos.write(data[0]);
-		fos.write(data[1]);
-		fos.write(data[2]);
-		fos.write(System.getProperty("line.separator").getBytes());
-		fos.flush();
+		dos.writeInt(data[0]);
+		dos.writeInt(data[1]);
+		dos.writeInt(data[2]);
+//		dos.write(System.getProperty("line.separator").getBytes());
+		dos.flush();
 	}
 	
 	public void closeWriter() {
 		out.close();
 		try {
-			fos.close();
+			dos.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
