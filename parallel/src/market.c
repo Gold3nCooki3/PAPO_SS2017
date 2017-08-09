@@ -61,11 +61,16 @@ void parprocess(MPI_File *fh, const int rank, const int size, const int overlap)
         MPI_Offset globalend;
         MPI_Offset filesize;
 
-        /* figure out who reads what */
+        //field strukt into MPI datarype
+        MPI_Datatype mpi_field_type;
+        MPI_Type_contiguous(3, MPI_INT, &mpi_field_type);
+		MPI_Type_commit(&mpi_field_type);
+
+         /* figure out who reads what */
         MPI_File_get_size(*fh, &filesize);
         filesize--;  /* get rid of text file eof */
-        mysize = filesize/size;
-        globalstart = rank * mysize + 28;
+        mysize = ((filesize-28)/sizeof(mpi_field_type))/size;
+        globalstart = rank * mysize;
         globalend   = globalstart + mysize - 1;
         if (rank == size-1) globalend = filesize-1;
 
@@ -81,7 +86,7 @@ void parprocess(MPI_File *fh, const int rank, const int size, const int overlap)
 
         /* everyone reads in their part */
         MPI_File_read_all(*fh, chunk2 , 28, MPI_CHAR, MPI_STATUS_IGNORE);
-        MPI_File_read_at_all(*fh, globalstart, chunk, mysize, MPI_CHAR, MPI_STATUS_IGNORE);
+        MPI_File_read_at_all(*fh, globalstart, chunk, mysize, mpi_field_type, MPI_STATUS_IGNORE);
         chunk[mysize] = '\0';
 
 	MPI_Barrier(MPI_COMM_WORLD);
@@ -105,8 +110,8 @@ void parprocess(MPI_File *fh, const int rank, const int size, const int overlap)
 		}
 	}else{
 	 	MPI_Isend(chunk, mysize, MPI_CHAR, 0, 1, MPI_COMM_WORLD, &req);
-
 	}
+
 	free(chunk2);
         free(chunk);
 }
