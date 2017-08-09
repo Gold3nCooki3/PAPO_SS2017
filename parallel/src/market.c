@@ -64,39 +64,40 @@ void parprocess(MPI_File *fh, const int rank, const int size, const int overlap)
         //field strukt into MPI datarype
         MPI_Datatype mpi_field_type;
         MPI_Type_contiguous(3, MPI_INT, &mpi_field_type);
-		MPI_Type_commit(&mpi_field_type);
+	MPI_Type_commit(&mpi_field_type);
 
          /* figure out who reads what */
         MPI_File_get_size(*fh, &filesize);
         filesize--;  /* get rid of text file eof */
-        mysize = ((filesize-28)/sizeof(mpi_field_type))/size;
-        globalstart = rank * mysize;
+        mysize = filesize/size;
+        printf("%d, s(mpi_field): %d\n", mysize, sizeof(mpi_field_type));
+	/*globalstart = rank * mysize;
         globalend   = globalstart + mysize - 1;
         if (rank == size-1) globalend = filesize-1;
-
+	*/
         /* add overlap to the end of everyone's chunk except last proc... */
-        if (rank != size-1)
-            globalend += overlap;
+        //if (rank != size-1)
+        //globalend += overlap;
 
-        mysize =  globalend - globalstart + 1;
+        //mysize =  globalend - globalstart + 1;
 
         /* allocate memory */
-        chunk = malloc( (mysize + 1)*sizeof(char));
-        chunk2 = malloc(28*sizeof(char));
-
+        //chunk = malloc( (mysize + 1)*sizeof(mpi_field_type));
+        chunk2 = malloc(8*sizeof(char));
+	
         /* everyone reads in their part */
-        MPI_File_read_all(*fh, chunk2 , 28, MPI_CHAR, MPI_STATUS_IGNORE);
-        MPI_File_read_at_all(*fh, globalstart, chunk, mysize, mpi_field_type, MPI_STATUS_IGNORE);
-        chunk[mysize] = '\0';
+        MPI_File_read_all(*fh, chunk2 , 8, MPI_BYTE, MPI_STATUS_IGNORE);
+        //MPI_File_read_at_all(*fh, globalstart, chunk, mysize, mpi_field_type, MPI_STATUS_IGNORE);
+        //chunk[mysize] = '\0';
 
-	MPI_Barrier(MPI_COMM_WORLD);
+	//MPI_Barrier(MPI_COMM_WORLD);
 
 	if( rank == 0 ){
 		printf("\n %d: \n", rank);
-                for(int i = 0; i < 28; i++){
-                        printf("%c", chunk2[i]);
-                }
-                for(int i = 0; i < 200; i++){
+                for(int i = 0; i < 8; i++){
+                        printf("%d\n", chunk2[i]);
+                }}
+        /*        for(int i = 0; i < 200; i++){
                         printf("%c", chunk[i]);
                 }
                 printf("\n");printf("...\n");
@@ -111,9 +112,9 @@ void parprocess(MPI_File *fh, const int rank, const int size, const int overlap)
 	}else{
 	 	MPI_Isend(chunk, mysize, MPI_CHAR, 0, 1, MPI_COMM_WORLD, &req);
 	}
-
+	*/
 	free(chunk2);
-        free(chunk);
+        //free(chunk);
 }
 
 /*Initializes an 3d field array
