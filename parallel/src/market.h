@@ -39,6 +39,11 @@ marketmetainfo {
 	int columns;
 	int stories;
 
+	int startcolumn;
+	int startstorey;
+	int rank;
+	int size;
+
 	int shelf_count;
 	int lift_count;
 	int stock_count;

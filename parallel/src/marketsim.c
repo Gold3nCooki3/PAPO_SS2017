@@ -17,16 +17,11 @@ int main(int argc, char *argv[]){
 		default: break;
 	}*/
 
-	//field**** market;
-	//meta mmi;
-	int rank, size;
-	MPI_File in;
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-	MPI_Comm_size(MPI_COMM_WORLD, &size);
-	int err = MPI_File_open(MPI_COMM_WORLD, argv[1], MPI_MODE_RDONLY, MPI_INFO_NULL, &in);
-	if(err != 0) exit(EXIT_FAILURE);
-	parprocess(&in, rank, size, 0);
-	//market = import_market(argv[1], &mmi);
+	field**** market;
+	meta mmi;
+	MPI_Comm_rank(MPI_COMM_WORLD, &mmi->rank);
+	MPI_Comm_size(MPI_COMM_WORLD, &mmi->size);
+	market = import_market(argv[1], &mmi);
 	/*queue_t *empty_shelfs = queue_new();
 	queue_t *entity_queue = queue_new();
 	for(int i = 0; i < simulations; i++){//Anlaufen
@@ -49,8 +44,8 @@ int main(int argc, char *argv[]){
 	while(!queue_empty(empty_shelfs)){
 		free(queue_dequeue(empty_shelfs));
 	}*/
-	//free_market();
-	//free_meta();
+	free_market();
+	free_meta();
 	//queue_destroy(entity_queue);
 	//queue_destroy(empty_shelfs);
 	MPI_Finalize();

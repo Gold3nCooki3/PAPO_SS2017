@@ -15,8 +15,9 @@ int vec_equal(vector3 * vec1, vector3 * vec2){
  */
 field* in_matrix_g(vector3 vec){
 	if(global__market){
-		if(vec.z > global__mmi->stories -1 || vec.z < 0 || vec.y > global__mmi->columns -1|| vec.y < 0 || vec.x > global__mmi->rows -1 || vec.x < 0) return 0;
-		return global__market[vec.z][vec.y][vec.x];
+		vector3 vect = {vec.x,vec.y - global__mmi->startcolumn,vec.z - global__mmi->startstorey};
+		if(vect.z > global__mmi->stories -1 || vect.z < 0 || vect.y > global__mmi->columns -1|| vect.y < 0 || vect.x > global__mmi->rows -1 || vect.x < 0) return 0;
+		return global__market[vect.z][vect.y][vect.x];
 	}else{
 		printf("Error: no global matrix");
 		exit(EXIT_FAILURE);
@@ -49,56 +50,76 @@ int is_blocked(vector3 vec){
 /*
  *
  */
-void parprocess(MPI_File *fh, const int rank, const int size, const int overlap) {
+field* readfile(MPI_File *fh, meta * const mmi) {
 
 	MPI_Offset start, end, filesize;
 	MPI_Request req;
 	MPI_Datatype MPI_field;
 
-	int *firstline, fieldcount, mysize, flinecount = 8;
+	int *firstline, fieldcount, mysize, overlap, flinecount = 8;
+	int rank = mmi->rank, size = mmi->size;
 	field *field_chunk;
 
-        /*field strukt into MPI datatype*/
-        MPI_Type_contiguous(3, MPI_INT, &MPI_field);
+    /*field strukt into MPI datatype*/
+	MPI_Type_contiguous(3, MPI_INT, &MPI_field);
 	MPI_Type_commit(&MPI_field);
 
-        /* figure out who reads what */
-        MPI_File_get_size(*fh, &filesize);
+    /* figure out who reads what */
+    MPI_File_get_size(*fh, &filesize);
 	fieldcount 	= (filesize/sizeof(int) - flinecount) / 3;
 	mysize 		= fieldcount/size;
 	start 		= rank * mysize;
-        end   		= start + mysize;
-        if (rank == size-1) end = fieldcount;
+    end   		= start + mysize;
+    if (rank == size-1) end = fieldcount;
 
-	/* add overlap to the end of everyone's chunk except last proc... */
-        if (rank != size-1)
-        end 		+= overlap;
+	/* add overlap to the end of everyone's chunk except last process ... */
+    if (rank != size-1)
+    end 		+= overlap;
 	mysize 		= end - start;
 
 	/* make start to an adress in the file */
 	start  		= start * 3 * sizeof(int) + flinecount * sizeof(int);
 
-        /* allocate memory */
-        field_chunk	= malloc( mysize * sizeof(field));
+	/* allocate memory */
+    field_chunk	= malloc( mysize * sizeof(field));
 	firstline 	= malloc( flinecount * sizeof(int));
 
-        /* everyone reads in their part */
-        MPI_File_read_all(*fh, firstline , flinecount, MPI_INT, MPI_STATUS_IGNORE);
-        MPI_File_read_at_all(*fh, start, field_chunk, mysize, MPI_field, MPI_STATUS_IGNORE);
+	/* everyone reads in their part */
+	MPI_File_read_all(*fh, firstline , flinecount, MPI_INT, MPI_STATUS_IGNORE);
+	MPI_File_read_at_all(*fh, start, field_chunk, mysize, MPI_field, MPI_STATUS_IGNORE);
 
-	//switch endianess, when the processor is a little endian processor
+	/* switch endianess, when the processor is a little endian processor */
 	#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	for(int t = 0; t < flinecount; t++){
 		firstline[t] 		= __builtin_bswap32(firstline[t]);
 	}
+	#endif
+	mmi->rows = firstline[0];
+	mmi->columns = firstline[1];
+	mmi->stories = mysize / (firstline[0] *  firstline[1]) + 1;
+	mmi->startcolumn = ((mysize * rank) % (firstline[1] * firstline[0])) / firstline[1];
+	mmi->startstorey = ((mysize * rank) / (firstline[1] * firstline[0]));
+
 	for(int t = 0; t < mysize; t++){
+	#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 		field_chunk[t].type	= __builtin_bswap32(field_chunk[t].type);
 		field_chunk[t].content	= __builtin_bswap32(field_chunk[t].content);
 		field_chunk[t].amount	= __builtin_bswap32(field_chunk[t].amount);
+	#endif
+		switch (field_chunk[t].type){
+			case SHELF:		mmi->shelf_count++; break;
+			case LIFT:
+			case ESCALATOR:	mmi->lift_count++; break;
+			case REGISTER:	mmi->register_count++; break;
+			case STOCK:		mmi->stock_count++; break;
+			case EXIT:		mmi->exit_count++; break;
+			default: break;
+		}
+
 	}
 	#endif
 
-	//Print for testing
+	/*Print for testing
 	if( rank == 0 ){
 		printf("Process %d:\n", rank);
                 for(int t = 0; t < flinecount; t++){
@@ -132,8 +153,9 @@ void parprocess(MPI_File *fh, const int rank, const int size, const int overlap)
 	 	MPI_Isend(field_chunk, mysize, MPI_field, MASTER, DEBUGTAG, MPI_COMM_WORLD, &req);
 		printf("!!! T: %d, C: %d, A: %3d\n", field_chunk[0].type, field_chunk[0].content, field_chunk[0].amount);
 	}
+    */
 	free(firstline);
-        free(field_chunk);
+	return field_chunk;
 }
 
 /*Initializes an 3d field array
@@ -161,13 +183,11 @@ field**** create_market(int rows, int columns, int stories){
  */
 field**** import_market(char* path, meta *mmi){
 
-	FILE *file = fopen(path, "r");
-	if (file == NULL){
-		exit(EXIT_FAILURE);
-	}
-
-	fscanf(file, "%d,%d,%d,%d,%d,%d,%d,%d\n", &mmi->rows, &mmi->columns, &mmi->stories,
-			&mmi->shelf_count, &mmi->lift_count, &mmi->register_count, &mmi->stock_count, &mmi->exit_count);
+	MPI_File mallfile;
+	int err = MPI_File_open(MPI_COMM_WORLD, argv[1], MPI_MODE_RDONLY, MPI_INFO_NULL, &mallfile);
+	if(err != 0) exit(EXIT_FAILURE);
+	field* matrix = readfile(&in, mmi);
+	MPI_Fiele_close(mallfile);
 
 	//Allocate pointers to specific field types
 	vector3* shelves = malloc(sizeof(vector3)*mmi->shelf_count);
@@ -176,45 +196,38 @@ field**** import_market(char* path, meta *mmi){
 	vector3* registers = malloc(sizeof(vector3)*mmi->register_count);
 	vector3* exits = malloc(sizeof(vector3)*mmi->exit_count);
 
-	int q=0, w=0, e=0, r=0, t = 0, temp = 0;
+	int q=0, w=0, e=0, r=0, t = 0, index = 0;
 	
-	field* matrix = calloc(mmi->rows * mmi->columns * mmi->stories, sizeof(field));
 	field**** market = create_market(mmi->rows, mmi->columns, mmi->stories);
+
 	for(int a = 0; a < mmi->stories; a++){
 		for(int b = 0; b < mmi->columns; b++){
 			for(int c = 0; c < mmi->rows; c++){
-				fscanf(file, "%d,%d,%d\n",
-					&matrix[temp].type,
-					&matrix[temp].content,
-					&matrix[temp].amount);
-				market[a][b][c] = &matrix[temp];
+				market[a][b][c] = &matrix[index++];
 				vector3 v = {c,b,a};
-				temp++;
-				//printf("(%d, %d, %d)\n",c,b,a);
 				switch(market[a][b][c]->type) {
-				case SHELF:
-					shelves[q++] = v;
-					break;
-				case LIFT:
-				case ESCALATOR:
-					lifts[w++] = v;
-					break;
-				case REGISTER:
-					registers[e++] = v;
-					break;
-				case STOCK:
-					stocks[r++] = v;
-					break;
-				case EXIT:
-					exits[t++] = v;
-					break;
-				default:
+					case SHELF:
+						shelves[q++] = v;
+						break;
+					case LIFT:
+					case ESCALATOR:
+						lifts[w++] = v;
+						break;
+					case REGISTER:
+						registers[e++] = v;
+						break;
+					case STOCK:
+						stocks[r++] = v;
+						break;
+					case EXIT:
+						exits[t++] = v;
+						break;
+					default:
 					break;
 				}
 			}
 		}
 	}
-	fclose(file);
 
 	mmi->shelf_fields = shelves;
 	mmi->lift_fields = lifts;
