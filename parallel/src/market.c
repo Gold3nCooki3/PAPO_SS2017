@@ -56,7 +56,7 @@ field* readfile(MPI_File *fh, meta * const mmi) {
 	MPI_Request req;
 	MPI_Datatype MPI_field;
 
-	int *firstline, fieldcount, mysize, overlap = 0, flinecount = 8;
+	int *firstline, fieldcount, linecount, mysize, overlap = 0, flinecount = 8;
 	int rank = mmi->rank, size = mmi->size;
 	field *field_chunk;
 
@@ -64,28 +64,32 @@ field* readfile(MPI_File *fh, meta * const mmi) {
 	MPI_Type_contiguous(3, MPI_INT, &MPI_field);
 	MPI_Type_commit(&MPI_field);
 
+	    MPI_File_get_size(*fh, &filesize);
+
+    /* all processes read first line*/
+	firstline 	= malloc( flinecount * sizeof(int));
+	MPI_File_read_all(*fh, firstline , flinecount, MPI_INT, MPI_STATUS_IGNORE);
+
 	/* figure out who reads what */
-    	MPI_File_get_size(*fh, &filesize);
 	fieldcount 	= (filesize/sizeof(int) - flinecount) / 3;
-	mysize 		= fieldcount/size;
+	linecount	= fieldcount / firstline[0];
+	mysize 		= linecount/size;
 	start 		= rank * mysize;
-    	end   		= start + mysize;
+	end   		= start + mysize;
 	if (rank == size-1) end = fieldcount;
 
 	/* add overlap to the end of everyone's chunk except last process ... */
 	if (rank != size-1)
 	end 		+= overlap;
-	mysize 		= end - start;
+	mysize 		= (end - start) * firstline[0] ; // (new_endline - startline) * elements per line
 
 	/* make start to an adress in the file */
-	start  		= start * 3 * sizeof(int) + flinecount * sizeof(int);
+	start  		= start * firstline[0] * 3 * sizeof(int)  + flinecount * sizeof(int);
 
 	/* allocate memory */
 	field_chunk	= malloc( mysize * sizeof(field));
-	firstline 	= malloc( flinecount * sizeof(int));
 
 	/* everyone reads in their part */
-	MPI_File_read_all(*fh, firstline , flinecount, MPI_INT, MPI_STATUS_IGNORE);
 	MPI_File_read_at_all(*fh, start, field_chunk, mysize, MPI_field, MPI_STATUS_IGNORE);
 
 	/* switch endianess, when the processor is a little endian processor */
@@ -151,7 +155,6 @@ field* readfile(MPI_File *fh, meta * const mmi) {
 		}
 	}else{
 	 	MPI_Isend(field_chunk, mysize, MPI_field, MASTER, DEBUGTAG, MPI_COMM_WORLD, &req);
-		//printf("!!! T: %d, C: %d, A: %3d\n", field_chunk[0].type, field_chunk[0].content, field_chunk[0].amount);
 	}
     
 	free(firstline);
