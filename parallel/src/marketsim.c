@@ -18,27 +18,27 @@ int main(int argc, char *argv[]){
 	}*/
 
 	field**** market;
-	meta mmi;
+	meta *mmi = calloc(1, sizeof(meta));
 	MPI_Comm_rank(MPI_COMM_WORLD, &mmi->rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &mmi->size);
-	market = import_market(argv[1], &mmi);
+	market = import_market(argv[1], mmi);
 	/*queue_t *empty_shelfs = queue_new();
 	queue_t *entity_queue = queue_new();
 	for(int i = 0; i < simulations; i++){//Anlaufen
-		eployeespawns = mmi.empty_count/employeebag;
+		eployeespawns = mmi->empty_count/employeebag;
 		for(int c = 0; c < customerspawns; c++){
-			spawn_entity(&mmi, entity_queue, empty_shelfs,CUSTOMER);
-			if(c < eployeespawns)spawn_entity(&mmi, entity_queue, empty_shelfs, EMPLOYEE);
+			spawn_entity(mmi, entity_queue, empty_shelfs,CUSTOMER);
+			if(c < eployeespawns)spawn_entity(mmi, entity_queue, empty_shelfs, EMPLOYEE);
 		}
-		work_queue(&mmi, entity_queue, empty_shelfs);
+		work_queue(mmi, entity_queue, empty_shelfs);
 		print_queue(entity_queue);
 	}
 	while(!queue_empty(entity_queue)){ //Auslaufen
-		eployeespawns = mmi.empty_count/employeebag;
+		eployeespawns = mmi->empty_count/employeebag;
 		for(int c = 0; c < eployeespawns; c++){
-			spawn_entity(&mmi, entity_queue, empty_shelfs, EMPLOYEE);
+			spawn_entity(mmi, entity_queue, empty_shelfs, EMPLOYEE);
 		}
-		work_queue(&mmi, entity_queue, empty_shelfs);
+		work_queue(mmi, entity_queue, empty_shelfs);
 		print_queue(entity_queue);
 	}
 	while(!queue_empty(empty_shelfs)){

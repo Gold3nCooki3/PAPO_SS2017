@@ -56,32 +56,32 @@ field* readfile(MPI_File *fh, meta * const mmi) {
 	MPI_Request req;
 	MPI_Datatype MPI_field;
 
-	int *firstline, fieldcount, mysize, overlap, flinecount = 8;
+	int *firstline, fieldcount, mysize, overlap = 0, flinecount = 8;
 	int rank = mmi->rank, size = mmi->size;
 	field *field_chunk;
 
-    /*field strukt into MPI datatype*/
+	/* field strukt into MPI datatype */
 	MPI_Type_contiguous(3, MPI_INT, &MPI_field);
 	MPI_Type_commit(&MPI_field);
 
-    /* figure out who reads what */
-    MPI_File_get_size(*fh, &filesize);
+	/* figure out who reads what */
+    	MPI_File_get_size(*fh, &filesize);
 	fieldcount 	= (filesize/sizeof(int) - flinecount) / 3;
 	mysize 		= fieldcount/size;
 	start 		= rank * mysize;
-    end   		= start + mysize;
-    if (rank == size-1) end = fieldcount;
+    	end   		= start + mysize;
+	if (rank == size-1) end = fieldcount;
 
 	/* add overlap to the end of everyone's chunk except last process ... */
-    if (rank != size-1)
-    end 		+= overlap;
+	if (rank != size-1)
+	end 		+= overlap;
 	mysize 		= end - start;
 
 	/* make start to an adress in the file */
 	start  		= start * 3 * sizeof(int) + flinecount * sizeof(int);
 
 	/* allocate memory */
-    field_chunk	= malloc( mysize * sizeof(field));
+	field_chunk	= malloc( mysize * sizeof(field));
 	firstline 	= malloc( flinecount * sizeof(int));
 
 	/* everyone reads in their part */
@@ -96,7 +96,8 @@ field* readfile(MPI_File *fh, meta * const mmi) {
 	#endif
 	mmi->rows = firstline[0];
 	mmi->columns = firstline[1];
-	mmi->stories = mysize / (firstline[0] *  firstline[1]) + 1;
+	mmi->stories = mysize / (firstline[0] *  firstline[1]);
+	mmi->stories = ( mmi->stories == 0 ) ? 1 : mmi->stories;
 	mmi->startcolumn = ((mysize * rank) % (firstline[1] * firstline[0])) / firstline[1];
 	mmi->startstorey = ((mysize * rank) / (firstline[1] * firstline[0]));
 
@@ -117,9 +118,8 @@ field* readfile(MPI_File *fh, meta * const mmi) {
 		}
 
 	}
-	#endif
 
-	/*Print for testing
+ 	/*Print for testing*/
 	if( rank == 0 ){
 		printf("Process %d:\n", rank);
                 for(int t = 0; t < flinecount; t++){
@@ -151,9 +151,9 @@ field* readfile(MPI_File *fh, meta * const mmi) {
 		}
 	}else{
 	 	MPI_Isend(field_chunk, mysize, MPI_field, MASTER, DEBUGTAG, MPI_COMM_WORLD, &req);
-		printf("!!! T: %d, C: %d, A: %3d\n", field_chunk[0].type, field_chunk[0].content, field_chunk[0].amount);
+		//printf("!!! T: %d, C: %d, A: %3d\n", field_chunk[0].type, field_chunk[0].content, field_chunk[0].amount);
 	}
-    */
+    
 	free(firstline);
 	return field_chunk;
 }
@@ -184,10 +184,10 @@ field**** create_market(int rows, int columns, int stories){
 field**** import_market(char* path, meta *mmi){
 
 	MPI_File mallfile;
-	int err = MPI_File_open(MPI_COMM_WORLD, argv[1], MPI_MODE_RDONLY, MPI_INFO_NULL, &mallfile);
+	int err = MPI_File_open(MPI_COMM_WORLD, path, MPI_MODE_RDONLY, MPI_INFO_NULL, &mallfile);
 	if(err != 0) exit(EXIT_FAILURE);
-	field* matrix = readfile(&in, mmi);
-	MPI_Fiele_close(mallfile);
+	field* matrix = readfile(&mallfile, mmi);
+	MPI_File_close(&mallfile);
 
 	//Allocate pointers to specific field types
 	vector3* shelves = malloc(sizeof(vector3)*mmi->shelf_count);
@@ -260,4 +260,5 @@ void free_meta(){
 	free(global__mmi->stock_fields);
 	free(global__mmi->register_fields);
 	free(global__mmi->exit_fields);
+	free(global__mmi);
 }
