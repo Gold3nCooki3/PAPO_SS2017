@@ -81,7 +81,7 @@ field* readfile(MPI_File *fh, meta * const mmi) {
 	mysize 		= linecount/size;
 	start 		= rank * mysize;
 	end   		= start + mysize;
-	if (rank == size-1) end = fieldcount;
+	if (rank == size-1) end = linecount;
 
 	/* add overlap to the end of everyone's chunk except last process ... */
 	if (rank != size-1)
