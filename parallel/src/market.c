@@ -50,71 +50,90 @@ int is_blocked(vector3 vec){
  *
  */
 void parprocess(MPI_File *fh, const int rank, const int size, const int overlap) {
-	MPI_Offset globalstart;
-    int mysize;
-    char *chunk, *chunk2;
-    MPI_Request   req;
-	  /* read in relevant chunk of file into "chunk",
-     * which starts at location in the file globalstart
-     * and has size mysize
-     */
-        MPI_Offset globalend;
-        MPI_Offset filesize;
 
-        //field strukt into MPI datarype
-        MPI_Datatype mpi_field_type;
-        MPI_Type_contiguous(3, MPI_INT, &mpi_field_type);
-	MPI_Type_commit(&mpi_field_type);
+	MPI_Offset start, end, filesize;
+	MPI_Request req;
+	MPI_Datatype MPI_field;
 
-         /* figure out who reads what */
+	int *firstline, fieldcount, mysize, flinecount = 8;
+	field *field_chunk;
+
+        /*field strukt into MPI datatype*/
+        MPI_Type_contiguous(3, MPI_INT, &MPI_field);
+	MPI_Type_commit(&MPI_field);
+
+        /* figure out who reads what */
         MPI_File_get_size(*fh, &filesize);
-        filesize--;  /* get rid of text file eof */
-        mysize = filesize/size;
-        printf("%d, s(mpi_field): %d\n", mysize, sizeof(mpi_field_type));
-	/*globalstart = rank * mysize;
-        globalend   = globalstart + mysize - 1;
-        if (rank == size-1) globalend = filesize-1;
-	*/
-        /* add overlap to the end of everyone's chunk except last proc... */
-        //if (rank != size-1)
-        //globalend += overlap;
+	fieldcount 	= (filesize/sizeof(int) - flinecount) / 3;
+	mysize 		= fieldcount/size;
+	start 		= rank * mysize;
+        end   		= start + mysize;
+        if (rank == size-1) end = fieldcount;
 
-        //mysize =  globalend - globalstart + 1;
+	/* add overlap to the end of everyone's chunk except last proc... */
+        if (rank != size-1)
+        end 		+= overlap;
+	mysize 		= end - start;
+
+	/* make start to an adress in the file */
+	start  		= start * 3 * sizeof(int) + flinecount * sizeof(int);
 
         /* allocate memory */
-        //chunk = malloc( (mysize + 1)*sizeof(mpi_field_type));
-        chunk2 = malloc(8*sizeof(char));
-	
+        field_chunk	= malloc( mysize * sizeof(field));
+	firstline 	= malloc( flinecount * sizeof(int));
+
         /* everyone reads in their part */
-        MPI_File_read_all(*fh, chunk2 , 8, MPI_BYTE, MPI_STATUS_IGNORE);
-        //MPI_File_read_at_all(*fh, globalstart, chunk, mysize, mpi_field_type, MPI_STATUS_IGNORE);
-        //chunk[mysize] = '\0';
+        MPI_File_read_all(*fh, firstline , flinecount, MPI_INT, MPI_STATUS_IGNORE);
+        MPI_File_read_at_all(*fh, start, field_chunk, mysize, MPI_field, MPI_STATUS_IGNORE);
 
-	//MPI_Barrier(MPI_COMM_WORLD);
+	//switch endianess, when the processor is a little endian processor
+	#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	for(int t = 0; t < flinecount; t++){
+		firstline[t] 		= __builtin_bswap32(firstline[t]);
+	}
+	for(int t = 0; t < mysize; t++){
+		field_chunk[t].type	= __builtin_bswap32(field_chunk[t].type);
+		field_chunk[t].content	= __builtin_bswap32(field_chunk[t].content);
+		field_chunk[t].amount	= __builtin_bswap32(field_chunk[t].amount);
+	}
+	#endif
 
+	//Print for testing
 	if( rank == 0 ){
-		printf("\n %d: \n", rank);
-                for(int i = 0; i < 8; i++){
-                        printf("%d\n", chunk2[i]);
-                }}
-        /*        for(int i = 0; i < 200; i++){
-                        printf("%c", chunk[i]);
+		printf("Process %d:\n", rank);
+                for(int t = 0; t < flinecount; t++){
+                        printf("%d, ", firstline[t]);
                 }
-                printf("\n");printf("...\n");
-		int b = 1;
-		for(; b < size; b++){
-			int ieee = MPI_Recv(chunk, mysize+1, MPI_CHAR, b, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-       			for(int i = 0; i < 20; i++){
-       				printf("%c", chunk[i]);
-       			}
-			printf("\n");printf("...\n");
+		printf("\n");
+		for(int i = 0; i < mysize; i++){
+			int z = i / (firstline[1] * firstline[0]) ;
+			int y = (i % (firstline[1] * firstline[0])) / firstline[1];
+			int x = (i % (firstline[1] * firstline[0])) % firstline[1];
+			printf("X: %2d, Y: %2d, Z: %2d ", x, y, z);
+                        printf("T: %d, C: %d, A: %3d\n", field_chunk[i].type, field_chunk[i].content, field_chunk[i].amount);
+                }
+                printf("\n");
+
+		for(int source = 1; source < size; source++){
+			printf("Process: %d\n", source);
+			int err = MPI_Recv(field_chunk, mysize, MPI_field, source, DEBUGTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+       			int gi = source * mysize;
+			printf("gi = %d, err = %d\n", gi, err);
+			for(int i = 0; i < mysize; i++){
+				gi += 1;
+                	        int z = (gi / (firstline[1] * firstline[0]));
+                       		int y = (gi % (firstline[1] * firstline[0])) / firstline[1];
+                        	int x = (gi % (firstline[1] * firstline[0])) % firstline[1];
+                        	printf("X: %2d, Y: %2d, Z: %2d ", x, y, z);
+                        	printf("T: %d, C: %d, A: %3d\n", field_chunk[i].type, field_chunk[i].content, field_chunk[i].amount);
+                	}
 		}
 	}else{
-	 	MPI_Isend(chunk, mysize, MPI_CHAR, 0, 1, MPI_COMM_WORLD, &req);
+	 	MPI_Isend(field_chunk, mysize, MPI_field, MASTER, DEBUGTAG, MPI_COMM_WORLD, &req);
+		printf("!!! T: %d, C: %d, A: %3d\n", field_chunk[0].type, field_chunk[0].content, field_chunk[0].amount);
 	}
-	*/
-	free(chunk2);
-        //free(chunk);
+	free(firstline);
+        free(field_chunk);
 }
 
 /*Initializes an 3d field array

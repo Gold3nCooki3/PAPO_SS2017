@@ -3,6 +3,8 @@
 
 #define TRUE 1
 #define FALSE 0
+#define MASTER 0
+#define DEBUGTAG 1
 
 #include <stdlib.h>
 #include <stdio.h>

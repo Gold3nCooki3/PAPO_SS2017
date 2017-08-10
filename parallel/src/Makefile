@@ -1,5 +1,5 @@
 CC = mpicc
-CFLAGS = -std=c99 -g -Wall
+CFLAGS = -std=c99 -g -Wall -O0
 BIN=prog.exe
 OBJ = marketsim.o market.o entity.o queue.o  program_test.o AStar.o
 

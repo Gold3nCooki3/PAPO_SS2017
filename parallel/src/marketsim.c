@@ -2,7 +2,6 @@
 
 int main(int argc, char *argv[]){
 	MPI_Init(&argc, &argv);
-	printf("Hello Word\n");
 	if (argc < 2) exit(EXIT_FAILURE);
 	srand(time(NULL));
 	/*int maxeployees = 5;
@@ -24,8 +23,8 @@ int main(int argc, char *argv[]){
 	MPI_File in;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
-	printf("r: %d\n", rank);
-	MPI_File_open(MPI_COMM_WORLD, argv[1], MPI_MODE_RDONLY, MPI_INFO_NULL, &in);
+	int err = MPI_File_open(MPI_COMM_WORLD, argv[1], MPI_MODE_RDONLY, MPI_INFO_NULL, &in);
+	if(err != 0) exit(EXIT_FAILURE);
 	parprocess(&in, rank, size, 0);
 	//market = import_market(argv[1], &mmi);
 	/*queue_t *empty_shelfs = queue_new();
