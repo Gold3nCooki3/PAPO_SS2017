@@ -60,15 +60,20 @@ field* readfile(MPI_File *fh, meta * const mmi) {
 	int rank = mmi->rank, size = mmi->size;
 	field *field_chunk;
 
-	/* field strukt into MPI datatype */
+	/* field struct into MPI datatype */
 	MPI_Type_contiguous(3, MPI_INT, &MPI_field);
 	MPI_Type_commit(&MPI_field);
 
-	    MPI_File_get_size(*fh, &filesize);
+	MPI_File_get_size(*fh, &filesize);
 
     /* all processes read first line*/
 	firstline 	= malloc( flinecount * sizeof(int));
 	MPI_File_read_all(*fh, firstline , flinecount, MPI_INT, MPI_STATUS_IGNORE);
+	#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	for(int t = 0; t < flinecount; t++){
+		firstline[t] 		= __builtin_bswap32(firstline[t]);
+	}
+	#endif
 
 	/* figure out who reads what */
 	fieldcount 	= (filesize/sizeof(int) - flinecount) / 3;
@@ -92,12 +97,7 @@ field* readfile(MPI_File *fh, meta * const mmi) {
 	/* everyone reads in their part */
 	MPI_File_read_at_all(*fh, start, field_chunk, mysize, MPI_field, MPI_STATUS_IGNORE);
 
-	/* switch endianess, when the processor is a little endian processor */
-	#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-	for(int t = 0; t < flinecount; t++){
-		firstline[t] 		= __builtin_bswap32(firstline[t]);
-	}
-	#endif
+	/* import values in meta object */
 	mmi->rows = firstline[0];
 	mmi->columns = firstline[1];
 	mmi->stories = mysize / (firstline[0] *  firstline[1]);
@@ -105,6 +105,7 @@ field* readfile(MPI_File *fh, meta * const mmi) {
 	mmi->startcolumn = ((mysize * rank) % (firstline[1] * firstline[0])) / firstline[1];
 	mmi->startstorey = ((mysize * rank) / (firstline[1] * firstline[0]));
 
+	/* switch endianess, when the processor is a little endian processor */
 	for(int t = 0; t < mysize; t++){
 	#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 		field_chunk[t].type	= __builtin_bswap32(field_chunk[t].type);
