@@ -44,7 +44,9 @@ int main(int argc, char *argv[]){
 	while(!queue_empty(empty_shelfs)){
 		free(queue_dequeue(empty_shelfs));
 	}*/
+	printf("Free Market\n");
 	free_market();
+	printf("free Meta");
 	free_meta();
 	//queue_destroy(entity_queue);
 	//queue_destroy(empty_shelfs);

@@ -130,34 +130,39 @@ field* readfile(MPI_File *fh, meta * const mmi) {
                 for(int t = 0; t < flinecount; t++){
                         printf("%d, ", firstline[t]);
                 }
-		printf("\n");
 		for(int i = 0; i < mysize; i++){
-			int z = i / (firstline[1] * firstline[0]) ;
-			int y = (i % (firstline[1] * firstline[0])) / firstline[1];
-			int x = (i % (firstline[1] * firstline[0])) % firstline[1];
-			printf("X: %2d, Y: %2d, Z: %2d ", x, y, z);
+                        int z = i / (firstline[1] * firstline[0]) ;
+                        int y = (i % (firstline[1] * firstline[0])) / firstline[1];
+                        int x = (i % (firstline[1] * firstline[0])) % firstline[1];
+                        printf("X: %2d, Y: %2d, Z: %2d ", x, y, z);
                         printf("T: %d, C: %d, A: %3d\n", field_chunk[i].type, field_chunk[i].content, field_chunk[i].amount);
                 }
-                printf("\n");
+		printf("\n");
 
 		for(int source = 1; source < size; source++){
 			printf("Process: %d\n", source);
-			int err = MPI_Recv(field_chunk, mysize, MPI_field, source, DEBUGTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			int chunk_size;
+			int err = MPI_Recv(&chunk_size, 1, MPI_INT, source, DEBUGTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			field* print_chunk = malloc(chunk_size * sizeof(field));
+			err += MPI_Recv(print_chunk, chunk_size, MPI_field, source, DEBUGTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
        			int gi = source * mysize;
-			printf("gi = %d, err = %d\n", gi, err);
-			for(int i = 0; i < mysize; i++){
-				gi += 1;
-                	        int z = (gi / (firstline[1] * firstline[0]));
+			printf("CS: %d  NS: %d\n", chunk_size, mysize);
+			for(int i = 0; i < chunk_size; i++){
+		     	        int z = (gi / (firstline[1] * firstline[0]));
                        		int y = (gi % (firstline[1] * firstline[0])) / firstline[1];
                         	int x = (gi % (firstline[1] * firstline[0])) % firstline[1];
                         	printf("X: %2d, Y: %2d, Z: %2d ", x, y, z);
-                        	printf("T: %d, C: %d, A: %3d\n", field_chunk[i].type, field_chunk[i].content, field_chunk[i].amount);
-                	}
+                        	printf("T: %2d, C: %3d, A: %3d\n", print_chunk[i].type, print_chunk[i].content, print_chunk[i].amount);
+                		gi++;
+			}
+			free(print_chunk);
 		}
 	}else{
+		field_chunk[0].amount = 42;
+		field_chunk[mysize-1].amount = 666;
+		MPI_Isend(&mysize, 1, MPI_INT, MASTER, DEBUGTAG, MPI_COMM_WORLD, &req);
 	 	MPI_Isend(field_chunk, mysize, MPI_field, MASTER, DEBUGTAG, MPI_COMM_WORLD, &req);
 	}
-    
 	free(firstline);
 	return field_chunk;
 }
@@ -193,6 +198,7 @@ field**** import_market(char* path, meta *mmi){
 	field* matrix = readfile(&mallfile, mmi);
 	MPI_File_close(&mallfile);
 
+
 	//Allocate pointers to specific field types
 	vector3* shelves = malloc(sizeof(vector3)*mmi->shelf_count);
 	vector3* lifts = malloc(sizeof(vector3)*mmi->lift_count);
@@ -201,9 +207,9 @@ field**** import_market(char* path, meta *mmi){
 	vector3* exits = malloc(sizeof(vector3)*mmi->exit_count);
 
 	int q=0, w=0, e=0, r=0, t = 0, index = 0;
-	
+	MPI_Barrier(MPI_COMM_WORLD);
 	field**** market = create_market(mmi->rows, mmi->columns, mmi->stories);
-
+	printf("rank: %3d, s: %5d, l: %3d, st: %3d, r: %3d, e: %3d\n", mmi->rank, mmi->shelf_count, mmi->lift_count, mmi->stock_count, mmi->register_count, mmi->exit_count);
 	for(int a = 0; a < mmi->stories; a++){
 		for(int b = 0; b < mmi->columns; b++){
 			for(int c = 0; c < mmi->rows; c++){
@@ -232,7 +238,6 @@ field**** import_market(char* path, meta *mmi){
 			}
 		}
 	}
-
 	mmi->shelf_fields = shelves;
 	mmi->lift_fields = lifts;
 	mmi->stock_fields = stocks;
