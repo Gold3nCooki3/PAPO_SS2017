@@ -35,18 +35,19 @@ void collect_entities(queue_t* const queue, int rank, int chunk_length, PrintEnt
 
 void print_queue_parallel(queue_t* const queue, meta *mmi){
 	int chunk_length = mmi->entity_count;
+	MPI_Request req;
 	PrintEntity* print_chunk = malloc(mmi->entity_count * sizeof(print_chunk));
 	MPI_Datatype MPI_PrintEntity;
 	MPI_Type_contiguous(10, MPI_INT, &MPI_PrintEntity);
 	MPI_Type_commit(&MPI_PrintEntity);
 
 
-	if(rank == MASTER){
+	if(mmi->rank == MASTER){
 		//print own data
 		collect_entities(queue, MASTER, chunk_length, print_chunk);
 
 		// get data
-		for(int source = 1; source < size; source++){
+		for(int source = 1; source < mmi->size; source++){
 			MPI_Recv(&chunk_length, 1, MPI_INT, source, PRINTTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 			realloc(print_chunk, chunk_length);
 			MPI_Recv(print_chunk, chunk_length, MPI_PrintEntity, source, PRINTTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -63,8 +64,8 @@ void print_queue_parallel(queue_t* const queue, meta *mmi){
 		collect_entities(queue, mmi->rank, chunk_length, print_chunk);
 
 		//send data
-		MPI_Isend(&chunk_length, 1, MPI_INT, MASTER, PRINTTAG, MPI_COMM_WORLD);
-		MPI_Isend(print_chunk, chunk_length, MPI_PrintEntity, MASTER, PRINTTAG, MPI_COMM_WORLD);
+		MPI_Isend(&chunk_length, 1, MPI_INT, MASTER, PRINTTAG, MPI_COMM_WORLD, &req);
+		MPI_Isend(print_chunk, chunk_length, MPI_PrintEntity, MASTER, PRINTTAG, MPI_COMM_WORLD,  &req);
 	}
 	free(print_chunk);
 }
