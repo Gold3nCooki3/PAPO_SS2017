@@ -25,7 +25,7 @@ int main(int argc, char *argv[]){
 	queue_t *empty_shelfs = queue_new();
 	queue_t *entity_queue = queue_new();
 	if(mmi->exit_count > 0) spawn_entity(mmi, entity_queue, empty_shelfs,CUSTOMER);
-	print_queue_parallel(empty_shelfs, mmi);
+	print_queue_parallel(entity_queue, mmi);
 	/*for(int i = 0; i < simulations; i++){//Anlaufen
 		//eployeespawns = mmi->empty_count/employeebag;
 		for(int c = 0; c < customerspawns; c++){

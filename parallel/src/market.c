@@ -124,7 +124,7 @@ field* readfile(MPI_File *fh, meta * const mmi) {
 
 	}
 
- 	/*Print for testing*/
+ 	/*Print for testing
 	if( rank == 0 ){
 		printf("Process %d:\n", rank);
                 for(int t = 0; t < flinecount; t++){
@@ -160,7 +160,7 @@ field* readfile(MPI_File *fh, meta * const mmi) {
 	}else{
 		MPI_Isend(&chunksize, 1, MPI_INT, MASTER, DEBUGTAG, MPI_COMM_WORLD, &req);
 	 	MPI_Isend(field_chunk, chunksize, MPI_field, MASTER, DEBUGTAG, MPI_COMM_WORLD, &req);
-	}
+	}*/
 	free(firstline);
 	return field_chunk;
 }

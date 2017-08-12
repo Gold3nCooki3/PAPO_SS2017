@@ -242,4 +242,5 @@ void spawn_entity(meta* const mmi, queue_t* const entity_queue, queue_t* const e
 		e->list = list;
 	queue_enqueue(entity_queue, e);
 	counter++;
+	mmi->entity_count = counter;
 }
