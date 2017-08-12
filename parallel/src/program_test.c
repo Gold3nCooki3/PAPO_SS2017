@@ -49,7 +49,7 @@ void print_queue_parallel(queue_t* const queue, meta *mmi){
 		// get data
 		for(int source = 1; source < mmi->size; source++){
 			MPI_Recv(&chunk_length, 1, MPI_INT, source, PRINTTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-			realloc(print_chunk, chunk_length);
+			print_chunk = realloc(print_chunk, chunk_length);
 			MPI_Recv(print_chunk, chunk_length, MPI_PrintEntity, source, PRINTTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 			// print data
 			for(int i = 0; i < chunk_length; i++ ){
