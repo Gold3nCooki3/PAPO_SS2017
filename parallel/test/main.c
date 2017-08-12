@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include "mpi.h"
+
+
 
 void fn1(MPI_File *fh, int rank, int size){
 	char *buf;
@@ -16,7 +17,7 @@ void fn1(MPI_File *fh, int rank, int size){
 
 	printf("%d\n", buf[0]);
 	printf("%d\n", buf[3]);
-	printf("i: %d\n", buf2[0]);
+	printf("i: %d\n",  __builtin_bswap32(buf2[0]));
 
 	free(buf);
 	free(buf2);

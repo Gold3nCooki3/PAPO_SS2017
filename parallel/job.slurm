@@ -1,12 +1,9 @@
 #!/bin/bash
 
-#SBATCH --time=1
-# Run ten tasks on two nodes.
+#SBATCH --time=5
 #SBATCH -N 4
 #SBATCH -n 4
-# Use "west" partition.
 #SBATCH --partition=west
-# Output goes to "output.out", error messages to "error.err".
 #SBATCH --output=job.out
 #SBATCH --error=job.err
 
@@ -18,5 +15,4 @@ then
 	export MPICH_NEMESIS_NETMOD=ib
 fi
 
-#srun hostname
-mpirun ./src/prog ./testdata2.mall 
+mpirun ./src/prog ./data/testdata4.mall.hex 
