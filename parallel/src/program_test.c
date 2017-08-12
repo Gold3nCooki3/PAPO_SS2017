@@ -6,109 +6,65 @@ rand_vector3(int x, int y, int z){
 	return v;
 }
 
-void print_queue(queue_t* queue){
+void collect_entities(queue_t* const queue, int rank, int chunk_length, PrintEntity* print_chunk){
 	struct queue_node_s *node = queue->front;
-		while(node != NULL){
+		int i = 0;
+		while(node != NULL && i < chunk_length){
 			entity* e = node->data;
-			//printf("p: %12p",queue);
-			//printf(" pn: %12p",queue->front);
-			//printf(" fp: %12p",node->next);
-			printf(" bp: %12p",node);
-			int p = (e->path_position > 0) ? ASPathGetCount(e->path) : 0;
-			printf(" pp: %2d",e->path_position);
-			printf(" pc: %2d",p);
-			printf(" id: %4d, type: %d, pos: (%2d,%2d,%2d), dest: (%2d,%2d,%2d) \n",
-				e->id, e ->type, e->position.x, e->position.y, e->position.z, e->list[e->listpos].x, e->list[e->listpos].y, e->list[e->listpos].z, e);
+			int pc = (e->path_position > 0) ? ASPathGetCount(e->path) : 0;
+			if(rank == MASTER){
+				printf("id: %4d, type: %d, pathpos: %3d, pathcount: %3d,  pos: (%2d,%2d,%2d), dest: (%2d,%2d,%2d) \n",
+				e->id, e->type,e->path_position, pc, e->position.x, e->position.y, e->position.z, e->list[e->listpos].x, e->list[e->listpos].y, e->list[e->listpos].z);
+			}else{
+				print_chunk[i].pathpos = e->path_position;
+				print_chunk[i].pathcount = pc;
+				print_chunk[i].id = e->id;
+				print_chunk[i].type = e->type;
+				print_chunk[i].posx = e->position.x;
+				print_chunk[i].posy = e->position.y;
+				print_chunk[i].posz = e->position.z;
+				print_chunk[i].destx = e->list[e->listpos].x;
+				print_chunk[i].desty = e->list[e->listpos].y;
+				print_chunk[i].destz = e->list[e->listpos].z;
+			}
+			i++;
 			node = node->next;
 		}
-		printf("\n \n");
 }
 
 
-/*
-int test_vec_equal(){
-	int c = 0;
-	vector3 vec1 = {1,1,1};
-	vector3 vec2 = {1,1,1};
-	if(!vec_equal(&vec1, &vec2)) c++;
+void print_queue_parallel(queue_t* const queue, meta *mmi){
+	int chunk_length = mmi->entity_count;
+	PrintEntity* print_chunk = malloc(mmi->entity_count * sizeof(print_chunk));
+	MPI_Datatype MPI_PrintEntity;
+	MPI_Type_contiguous(10, MPI_INT, &MPI_PrintEntity);
+	MPI_Type_commit(&MPI_PrintEntity);
 
-	vector3 vec3 = { 1, 100 ,1000};
-	vector3 vec4 = { 1, 1 ,1 };
-	if(vec_equal(&vec3, &vec4)) c++;
 
-	vector3 vec5 = { 0, 0 ,0};
-	vector3 vec6 = { 0, 0 ,0};
-	if(!vec_equal(&vec5, &vec6)) c++;
-	if(c > 0){
-		printf("Error test vec\n");
-	}return c;
-}
+	if(rank == MASTER){
+		//print own data
+		collect_entities(queue, MASTER, chunk_length, print_chunk);
 
-field*** test_import_market(char * path,int * y, int * z){
-	int c = 0;
-	int x;
-	meta mmi;
-	field*** m = import_market(path, &mmi);
-	if(m[0][0][0].type != 0 ||
-			m[0][0][0].content != 0 ||
-			m[0][0][0].amount != 0)  c++;
+		// get data
+		for(int source = 1; source < size; source++){
+			MPI_Recv(&chunk_length, 1, MPI_INT, source, PRINTTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			realloc(print_chunk, chunk_length);
+			MPI_Recv(print_chunk, chunk_length, MPI_PrintEntity, source, PRINTTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			// print data
+			for(int i = 0; i < chunk_length; i++ ){
+				printf("id: %4d, type: %d, pathpos: %3d, pathcount: %3d,  pos: (%2d,%2d,%2d), dest: (%2d,%2d,%2d) \n",
+						print_chunk[i].id, print_chunk[i].type, print_chunk[i].pathpos, print_chunk[i].pathcount,
+						print_chunk[i].posx, print_chunk[i].posy, print_chunk[i].posz,
+						print_chunk[i].destx, print_chunk[i].desty, print_chunk[i].destz);
+			}
+		}
+	}else{
+		//collect data
+		collect_entities(queue, mmi->rank, chunk_length, print_chunk);
 
-	if(m[4][9][9].type != 3 ||
-			m[4][9][9].content != 0 ||
-			m[4][9][9].amount != 0) c++;
-
-	if(m[3][2][2].type == 1 ||
-			m[3][2][1].content != 0 ||
-			m[3][2][1].amount != 0) c++;
-	if(x != 10 || *y != 10 || *z != 5) c++;
-	if(c > 0){
-		free_market(m, *y, *z);
-		printf("Error test import\n");
-		exit(EXIT_FAILURE);
+		//send data
+		MPI_Isend(&chunk_length, 1, MPI_INT, MASTER, PRINTTAG, MPI_COMM_WORLD);
+		MPI_Isend(print_chunk, chunk_length, MPI_PrintEntity, MASTER, PRINTTAG, MPI_COMM_WORLD);
 	}
-	return m;
+	free(print_chunk);
 }
-
-int test_in_matrix(field*** m){
-	vector3 vec1 = {0,0,0};
-	field* f = in_matrix(m, vec1);
-	int c = 0;
-	if(f->type != 0 || f->content != 0 || f->amount != 0) c++;
-	return c;
-}
-
-int test_isblocked(field*** m){
-	int c = 0;
-	vector3 vec = { 0, 0 ,0};
-	if(is_blocked(m, vec)) c++;
-
-	vector3 vec2 = { 3, 0 ,3};
-	if(!is_blocked(m, vec2)) c++;
-	return c;
-}
-
-void test_market(char* path){
-	int a = 0;
-	int y, z;
-	a += test_vec_equal();
-	field*** m = test_import_market(path, &y, &z);
-	a += test_in_matrix(m);
-	a += test_isblocked(m);
-	free_market(m, y, z);
-	printf("Es sind %d Fehler aufgetreten\n", a);
-	if(a > 0) exit(EXIT_FAILURE);
-}
-
-void test_spawn(meta* const mmi, queue_t* const queue,queue_t* const empty_shelfs){
-	for(int i= 0; i < 4; i++){
-		spawn_entity(mmi, queue, empty_shelfs,  CUSTOMER);
-	}
-	for(int i= 0; i < 4; i++){
-		spawn_entity(mmi, queue, empty_shelfs, EMPLOYEE);
-	}
-	printf("\n \n");
-	print_queue(queue);
-	printf("\n \n");
-}
-*/
-

@@ -4,25 +4,33 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-
+#include "mpi.h"
 #include "queue.h"
 #include "marketsim.h"
 #include "entity.h"
 #include "AStar.h"
 
-/*
- *Spawns 8 entities
- */
-void test_spawn(meta* const mmi, queue_t* const queue,queue_t* const empty_shelfs);
+#define PRINTTAG 5
+#define MASTER 0
+
+
+struct PrintEntity{
+	int pathpos;
+	int pathcount;
+	int id;
+	int type;
+	int posx;
+	int posy;
+	int posz;
+	int destx;
+	int desty;
+	int destz;
+};
+typedef struct PrintEntity PrintEntity;
 
 /*
  *print the whole queue of entities
  */
-void print_queue(queue_t* queue);
-
-/*
- * Test all functions in market.c
- */
-void test_market(char* path);
+void print_queue_parallel(queue_t* const queue, meta *mmi);
 
 #endif

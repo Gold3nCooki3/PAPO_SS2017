@@ -51,6 +51,7 @@ marketmetainfo {
 	int exit_count;
 
 	int empty_count;
+	int entity_count;
 
 	vector3* shelf_fields;
 	vector3* lift_fields;
