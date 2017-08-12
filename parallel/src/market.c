@@ -56,7 +56,7 @@ field* readfile(MPI_File *fh, meta * const mmi) {
 	MPI_Request req;
 	MPI_Datatype MPI_field;
 
-	int *firstline, fieldcount, linecount, mysize, overlap = 0, flinecount = 8;
+	int *firstline, fieldcount, linecount, chunksize, overlap = 0, flinecount = 8;
 	int rank = mmi->rank, size = mmi->size;
 	field *field_chunk;
 
@@ -78,35 +78,35 @@ field* readfile(MPI_File *fh, meta * const mmi) {
 	/* figure out who reads what */
 	fieldcount 	= (filesize/sizeof(int) - flinecount) / 3;
 	linecount	= fieldcount / firstline[0];
-	mysize 		= linecount/size;
-	start 		= rank * mysize;
-	end   		= start + mysize;
+	chunksize 		= linecount/size;
+	start 		= rank * chunksize;
+	end   		= start + chunksize;
 	if (rank == size-1) end = linecount;
 
 	/* add overlap to the end of everyone's chunk except last process ... */
 	if (rank != size-1)
 	end 		+= overlap;
-	mysize 		= (end - start) * firstline[0] ; // (new_endline - startline) * elements per line
+	chunksize 		= (end - start) * firstline[0] ; // (new_endline - startline) * elements per line
 
 	/* make start to an adress in the file */
 	start  		= start * firstline[0] * 3 * sizeof(int)  + flinecount * sizeof(int);
 
 	/* allocate memory */
-	field_chunk	= malloc( mysize * sizeof(field));
+	field_chunk	= malloc( chunksize * sizeof(field));
 
 	/* everyone reads in their part */
-	MPI_File_read_at_all(*fh, start, field_chunk, mysize, MPI_field, MPI_STATUS_IGNORE);
+	MPI_File_read_at_all(*fh, start, field_chunk, chunksize, MPI_field, MPI_STATUS_IGNORE);
 
 	/* import values in meta object */
 	mmi->rows = firstline[0];
 	mmi->columns = firstline[1];
-	mmi->stories = mysize / (firstline[0] *  firstline[1]);
+	mmi->stories = chunksize / (firstline[0] *  firstline[1]);
 	mmi->stories = ( mmi->stories == 0 ) ? 1 : mmi->stories;
-	mmi->startcolumn = ((mysize * rank) % (firstline[1] * firstline[0])) / firstline[1];
-	mmi->startstorey = ((mysize * rank) / (firstline[1] * firstline[0]));
+	mmi->startcolumn = ((chunksize * rank) % (firstline[1] * firstline[0])) / firstline[1];
+	mmi->startstorey = ((chunksize * rank) / (firstline[1] * firstline[0]));
 
 	/* switch endianess, when the processor is a little endian processor */
-	for(int t = 0; t < mysize; t++){
+	for(int t = 0; t < chunksize; t++){
 	#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 		field_chunk[t].type	= __builtin_bswap32(field_chunk[t].type);
 		field_chunk[t].content	= __builtin_bswap32(field_chunk[t].content);
@@ -130,7 +130,7 @@ field* readfile(MPI_File *fh, meta * const mmi) {
                 for(int t = 0; t < flinecount; t++){
                         printf("%d, ", firstline[t]);
                 }
-		for(int i = 0; i < mysize; i++){
+		for(int i = 0; i < chunksize; i++){
                         int z = i / (firstline[1] * firstline[0]) ;
                         int y = (i % (firstline[1] * firstline[0])) / firstline[1];
                         int x = (i % (firstline[1] * firstline[0])) % firstline[1];
@@ -141,13 +141,13 @@ field* readfile(MPI_File *fh, meta * const mmi) {
 
 		for(int source = 1; source < size; source++){
 			printf("Process: %d\n", source);
-			int chunk_size;
-			int err = MPI_Recv(&chunk_size, 1, MPI_INT, source, DEBUGTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-			field* print_chunk = malloc(chunk_size * sizeof(field));
-			err += MPI_Recv(print_chunk, chunk_size, MPI_field, source, DEBUGTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-       			int gi = source * mysize;
-			printf("CS: %d  NS: %d\n", chunk_size, mysize);
-			for(int i = 0; i < chunk_size; i++){
+			int print_size;
+			int err = MPI_Recv(&print_size, 1, MPI_INT, source, DEBUGTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			field* print_chunk = malloc(print_size * sizeof(field));
+			err += MPI_Recv(print_chunk, print_size, MPI_field, source, DEBUGTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+       			int gi = source * chunksize;
+			printf("CS: %d  NS: %d\n", print_size, chunksize);
+			for(int i = 0; i < print_size; i++){
 		     	        int z = (gi / (firstline[1] * firstline[0]));
                        		int y = (gi % (firstline[1] * firstline[0])) / firstline[1];
                         	int x = (gi % (firstline[1] * firstline[0])) % firstline[1];
@@ -158,10 +158,8 @@ field* readfile(MPI_File *fh, meta * const mmi) {
 			free(print_chunk);
 		}
 	}else{
-		field_chunk[0].amount = 42;
-		field_chunk[mysize-1].amount = 666;
-		MPI_Isend(&mysize, 1, MPI_INT, MASTER, DEBUGTAG, MPI_COMM_WORLD, &req);
-	 	MPI_Isend(field_chunk, mysize, MPI_field, MASTER, DEBUGTAG, MPI_COMM_WORLD, &req);
+		MPI_Isend(&chunksize, 1, MPI_INT, MASTER, DEBUGTAG, MPI_COMM_WORLD, &req);
+	 	MPI_Isend(field_chunk, chunksize, MPI_field, MASTER, DEBUGTAG, MPI_COMM_WORLD, &req);
 	}
 	free(firstline);
 	return field_chunk;
@@ -194,7 +192,9 @@ field**** import_market(char* path, meta *mmi){
 
 	MPI_File mallfile;
 	int err = MPI_File_open(MPI_COMM_WORLD, path, MPI_MODE_RDONLY, MPI_INFO_NULL, &mallfile);
-	if(err != 0) exit(EXIT_FAILURE);
+	if(err != 0){
+		exit(EXIT_FAILURE);
+	}
 	field* matrix = readfile(&mallfile, mmi);
 	MPI_File_close(&mallfile);
 
@@ -214,7 +214,7 @@ field**** import_market(char* path, meta *mmi){
 		for(int b = 0; b < mmi->columns; b++){
 			for(int c = 0; c < mmi->rows; c++){
 				market[a][b][c] = &matrix[index++];
-				vector3 v = {c,b,a};
+				vector3 v = {c, b + mmi->startcolumn , a  + mmi->startstorey};
 				switch(market[a][b][c]->type) {
 					case SHELF:
 						shelves[q++] = v;
@@ -249,7 +249,6 @@ return market;
 }
 
 /*Deallocate 3d field array
- * TODO: needs to be extended when create_market is optimized
  * @param global_market
  */
 void free_market(){
