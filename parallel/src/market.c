@@ -215,9 +215,10 @@ field**** import_market(char* path, meta *mmi){
 	printf("rank: %3d, s: %5d, l: %3d, st: %3d, r: %3d, e: %3d\n", mmi->rank, mmi->shelf_count, mmi->lift_count, mmi->stock_count, mmi->register_count, mmi->exit_count);
 	for(int a = 0; a < mmi->stories; a++){
 		for(int b = 0; b < mmi->columns; b++){
+			if(a == 0 && b == 0) b += mmi->startcolumn;
 			for(int c = 0; c < mmi->rows; c++){
 				market[a][b][c] = &matrix[index++];
-				vector3 v = {c, b + mmi->startcolumn , a  + mmi->startstorey};
+				vector3 v = {c, b , a  + mmi->startstorey};
 				switch(market[a][b][c]->type) {
 					case SHELF:
 						shelves[q++] = v;
