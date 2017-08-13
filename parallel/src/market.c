@@ -1,5 +1,7 @@
 #include "market.h"
 
+#define MIN(X,Y) ((X) < (Y) ? : (X) : (Y))
+
 /* Test if Vectors are equal
  * @param vec1, vec2 address of the vectors
  * @return Boolean
@@ -78,8 +80,9 @@ field* readfile(MPI_File *fh, meta * const mmi) {
 	/* figure out who reads what */
 	fieldcount 	= (filesize/sizeof(int) - flinecount) / 3;
 	linecount	= fieldcount / firstline[0];
-	chunksize 		= linecount/size;
-	start 		= rank * chunksize;
+	chunksize 	= (rank < linecount%size) ? linecount/size + 1 : linecount/size ;
+
+	start 		= rank * chunksize + MIN(rank, linecount%size);
 	end   		= start + chunksize;
 	if (rank == size-1) end = linecount;
 
