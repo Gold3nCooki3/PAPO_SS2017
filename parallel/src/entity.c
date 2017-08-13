@@ -225,7 +225,7 @@ vector3* generate_list(meta* const mmi, queue_t* empty_shelfs, int* items, Entit
  * @param position 	: position where the entity is spawned
  * @param type		: type of the entity
  */
-void spawn_entity(meta* const mmi, queue_t* const entity_queue, queue_t* const empty_shelfs, EntityType type){
+/*void spawn_entity(meta* const mmi, queue_t* const entity_queue, queue_t* const empty_shelfs, EntityType type){
 	static int counter = 0;
 	int items = 0;
 	vector3* list;
@@ -233,6 +233,23 @@ void spawn_entity(meta* const mmi, queue_t* const entity_queue, queue_t* const e
 	vector3 position = (type == CUSTOMER) ? mmi->exit_fields[abs(rand()%mmi->exit_count)] : mmi->stock_fields[abs(rand()%mmi->stock_count)];
 	entity* e = calloc(1, sizeof(*e));
 		e->id = counter;
+		e->type = type;
+		e->listpos = 0;
+		e->path_position = 0;
+		e->amountItems = items;
+		e->position= position;
+		e->memory_dest.x = -1;
+		e->list = list;
+	queue_enqueue(entity_queue, e);
+	counter++;
+	mmi->entity_count = counter;
+}*/
+
+void spawn_entity(meta* const mmi, queue_t* const entity_queue, queue_t* const empty_shelfs, EntityType type){
+	static int counter = 0;
+	vector3 * list= malloc(sizeof(vector3));
+	entity* e = calloc(1, sizeof(*e));
+		e->id = 0;
 		e->type = type;
 		e->listpos = 0;
 		e->path_position = 0;

@@ -39,8 +39,8 @@ marketmetainfo {
 	int columns;
 	int stories;
 
-	int startcolumn;
-	int startstorey;
+	int linecount;
+	int startline;
 	int rank;
 	int size;
 

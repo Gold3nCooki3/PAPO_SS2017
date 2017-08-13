@@ -82,14 +82,14 @@ field* readfile(MPI_File *fh, meta * const mmi) {
 	linecount	= fieldcount / firstline[0];
 	chunksize 	= (rank < linecount%size) ? linecount/size + 1 : linecount/size ;
 
-	start 		= rank * chunksize + MIN(rank, linecount%size);
+	start 		= rank * linecount + MIN(rank, linecount%size);
 	end   		= start + chunksize;
 	if (rank == size-1) end = linecount;
 
 	/* add overlap to the end of everyone's chunk except last process ... */
 	if (rank != size-1)
 	end 		+= overlap;
-	chunksize 		= (end - start) * firstline[0] ; // (new_endline - startline) * elements per line
+	chunksize   =(end - start) * firstline[0] ; // (new_endline - startline) * elements per line
 
 	/* make start to an adress in the file */
 	start  		= start * firstline[0] * 3 * sizeof(int)  + flinecount * sizeof(int);
@@ -105,8 +105,8 @@ field* readfile(MPI_File *fh, meta * const mmi) {
 	mmi->columns = firstline[1];
 	mmi->stories = chunksize / (firstline[0] *  firstline[1]);
 	mmi->stories = ( mmi->stories == 0 ) ? 1 : mmi->stories;
-	mmi->startcolumn = ((chunksize * rank) % (firstline[1] * firstline[0])) / firstline[1];
-	mmi->startstorey = ((chunksize * rank) / (firstline[1] * firstline[0]));
+	mmi->linecount = linecount;
+	mmi->startline = rank * linecount + MIN(rank, linecount%size);
 
 	/* switch endianess, when the processor is a little endian processor */
 	for(int t = 0; t < chunksize; t++){
@@ -213,12 +213,14 @@ field**** import_market(char* path, meta *mmi){
 	MPI_Barrier(MPI_COMM_WORLD);
 	field**** market = create_market(mmi->rows, mmi->columns, mmi->stories);
 	printf("rank: %3d, s: %5d, l: %3d, st: %3d, r: %3d, e: %3d\n", mmi->rank, mmi->shelf_count, mmi->lift_count, mmi->stock_count, mmi->register_count, mmi->exit_count);
+	int startcolumn = startline % ( mmi->rows * mmi->columns ) ;
+	int startstorey = startline / ( mmi->rows * mmi->columns ) ;
 	for(int a = 0; a < mmi->stories; a++){
 		for(int b = 0; b < mmi->columns; b++){
-			if(a == 0 && b == 0) b += mmi->startcolumn;
+			if(a == 0 && b == 0) b += startcolumn;
 			for(int c = 0; c < mmi->rows; c++){
 				market[a][b][c] = &matrix[index++];
-				vector3 v = {c, b , a  + mmi->startstorey};
+				vector3 v = {c, b , a  + startstorey};
 				switch(market[a][b][c]->type) {
 					case SHELF:
 						shelves[q++] = v;
