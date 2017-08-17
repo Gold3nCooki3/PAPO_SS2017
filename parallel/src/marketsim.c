@@ -24,6 +24,7 @@ int main(int argc, char *argv[]){
 	market = import_market(argv[1], mmi);
 	queue_t *empty_shelfs = queue_new();
 	queue_t *entity_queue = queue_new();
+	queue_t *pathf_queue = queue_new();
 	if(mmi->exit_count > 0) spawn_entity(mmi, entity_queue, empty_shelfs,CUSTOMER);
 	print_queue_parallel(entity_queue, mmi);
 	/*for(int i = 0; i < simulations; i++){//Anlaufen
@@ -51,6 +52,7 @@ int main(int argc, char *argv[]){
 	free_market();
 	free_meta();
 	queue_destroy(entity_queue);
+	queue_destroy(pathf_queue);
 	queue_destroy(empty_shelfs);
 	MPI_Finalize();
 	return 0;

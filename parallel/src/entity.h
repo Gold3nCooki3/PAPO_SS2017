@@ -47,6 +47,14 @@ entity{
 };
 typedef struct entity entity;
 
+struct
+PathEssentials{
+	int id;
+	int status;
+	vector3 start;
+	vector3 dest;
+};
+typedef struct PathEssentials PE;
 
 /*Spawn an entity and enqueue it
  * @param queue 	: queue of all entities

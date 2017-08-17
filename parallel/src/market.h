@@ -39,6 +39,8 @@ marketmetainfo {
 	int columns;
 	int stories;
 
+	int startcolumn;
+	int startstorey;
 	int linecount;
 	int startline;
 	int rank;
@@ -50,6 +52,7 @@ marketmetainfo {
 	int register_count;
 	int exit_count;
 
+	int spawn_count;
 	int empty_count;
 	int entity_count;
 

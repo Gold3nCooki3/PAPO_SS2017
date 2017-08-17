@@ -10,6 +10,12 @@ int vec_equal(vector3 * vec1, vector3 * vec2){
 	return (vec1->x == vec2->x) && (vec1->y == vec2->y) && (vec1->z == vec2->z);
 }
 
+int in_process(vector3 vec){
+	int vec_to_id = vec.y  + vec.z * global__mmi->columns;
+	if((vec_to_id >= global__mmi->startline) && (vec_to_id < global__mmi->startline + global__mmi->linecount))	return TRUE;
+	return FALSE;
+}
+
 /*Gives back the field pointer in the field Matrix
  * described by the vector position
  * @param vec 		: position of the field in the Matrix
@@ -17,9 +23,12 @@ int vec_equal(vector3 * vec1, vector3 * vec2){
  */
 field* in_matrix_g(vector3 vec){
 	if(global__market){
-		vector3 vect = {vec.x,vec.y - global__mmi->startcolumn,vec.z - global__mmi->startstorey};
-		if(vect.z > global__mmi->stories -1 || vect.z < 0 || vect.y > global__mmi->columns -1|| vect.y < 0 || vect.x > global__mmi->rows -1 || vect.x < 0) return 0;
-		return global__market[vect.z][vect.y][vect.x];
+		if(!in_field(vec)) return 0;
+		int x = vec.x;
+		int y = vec.y;
+		int z = vec.z - global__mmi->startstorey;
+		if(z > global__mmi->stories -1 || z < 0 || y > global__mmi->columns -1|| y < 0 || x > global__mmi->rows -1 || x < 0) return 0;
+		return global__market[z][y][x];
 	}else{
 		printf("Error: no global matrix");
 		exit(EXIT_FAILURE);
@@ -213,8 +222,10 @@ field**** import_market(char* path, meta *mmi){
 	MPI_Barrier(MPI_COMM_WORLD);
 	field**** market = create_market(mmi->rows, mmi->columns, mmi->stories);
 	printf("rank: %3d, s: %5d, l: %3d, st: %3d, r: %3d, e: %3d\n", mmi->rank, mmi->shelf_count, mmi->lift_count, mmi->stock_count, mmi->register_count, mmi->exit_count);
-	int startcolumn = startline % ( mmi->rows * mmi->columns ) ;
-	int startstorey = startline / ( mmi->rows * mmi->columns ) ;
+	int startcolumn = mmi->startline % ( mmi->rows * mmi->columns ) ;
+	int startstorey = mmi->startline / ( mmi->rows * mmi->columns ) ;
+	mmi->startcolumn = startcolumn;
+	mmi->startstorey = startstorey;
 	for(int a = 0; a < mmi->stories; a++){
 		for(int b = 0; b < mmi->columns; b++){
 			if(a == 0 && b == 0) b += startcolumn;

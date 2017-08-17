@@ -61,13 +61,71 @@ vector3 get_close_vector3(vector3* const list, int listlength, vector3 start, in
 	return dest;
 }
 
-void generate_path(entity* const e, meta* const mmi){
+void generate_path(queue_t* const q, meta* const mmi){
+	MPI_
+	struct queue_node_s *node = queue->front
+	int i = 0, j = 0;
+	PE* local_r = malloc(mmi->spawn_count * sizeof(PE));
+	PE* local_l = malloc(mmi->spawn_count * sizeof(PE));
+
+	MPI_Datatype MPI_PathE;
+	MPI_Type_contiguous(8, MPI_INT, &MPI_PathE);
+	MPI_Type_commit(&MPI_PathE);
+
+
+	while(node != NULL){
+		entity* e = node->data
+		ASPath tempPath generate_localpath(e->position, e->list[e->listpos], mmi);
+		if(!tempPath){
+			e->path = tempPath;
+		}else{
+			vector3 start = ;
+			vector3 dest = ;
+			PE p = {e->id, 0, start, dest};
+			if(dest > mmi->startline){
+				local_r[i] = p;
+				i++;
+			}else{
+				local_l[j] = p;
+				j++;
+			}
+		}
+		node = node->next;
+	}
+
+
+	i++;j++;
+	if(mmi->rank != size-1){
+		MPI_Isend(&i, 1, MPI_INT, rank+1, PATHTAG, MPI_COMM_WORLD, &req);
+		MPI_Isend(local_r, i, MPI_PathE, rank+1,PATHTAG, MPI_COMM_WORLD, &req);
+	}
+	if(mmi->rank != 0){
+		MPI_Isend(&j, 1, MPI_INT, rank-1, PATHTAG, MPI_COMM_WORLD, &req);
+		MPI_Isend(local_l, j, MPI_PathE, rank-1, PATHTAG, MPI_COMM_WORLD, &req);
+	}
+
+	int tempi, tempj;
+	if(mmi->rank != size-1){
+		MPI_Recv(&tempi, 1, MPI_INT, rank-1, PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE) ;
+		PE * right = realloc(tempi * siezof(PE));
+		MPI_Recv(&tempi, tempi, MPI_INT, rank-1, PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE) ;
+	}
+	if(mmi->rank != 0){
+		MPI_Recv(&tempj, 1, MPI_INT, rank+1, PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE) ;
+		PE * left = realloc(tempj * siezof(PE));
+		MPI_Recv(&tempi, tempj, MPI_INT, rank+1, PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE) ;
+	}
+
+}
+
+
+void generate_localpath(entity* const e, meta* const mmi){
 	PathNode pathFrom = (PathNode)e->position;
 	vector3 pathTo_v = e->list[e->listpos];
 
 	if(pathTo_v.z != e->position.z){
 		pathTo_v = get_close_vector3(mmi->lift_fields, mmi->lift_count, e->position, TRUE);
-	}else{
+	}else if(){
 		switch (in_matrix_g(e->list[e->listpos])->type){
 			case REGISTER:
 			case SHELF: pathTo_v.x++;
@@ -79,7 +137,7 @@ void generate_path(entity* const e, meta* const mmi){
 						if(is_blocked(pathTo_v)){
 							pathTo_v.y-=2;
 							if(is_blocked(pathTo_v)){
-								exit(EXIT_FAILURE);
+
 							}
 						}
 					}
@@ -88,6 +146,7 @@ void generate_path(entity* const e, meta* const mmi){
 			default: break;
 		}
 	}
+
 
 	PathNode pathTo = (PathNode)pathTo_v;
 	e->path = ASPathCreate(&PathNodeSource, NULL, &pathFrom, &pathTo);
@@ -106,7 +165,7 @@ void generate_path(entity* const e, meta* const mmi){
  */
 int move_entity(meta* const mmi,queue_t* const empty_shelfs, entity* const e){
 	if (!has_path(e)){
-		generate_path(e, mmi);
+		generate_localpath(e, mmi);
 	}
 
 	//Get to new Position
@@ -225,36 +284,17 @@ vector3* generate_list(meta* const mmi, queue_t* empty_shelfs, int* items, Entit
  * @param position 	: position where the entity is spawned
  * @param type		: type of the entity
  */
-/*void spawn_entity(meta* const mmi, queue_t* const entity_queue, queue_t* const empty_shelfs, EntityType type){
-	static int counter = 0;
-	int items = 0;
-	vector3* list;
-	list= generate_list(mmi, empty_shelfs, &items, type);
-	vector3 position = (type == CUSTOMER) ? mmi->exit_fields[abs(rand()%mmi->exit_count)] : mmi->stock_fields[abs(rand()%mmi->stock_count)];
-	entity* e = calloc(1, sizeof(*e));
-		e->id = counter;
-		e->type = type;
-		e->listpos = 0;
-		e->path_position = 0;
-		e->amountItems = items;
-		e->position= position;
-		e->memory_dest.x = -1;
-		e->list = list;
-	queue_enqueue(entity_queue, e);
-	counter++;
-	mmi->entity_count = counter;
-}*/
-
 void spawn_entity(meta* const mmi, queue_t* const entity_queue, queue_t* const empty_shelfs, EntityType type){
 	static int counter = 0;
 	vector3 * list= malloc(sizeof(vector3));
+	list[1] = {4,4,4};
 	entity* e = calloc(1, sizeof(*e));
 		e->id = 0;
 		e->type = type;
 		e->listpos = 0;
 		e->path_position = 0;
 		e->amountItems = items;
-		e->position= position;
+		e->position= {0,0,0};
 		e->memory_dest.x = -1;
 		e->list = list;
 	queue_enqueue(entity_queue, e);
