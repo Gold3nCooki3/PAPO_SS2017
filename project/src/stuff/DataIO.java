@@ -122,15 +122,15 @@ public class DataIO {
 	public void writeEntity(int id, Coord list[], int listlength) {
 		out.print(id);
 		for(int i = 0; i < listlength; i++) {
-			if(i == listlength-1) {
-				out.println(",0,0");
-				break;
-			}
 			if(i >= list.length) {
-				out.print(",0,0");
-				continue;
+				out.print(",0,0,0");
+				if(i == listlength - 1) {
+					out.println();
+					out.flush();
+				}
+			} else {
+				out.print(","+list[i].x()+","+list[i].y()+","+list[i].z());
 			}
-			out.print(","+list[i].x()+","+list[i].y());
 		}
 	}
 	
