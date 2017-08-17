@@ -2,7 +2,7 @@
 
 \subsection{Navigation von Kunden im Kaufhaus}
 \label{kundne:nav}
-Zur Navigation im Kaufhaus wird eine serielle Implementierung des A*-Algorithmus von Sean Heber verwendet.
+Zur Navigation im Kaufhaus wird eine serielle Implementierung des A*-Algorithmus von Sean Heber \footnote{\url{https://github.com/BigZaphod/AStar}} verwendet.
 Mit der vorliegenden Implementation wird garantiert ein Weg gefunden, jedoch setzt die verwendete Version nicht auf das Kriterium der Optimalität des Weges, sondern auf die schnelle Berechenbarkeit eines Weges und Dateneffizienz. In gewisser Weise liefert dies einen zusätzlichen Realitätsbezug, da Menschen in der Regel nicht den kürzesten Weg wählen, sondern auch gerne mal einen Umweg durch die Süßwarenabteilung machen.
 
 Im Falle von SMITH wird eine serielle Implementation des A*-Algorithmus von jedem Knoten ausgeführt. Knoten bekommen einen Teil eines Stockwerkes im Kaufhaus zugeteilt und besitzen lediglich diese Daten, benötigen also nicht gesammte Stockwerke. Weiterhin kennt jeder Knoten die Position seines Teilstückes im Kaufhaus und kann dadurch auf globale Koordinaten der Felder zurückschließen.\\
@@ -30,3 +30,6 @@ Es gibt verschiedene Operationen, die ausgeführt werden müssen:
 \end{itemize}
 Operationen wie eine Kundenbewegung werden ausgeführt und anschließend aus der Queue entfernt.\\
 Ist eine Berechnung eines Weges erforderlich, so wird diese ausgeführt. Ist die Berechnung erforderlich, wenn geprüft werden soll, ob ein Weg existiert, so wird zum gegebenen Startknoten ein passender Zielknoten gesucht (Siehe \ref{kundne:nav}) und der nächste Prozess wird benachrichtigt, dass eine Wegsuche durchzuführen ist. Während der Prozess auf eine Rückmeldung des nächsten Prozesses wartet wird die Kunden-Entity immer wieder erneut zur Queue hinzugefügt, bis eine Rückmeldung vorliegt, ob ein Weg gefunden wurde oder nicht. Wurde kein Weg gefunden, so wird die Suche mit einem neuen Randknoten als Zielknoten angestoßen, wurde einer gefunden, so wird das Startknoten-Zielknoten-Paar zur späteren Verwendung abgespeichert und eine Meldung an den vorigen Prozess geschickt. Wird die Wegberechnung gestartet, da ein Kunde einen Weg zur Navigation innerhalb des Bereichs eines Prozessors benötigt, wird dieser berechnet, im Kunden in einer Datestruktur abgelegt und der kunde wird aus der Queue entfernt.
+
+\subsection{Spawnen von Kunden}
+SMITH soll das Kaufhaus zu jeder Zeit maximal auslasten. Dafür wird das Spawnen von Kunden zentral gehandhabt. Ein Masterserver verteilt 
