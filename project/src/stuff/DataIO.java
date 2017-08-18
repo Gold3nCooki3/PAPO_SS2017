@@ -112,7 +112,7 @@ public class DataIO {
 		buf.close();
 	}
 	
-	public void initEntityWriter(File f) throws IOException {
+	public void initEntityWriter(File f, int items, int eCount) throws IOException {
 		File fb = new File(f.toString().concat(".hex"));
 		if(!f.exists()) {
 			f.createNewFile();
@@ -120,6 +120,9 @@ public class DataIO {
 		}
 		out = new PrintWriter(f);
 		dos = new DataOutputStream(new FileOutputStream(fb));
+		out.println(items+","+eCount);
+		dos.writeInt(items);
+		dos.writeInt(eCount);
 	}
 	
 	public void writeEntity(int id, Coord list[], int listlength) throws IOException {

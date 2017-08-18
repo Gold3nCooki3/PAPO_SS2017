@@ -54,9 +54,9 @@ public class EntityGenPopup {
 				if(action == JFileChooser.APPROVE_OPTION) {
 					try {
 						if(!speicher.getSelectedFile().getName().endsWith(".elist")) {
-							dio.initEntityWriter(new File(speicher.getSelectedFile().toString().concat(".elist")));
+							dio.initEntityWriter(new File(speicher.getSelectedFile().toString().concat(".elist")), (int) eMax.getValue(), (int) eCount.getValue());
 						} else {
-							dio.initEntityWriter(speicher.getSelectedFile());
+							dio.initEntityWriter(speicher.getSelectedFile(), (int) eMax.getValue(), (int) eCount.getValue());
 						}
 					} catch (IOException ioe) {
 						System.err.println(ioe);
