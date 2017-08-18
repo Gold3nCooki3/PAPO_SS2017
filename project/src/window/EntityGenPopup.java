@@ -64,9 +64,17 @@ public class EntityGenPopup {
 				}
 				for(int i = 0; i < (int) eCount.getValue(); i++) {
 					Coord[] a = eg.generateEntity((int) eMin.getValue(), (int) eMax.getValue());
-					dio.writeEntity(id++, a, (int) eMax.getValue());
+					try {
+						dio.writeEntity(id++, a, (int) eMax.getValue());
+					} catch (IOException e2) {
+						e2.printStackTrace();
+					}
 				}
-				dio.closeEntityWriter();
+				try {
+					dio.closeEntityWriter();
+				} catch (IOException e2) {
+					e2.printStackTrace();
+				}
 				f.dispose();
 			}
 		});

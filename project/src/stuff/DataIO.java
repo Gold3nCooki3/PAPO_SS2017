@@ -113,28 +113,41 @@ public class DataIO {
 	}
 	
 	public void initEntityWriter(File f) throws IOException {
+		File fb = new File(f.toString().concat(".hex"));
 		if(!f.exists()) {
 			f.createNewFile();
+			fb.createNewFile();
 		}
 		out = new PrintWriter(f);
+		dos = new DataOutputStream(new FileOutputStream(fb));
 	}
 	
-	public void writeEntity(int id, Coord list[], int listlength) {
+	public void writeEntity(int id, Coord list[], int listlength) throws IOException {
 		out.print(id);
 		for(int i = 0; i < listlength; i++) {
 			if(i >= list.length) {
 				out.print(",0,0,0");
+				dos.writeInt(0);
+				dos.writeInt(0);
+				dos.writeInt(0);
+				dos.flush();
 				if(i == listlength - 1) {
 					out.println();
 					out.flush();
 				}
 			} else {
 				out.print(","+list[i].x()+","+list[i].y()+","+list[i].z());
+				dos.writeInt(list[i].x());
+				dos.writeInt(list[i].y());
+				dos.writeInt(list[i].z());
+				dos.flush();
 			}
 		}
 	}
 	
-	public void closeEntityWriter() {
+	public void closeEntityWriter() throws IOException {
 		out.close();
+		dos.flush();
+		dos.close();
 	}
 }
