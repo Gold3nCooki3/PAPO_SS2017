@@ -68,6 +68,6 @@ void spawn_entity(meta* const mmi, queue_t* const entity_queue, queue_t* const e
  * @param queue 	: queue of all entities
  *
  */
-void work_queue(meta * const mmi, queue_t* const entity_queue, queue_t* const empty_shelfs);
+void work_queue(meta * const mmi, queue_t* const entity_queue, queue_t* const empty_shelfs, queue_t* const pathf_queue);
 
 #endif

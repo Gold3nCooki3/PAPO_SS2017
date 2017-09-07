@@ -2,9 +2,8 @@
 
 #define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
 
-/* Test if Vectors are equal
- * @param vec1, vec2 address of the vectors
- * @return Boolean
+/*
+ * Test if Vectors are equal
  */
 int vec_equal(vector3 * vec1, vector3 * vec2){
 	return (vec1->x == vec2->x) && (vec1->y == vec2->y) && (vec1->z == vec2->z);
@@ -16,10 +15,8 @@ int in_process(vector3 vec){
 	return FALSE;
 }
 
-/*Gives back the field pointer in the field Matrix
- * described by the vector position
- * @param vec 		: position of the field in the Matrix
- * @return 			: Field Pointer
+/*
+ * Gives back the field pointer in the field Matrix
  */
 field* in_matrix_g(vector3 vec){
 	if(global__market){
@@ -36,9 +33,8 @@ field* in_matrix_g(vector3 vec){
 }
 
 
-/*Test if a field is blocked by something
- * @param vec 		: position of the field in the Matrix
- * @return 			: Boolean
+/*
+ * Test if a field is blocked by something
  */
 int is_blocked(vector3 vec){
 	field* f= in_matrix_g(vec);
@@ -177,10 +173,8 @@ field* readfile(MPI_File *fh, meta * const mmi) {
 	return field_chunk;
 }
 
-/*Initializes an 3d field array
- *	field array only for access
- * @param x, y, floor_count : length, width and hight of the market
- * @return 			: pointer of allocated field array
+/*
+ * Initializes an 3d field array
  */
 field**** create_market(int rows, int columns, int stories){
 	field **** market = malloc(stories * sizeof(field***));
@@ -195,10 +189,8 @@ field**** create_market(int rows, int columns, int stories){
 	return market;
 }
 
-/*Import market data form textfile/csv,
- * @param path		: path to text file
- * @param mmi		; pointer to meta struct
- * @return 			: pointer of the filled array
+/*
+ * Import market data form textfile/csv,
  */
 field**** import_market(char* path, meta *mmi){
 
@@ -265,8 +257,8 @@ field**** import_market(char* path, meta *mmi){
 return market;
 }
 
-/*Deallocate 3d field array
- * @param global_market
+/*
+ * Deallocate 3d field array
  */
 void free_market(){
 	for(int o = 0; o < global__mmi->stories; o++ ){

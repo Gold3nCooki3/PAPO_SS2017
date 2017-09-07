@@ -61,7 +61,7 @@ vector3 get_close_vector3(vector3* const list, int listlength, vector3 start, in
 	return dest;
 }
 
-void generate_path(queue_t* const q, meta* const mmi){
+void generate_paths(queue_t* const q, meta* const mmi){
 	MPI_
 	struct queue_node_s *node = queue->front
 	int i = 0, j = 0;
@@ -119,42 +119,48 @@ void generate_path(queue_t* const q, meta* const mmi){
 }
 
 
-void generate_localpath(entity* const e, meta* const mmi){
-	PathNode pathFrom = (PathNode)e->position;
-	vector3 pathTo_v = e->list[e->listpos];
+void generate_localpath(vector3 start, vector3 dest, meta* const mmi){
+	PathNode pathFrom = (PathNode)start;
+	vector3 pathTo_v = dest;
 
-	if(pathTo_v.z != e->position.z){
-		pathTo_v = get_close_vector3(mmi->lift_fields, mmi->lift_count, e->position, TRUE);
-	}else if(){
-		switch (in_matrix_g(e->list[e->listpos])->type){
-			case REGISTER:
-			case SHELF: pathTo_v.x++;
-				if(is_blocked(pathTo_v)){
-					pathTo_v.x-=2;
+
+	if(in_process(dest)){
+		if(pathTo_v.z != start.z){
+			if(mmi->lift_count > 0){
+				pathTo_v = get_close_vector3(mmi->lift_fields, mmi->lift_count, e->position, TRUE);
+			}else{
+				return LIFT;
+			}
+		}else if(){
+			switch (in_matrix_g(e->list[e->listpos])->type){
+				case REGISTER:
+				case SHELF: pathTo_v.x++;
 					if(is_blocked(pathTo_v)){
-						pathTo_v.x+=1;
-						pathTo_v.y+=1;
+						pathTo_v.x-=2;
 						if(is_blocked(pathTo_v)){
-							pathTo_v.y-=2;
+							pathTo_v.x+=1;
+							pathTo_v.y+=1;
 							if(is_blocked(pathTo_v)){
+								pathTo_v.y-=2;
+								if(is_blocked(pathTo_v)){
 
+								}
 							}
 						}
 					}
-				}
-				break;
-			default: break;
+					break;
+				default: break;
+			}
 		}
 	}
 
 
 	PathNode pathTo = (PathNode)pathTo_v;
-	e->path = ASPathCreate(&PathNodeSource, NULL, &pathFrom, &pathTo);
-	e->memory_dest = pathTo_v;
+	ASPath path = ASPathCreate(&PathNodeSource, NULL, &pathFrom, &pathTo);
 	if(ASPathGetCount(e->path) == 0){ //not vaild
-		printf("No path");
-		exit(EXIT_FAILURE);
+		return 0;
 	}
+	return path;
 }
 
 /*Moves an entity towards their destination,
@@ -215,7 +221,13 @@ int move_entity(meta* const mmi,queue_t* const empty_shelfs, entity* const e){
  * @param market 	: fields where entities move within
  * @param entity_queue 	: queue of all entities
  */
-void work_queue(meta * const mmi, queue_t* const entity_queue, queue_t* const empty_shelfs){
+void work_queue(meta * const mmi, queue_t* const entity_queue, queue_t* const empty_shelfs, queue_t* const pathf_queue){
+	if(!queue_empty(pathf_queue)){
+		generate_paths(pathf_queue, mmi);
+	}else{
+		printf("Nothing to spawn");
+	}
+
 	if(queue_empty(entity_queue)){
 		printf("empty!");
 		return;
@@ -299,5 +311,5 @@ void spawn_entity(meta* const mmi, queue_t* const entity_queue, queue_t* const e
 		e->list = list;
 	queue_enqueue(entity_queue, e);
 	counter++;
-	mmi->entity_count = counter;
+	mmi->spawn_count = counter;
 }
