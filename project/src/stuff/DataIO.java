@@ -140,6 +140,7 @@ public class DataIO {
 				}
 			} else {
 				out.print(","+list[i].x()+","+list[i].y()+","+list[i].z());
+				dos.writeInt(id);
 				dos.writeInt(list[i].x());
 				dos.writeInt(list[i].y());
 				dos.writeInt(list[i].z());
