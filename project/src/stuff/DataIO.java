@@ -127,6 +127,7 @@ public class DataIO {
 	
 	public void writeEntity(int id, Coord list[], int listlength) throws IOException {
 		out.print(id);
+		dos.writeInt(id);
 		for(int i = 0; i < listlength; i++) {
 			if(i >= list.length) {
 				out.print(",0,0,0");
@@ -140,7 +141,6 @@ public class DataIO {
 				}
 			} else {
 				out.print(","+list[i].x()+","+list[i].y()+","+list[i].z());
-				dos.writeInt(id);
 				dos.writeInt(list[i].x());
 				dos.writeInt(list[i].y());
 				dos.writeInt(list[i].z());
