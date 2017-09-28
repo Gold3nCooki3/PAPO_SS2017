@@ -61,9 +61,57 @@ vector3 get_close_vector3(vector3* const list, int listlength, vector3 start, in
 	return dest;
 }
 
+ASPath* generate_localpath(vector3 start, vector3 dest, meta* const mmi){
+	PathNode pathFrom = (PathNode)start;
+	vector3 pathTo_v = dest;
+
+
+	if(in_process(dest)){
+		if(pathTo_v.z != start.z){
+			if(mmi->lift_count > 0){
+				pathTo_v = get_close_vector3(mmi->lift_fields, mmi->lift_count, start, TRUE);
+			}else{
+				return LIFT;
+			}
+		}else{
+			switch (in_matrix_g(dest)->type){
+				case REGISTER:
+				case SHELF: pathTo_v.x++;
+					if(is_blocked(pathTo_v)){
+						pathTo_v.x-=2;
+						if(is_blocked(pathTo_v)){
+							pathTo_v.x+=1;
+							pathTo_v.y+=1;
+							if(is_blocked(pathTo_v)){
+								pathTo_v.y-=2;
+								if(is_blocked(pathTo_v)){
+
+								}
+							}
+						}
+					}
+					break;
+				default: break;
+			}
+		}
+	}else{
+		return 0;
+	}
+
+
+	PathNode pathTo = (PathNode)pathTo_v;
+	ASPath path = ASPathCreate(&PathNodeSource, NULL, &pathFrom, &pathTo);
+	if(ASPathGetCount(path) == 0){ //not vaild
+		return 0;
+	}
+	return path;
+}
+
 void generate_paths(queue_t* const queue, meta* const mmi){
 	struct queue_node_s *node = queue->front;
-	int rightcount = 0, leftcount = 0, rank = mmi->rank;
+	int rightcount = 0, leftcount = 0, rank = mmi->rank, size= mmi->size;
+	MPI_Request req;
+
 	PE* local_r = malloc(mmi->spawn_count * sizeof(PE));
 	PE* local_l = malloc(mmi->spawn_count * sizeof(PE));
 
@@ -93,7 +141,7 @@ void generate_paths(queue_t* const queue, meta* const mmi){
 					tempdest.z = e->position.z;
 					if(!is_blocked(tempdest)){
 						ASPath path = ASPathCreate(&PathNodeSource, NULL, &start, &tempdest);
-						if(ASPathGetCount == 0) continue;
+						if(ASPathGetCount(&path) == 0) continue;
 						dest = tempdest;
 						min = tempmin;
 					}
@@ -114,24 +162,24 @@ void generate_paths(queue_t* const queue, meta* const mmi){
 	int t= 0;
 	while(t++ < 1){
 
-		if(mmi->rank != size-1){
+		if(rank != size-1){
 			MPI_Isend(&leftcount, 1, MPI_INT, rank+1, PATHTAG, MPI_COMM_WORLD, &req);
 			MPI_Isend(local_l, leftcount, MPI_PathE, rank+1, PATHTAG, MPI_COMM_WORLD, &req);
 		}
-		if(mmi->rank != 0){
+		if(rank != 0){
 			MPI_Isend(&rightcount, 1, MPI_INT, rank-1, PATHTAG, MPI_COMM_WORLD, &req);
 			MPI_Isend(local_r, rightcount, MPI_PathE, rank-1,PATHTAG, MPI_COMM_WORLD, &req);
 		}
 
 		int temp_rc, temp_lc;
-		if(mmi->rank != 0){ /* other fields*/
+		if(rank != 0){ /* other fields*/
 			MPI_Recv(&temp_rc, 1, MPI_INT, rank-1, PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE) ;
-			PE * other_r = calloc(temp_rc, siezof(PE));
+			PE * other_r = calloc(temp_rc, sizeof(PE));
 			MPI_Recv(other_r, temp_rc, MPI_INT, rank-1, PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE) ;
 		}
-		if(mmi->rank != size-1){
+		if(rank != size-1){
 			MPI_Recv(&temp_lc, 1, MPI_INT, rank+1, PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE) ;
-			PE * other_l = calloc(temp_lc, siezof(PE));
+			PE * other_l = calloc(temp_lc, sizeof(PE));
 			MPI_Recv(other_l, temp_lc, MPI_INT, rank+1, PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE) ;
 		}
 
@@ -150,53 +198,6 @@ void generate_paths(queue_t* const queue, meta* const mmi){
 	}
 }
 
-
-void generate_localpath(vector3 start, vector3 dest, meta* const mmi){
-	PathNode pathFrom = (PathNode)start;
-	vector3 pathTo_v = dest;
-
-
-	if(in_process(dest)){
-		if(pathTo_v.z != start.z){
-			if(mmi->lift_count > 0){
-				pathTo_v = get_close_vector3(mmi->lift_fields, mmi->lift_count, e->position, TRUE);
-			}else{
-				return LIFT;
-			}
-		}else if(){
-			switch (in_matrix_g(e->list[e->listpos])->type){
-				case REGISTER:
-				case SHELF: pathTo_v.x++;
-					if(is_blocked(pathTo_v)){
-						pathTo_v.x-=2;
-						if(is_blocked(pathTo_v)){
-							pathTo_v.x+=1;
-							pathTo_v.y+=1;
-							if(is_blocked(pathTo_v)){
-								pathTo_v.y-=2;
-								if(is_blocked(pathTo_v)){
-
-								}
-							}
-						}
-					}
-					break;
-				default: break;
-			}
-		}
-	}else{
-		return 0;
-	}
-
-
-	PathNode pathTo = (PathNode)pathTo_v;
-	ASPath path = ASPathCreate(&PathNodeSource, NULL, &pathFrom, &pathTo);
-	if(ASPathGetCount(e->path) == 0){ //not vaild
-		return 0;
-	}
-	return path;
-}
-
 /*Moves an entity towards their destination,
  * to pick up or fill up content from a frame
  * @param market	: market where entity is moving within
@@ -204,9 +205,6 @@ void generate_localpath(vector3 start, vector3 dest, meta* const mmi){
  * @return FALSE if person has reached their final destination
  */
 int move_entity(meta* const mmi,queue_t* const empty_shelfs, entity* const e){
-	if (!has_path(e)){
-		generate_localpath(e, mmi);
-	}
 
 	//Get to new Position
 	PathNode* new_pos = ASPathGetNode(e->path, e->path_position);
@@ -333,14 +331,16 @@ vector3* generate_list(meta* const mmi, queue_t* empty_shelfs, int* items, Entit
 void spawn_entity(meta* const mmi, queue_t* const entity_queue, queue_t* const empty_shelfs, EntityType type){
 	static int counter = 0;
 	vector3 * list= malloc(sizeof(vector3));
-	list[1] = {4,4,4};
+	vector3 testdest= { 4, 4, 4};
+	list[1] = testdest;
 	entity* e = calloc(1, sizeof(*e));
 		e->id = 0;
 		e->type = type;
 		e->listpos = 0;
 		e->path_position = 0;
-		e->amountItems = items;
-		e->position= {0,0,0};
+		e->amountItems = 1;
+		vector3 testpos = { 0, 0, 0};
+		e->position = testpos;
 		e->memory_dest.x = -1;
 		e->list = list;
 	queue_enqueue(entity_queue, e);

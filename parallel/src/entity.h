@@ -8,6 +8,8 @@
 #define LISTL 10
 #define FILLVAL 10
 
+#define PATHTAG 555
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

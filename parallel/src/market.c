@@ -20,7 +20,7 @@ int in_process(vector3 vec){
  */
 field* in_matrix_g(vector3 vec){
 	if(global__market){
-		if(!in_field(vec)) return 0;
+		if(!in_process(vec)) return 0;
 		int x = vec.x;
 		int y = vec.y;
 		int z = vec.z - global__mmi->startstorey;
