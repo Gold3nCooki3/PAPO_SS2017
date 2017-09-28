@@ -62,8 +62,8 @@ vector3 get_close_vector3(vector3* const list, int listlength, vector3 start, in
 }
 
 void generate_paths(queue_t* const queue, meta* const mmi){
-	struct queue_node_s *node = queue->front
-	int i = 0, j = 0;
+	struct queue_node_s *node = queue->front;
+	int rightcount = 0, leftcount = 0;
 	PE* local_r = malloc(mmi->spawn_count * sizeof(PE));
 	PE* local_l = malloc(mmi->spawn_count * sizeof(PE));
 
@@ -71,67 +71,81 @@ void generate_paths(queue_t* const queue, meta* const mmi){
 	MPI_Type_contiguous(8, MPI_INT, &MPI_PathE);
 	MPI_Type_commit(&MPI_PathE);
 
-	int t= 0;
-	while(t++ < 1){
-		while(node != NULL){
-			entity* e = node->data
-			ASPath tempPath generate_localpath(e->position, e->list[e->listpos], mmi);
-			if(!tempPath){
-				e->path = tempPath;
-			}else{
-				vector3 start = e->position;
-				vectoc3 dest;
 
-				PE p = {e->id, 0, start, dest};
-				if(e->list[e->listpos] < mmi->startline){
-					for(int r = 0 ; r < mmi->rows; r++){
-						int min = -1;
-						int d = abs(r - e->list[e->listpos].x) + abs(mmi->startcolumn - e->list[e->listpos].y);
-						if(d < min || min == -1){
-							min = d;
-							dest = {r, mmi->startcolumn, e->position.z};
-						}
+	while(node != NULL){
+		entity* e = node->data;
+		ASPath tempPath = generate_localpath(e->position, e->list[e->listpos], mmi);
+		if(!tempPath){
+			e->path = tempPath;
+		}else{
+			vector3 start = e->position;
+			vector3 dest, tempdest;
+
+			int directioncolumn = (TRUE) ? mmi->startcolumn + mmi->linecount : mmi->startcolumn;
+
+			for(int r = 0 ; r < mmi->rows; r++){ /* TODO EDGEFIELDS */
+				int tempmin, min = -1;
+				int d = abs(r - e->list[e->listpos].x) + abs(directioncolumn - e->list[e->listpos].y);
+				if(d < min || min == -1){
+					tempmin = d;
+					tempdest.x = r;
+					tempdest.y = directioncolumn;
+					tempdest.z = e->position.z;
+					if(!is_blocked(tempdest)){
+						ASPath path = ASPathCreate(&PathNodeSource, NULL, &start, &tempdest);
+						if(ASPathGetCount == 0) continue;
+						dest = tempdest;
+						min = tempmin;
 					}
-					local_l[j] = p;
-					j++;
-				}else{
-					for(int r = 0 ; r < mmi->rows; r++){
-						int min = -1;
-						int d = abs(r - e->list[e->listpos].x) + abs(mmi->startcolumn + linecount - e->list[e->listpos].y);
-						if(d < min || min == -1){
-							min = d;
-							dest = {r, mmi->startcolumn, e->position.z};
-						}
-					}
-					local_r[i] = p;
-					i++;
 				}
 			}
-			node = node->next;
+
+			PE p = {e->id, 0, dest, e->list[e->listpos]};
+			if(TRUE){
+				local_r[rightcount++] = p;
+			}else{
+				local_l[leftcount++] = p;
+			}
 		}
+		node = node->next;
+	}
 
-
+	int t= 0;
+	while(t++ < 1){
 		i++;j++;
 		if(mmi->rank != size-1){
-			MPI_Isend(&i, 1, MPI_INT, rank+1, PATHTAG, MPI_COMM_WORLD, &req);
-			MPI_Isend(local_r, i, MPI_PathE, rank+1,PATHTAG, MPI_COMM_WORLD, &req);
+			MPI_Isend(&leftcount, 1, MPI_INT, rank+1, PATHTAG, MPI_COMM_WORLD, &req);
+			MPI_Isend(local_l, leftcount, MPI_PathE, rank+1, PATHTAG, MPI_COMM_WORLD, &req);
 		}
 		if(mmi->rank != 0){
-			MPI_Isend(&j, 1, MPI_INT, rank-1, PATHTAG, MPI_COMM_WORLD, &req);
-			MPI_Isend(local_l, j, MPI_PathE, rank-1, PATHTAG, MPI_COMM_WORLD, &req);
+			MPI_Isend(&rightcount, 1, MPI_INT, rank-1, PATHTAG, MPI_COMM_WORLD, &req);
+			MPI_Isend(local_r, rightcount, MPI_PathE, rank-1,PATHTAG, MPI_COMM_WORLD, &req);
 		}
 
-		int tempi, tempj;
+		int temp_rc, temp_lc;
+		if(mmi->rank != 0){ /* other fields*/
+			MPI_Recv(&temp_rc, 1, MPI_INT, rank-1, PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE) ;
+			PE * other_r = calloc(temp_rc, siezof(PE));
+			MPI_Recv(other_r, tempi, MPI_INT, rank-1, PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE) ;
+		}
 		if(mmi->rank != size-1){
-			MPI_Recv(&tempi, 1, MPI_INT, rank-1, PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE) ;
-			PE * right = realloc(tempi * siezof(PE));
-			MPI_Recv(&tempi, tempi, MPI_INT, rank-1, PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE) ;
+			MPI_Recv(&temp_lc, 1, MPI_INT, rank+1, PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE) ;
+			PE * other_l = calloc(temp_lc, siezof(PE));
+			MPI_Recv(other_l, tempj, MPI_INT, rank+1, PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE) ;
 		}
-		if(mmi->rank != 0){
-			MPI_Recv(&tempj, 1, MPI_INT, rank+1, PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE) ;
-			PE * left = realloc(tempj * siezof(PE));
-			MPI_Recv(&tempi, tempj, MPI_INT, rank+1, PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE) ;
+
+		/*find path for left and right*/
+		/*switch start = dest, find new dest*/
+
+		for(int i = 0; i < temp_rc; i++){
+			other_r[i].start = other_r[i].dest
 		}
+		for(int i = 0; i < temp_lc; i++){
+			other_l[i].start = other_l[i].dest
+		}
+
+
+
 	}
 }
 
@@ -169,6 +183,8 @@ void generate_localpath(vector3 start, vector3 dest, meta* const mmi){
 				default: break;
 			}
 		}
+	}else{
+		return 0;
 	}
 
 

@@ -210,7 +210,9 @@ field**** import_market(char* path, meta *mmi){
 	vector3* registers = malloc(sizeof(vector3)*mmi->register_count);
 	vector3* exits = malloc(sizeof(vector3)*mmi->exit_count);
 
+	int indexcap = mmi->linecount * mmi->rows;
 	int q=0, w=0, e=0, r=0, t = 0, index = 0;
+
 	MPI_Barrier(MPI_COMM_WORLD);
 	field**** market = create_market(mmi->rows, mmi->columns, mmi->stories);
 	printf("rank: %3d, s: %5d, l: %3d, st: %3d, r: %3d, e: %3d\n", mmi->rank, mmi->shelf_count, mmi->lift_count, mmi->stock_count, mmi->register_count, mmi->exit_count);
@@ -219,9 +221,12 @@ field**** import_market(char* path, meta *mmi){
 	mmi->startcolumn = startcolumn;
 	mmi->startstorey = startstorey;
 	for(int a = 0; a < mmi->stories; a++){
+		if(index >= indexcap) break;
 		for(int b = 0; b < mmi->columns; b++){
 			if(a == 0 && b == 0) b += startcolumn;
+			if(index >= indexcap) break;
 			for(int c = 0; c < mmi->rows; c++){
+				if(index >= indexcap) break;
 				market[a][b][c] = &matrix[index++];
 				vector3 v = {c, b , a  + startstorey};
 				switch(market[a][b][c]->type) {
@@ -247,6 +252,11 @@ field**** import_market(char* path, meta *mmi){
 			}
 		}
 	}
+
+	//find outer fields
+
+
+
 	mmi->shelf_fields = shelves;
 	mmi->lift_fields = lifts;
 	mmi->stock_fields = stocks;
