@@ -221,12 +221,12 @@ field**** import_market(char* path, meta *mmi){
 	mmi->startcolumn = startcolumn;
 	mmi->startstorey = startstorey;
 	for(int a = 0; a < mmi->stories; a++){
-		if(index >= indexcap) break;
+		//if(index >= indexcap) break;
 		for(int b = 0; b < mmi->columns; b++){
 			if(a == 0 && b == 0) b += startcolumn;
-			if(index >= indexcap) break;
+			//if(index >= indexcap) break;
 			for(int c = 0; c < mmi->rows; c++){
-				if(index >= indexcap) break;
+				if(index >= indexcap) printf("HEY");
 				market[a][b][c] = &matrix[index++];
 				vector3 v = {c, b , a  + startstorey};
 				switch(market[a][b][c]->type) {
