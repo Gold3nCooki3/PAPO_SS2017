@@ -4,6 +4,7 @@
 *.obj
 *.elf
 *.class
+*.xlsx
 
 # Precompiled Headers
 *.gch
@@ -34,6 +35,8 @@ core
 
 # Debug files
 *.dSYM/
-*.su
-.\project
+
+# other
+Aufteilung.xlsx
+\project
 /project/
