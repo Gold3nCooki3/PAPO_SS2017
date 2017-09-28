@@ -139,10 +139,10 @@ void generate_paths(queue_t* const queue, meta* const mmi){
 		/*switch start = dest, find new dest*/
 
 		for(int i = 0; i < temp_rc; i++){
-			other_r[i].start = other_r[i].dest
+
 		}
 		for(int i = 0; i < temp_lc; i++){
-			other_l[i].start = other_l[i].dest
+
 		}
 
 
