@@ -63,7 +63,7 @@ vector3 get_close_vector3(vector3* const list, int listlength, vector3 start, in
 
 void generate_paths(queue_t* const queue, meta* const mmi){
 	struct queue_node_s *node = queue->front;
-	int rightcount = 0, leftcount = 0;
+	int rightcount = 0, leftcount = 0, rank = mmi->rank;
 	PE* local_r = malloc(mmi->spawn_count * sizeof(PE));
 	PE* local_l = malloc(mmi->spawn_count * sizeof(PE));
 
@@ -109,10 +109,11 @@ void generate_paths(queue_t* const queue, meta* const mmi){
 		}
 		node = node->next;
 	}
+	rightcount++;leftcount++;
 
 	int t= 0;
 	while(t++ < 1){
-		i++;j++;
+
 		if(mmi->rank != size-1){
 			MPI_Isend(&leftcount, 1, MPI_INT, rank+1, PATHTAG, MPI_COMM_WORLD, &req);
 			MPI_Isend(local_l, leftcount, MPI_PathE, rank+1, PATHTAG, MPI_COMM_WORLD, &req);
@@ -126,12 +127,12 @@ void generate_paths(queue_t* const queue, meta* const mmi){
 		if(mmi->rank != 0){ /* other fields*/
 			MPI_Recv(&temp_rc, 1, MPI_INT, rank-1, PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE) ;
 			PE * other_r = calloc(temp_rc, siezof(PE));
-			MPI_Recv(other_r, tempi, MPI_INT, rank-1, PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE) ;
+			MPI_Recv(other_r, temp_rc, MPI_INT, rank-1, PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE) ;
 		}
 		if(mmi->rank != size-1){
 			MPI_Recv(&temp_lc, 1, MPI_INT, rank+1, PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE) ;
 			PE * other_l = calloc(temp_lc, siezof(PE));
-			MPI_Recv(other_l, tempj, MPI_INT, rank+1, PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE) ;
+			MPI_Recv(other_l, temp_lc, MPI_INT, rank+1, PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE) ;
 		}
 
 		/*find path for left and right*/
