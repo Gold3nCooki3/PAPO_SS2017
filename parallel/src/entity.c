@@ -61,7 +61,7 @@ vector3 get_close_vector3(vector3* const list, int listlength, vector3 start, in
 	return dest;
 }
 
-ASPath* generate_localpath(vector3 start, vector3 dest, meta* const mmi){
+ASPath generate_localpath(vector3 start, vector3 dest, meta* const mmi){
 	PathNode pathFrom = (PathNode)start;
 	vector3 pathTo_v = dest;
 
@@ -141,7 +141,7 @@ void generate_paths(queue_t* const queue, meta* const mmi){
 					tempdest.z = e->position.z;
 					if(!is_blocked(tempdest)){
 						ASPath path = ASPathCreate(&PathNodeSource, NULL, &start, &tempdest);
-						if(ASPathGetCount(&path) == 0) continue;
+						if(ASPathGetCount(path) == 0) continue;
 						dest = tempdest;
 						min = tempmin;
 					}
