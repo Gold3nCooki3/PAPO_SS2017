@@ -24,7 +24,7 @@
 
 
 typedef enum EntityType {CUSTOMER, EMPLOYEE=5} EntityType;
-
+typedef enum EnqueueStatus {ENQUEUE, NEWPATH, DESTROY, UP, DOWN, EDGEL, EDGER} EnS;
 
 /*Entity
  * id 		: count upwards

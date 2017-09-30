@@ -1,5 +1,7 @@
 #include "entity.h"
 
+#define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
+
 /*============================================HELP FUNCTIONS PATHFINDING======================================*/
 typedef struct vector3 PathNode;
 
@@ -165,7 +167,7 @@ void generate_paths(queue_t* const queue, meta* const mmi){
 				}
 			}
 
-			PE p = {e->id, 0, mmi->edge_fields[result], e->list[e->listpos]};
+			PE p = {e->id, result, mmi->edge_fields[result], e->list[e->listpos]};
 			if(TRUE){
 				local_r[rightcount++] = p;
 			}else{
@@ -220,13 +222,14 @@ void generate_paths(queue_t* const queue, meta* const mmi){
  * @param e			: entity
  * @return FALSE if person has reached their final destination
  */
-int move_entity(meta* const mmi,queue_t* const empty_shelfs, entity* const e){
+EnS move_entity(meta* const mmi,queue_t* const empty_shelfs, entity* const e){
 
 	//Get to new Position
 	PathNode* new_pos = ASPathGetNode(e->path, e->path_position);
 	e->position = *new_pos;
 	e->path_position++;
 
+	EnS return_val = ENQUEUE;
 	// exit
 	if(ASPathGetCount(e->path) == e->path_position){
 		printf("in here");
@@ -236,15 +239,25 @@ int move_entity(meta* const mmi,queue_t* const empty_shelfs, entity* const e){
 			case STOCK:
 			case EXIT:
 				ASPathDestroy(e->path);
-				return FALSE; break;
+				return DESTROY; break;
 			case ESCALATOR:
 			case LIFT: printf("PF_ Takeing the lift");
-				e->position.z = (e->position.z > e->list[e->listpos].z) ?  e->position.z-1 : e->position.z+1; break;
+				if (e->position.z > e->list[e->listpos].z) {
+					e->position.z -= 1;
+					if(!in_process(e->position)) return_val = DOWN;
+				}else{
+					e->position.z += 1;
+					if(!in_process(e->position)) return_val = UP;
+				}
+				break;
 			case CORRIDOR:
+				if(!in_process(e->list[e->listpos])){
+					return_val = (e->position.y + e->position.z * mmi->columns  == mmi->startcolumn) ? EDGEL : EDGER;
+				}else{
 				f = in_matrix_g(e->list[e->listpos]);
 				if(e->type == CUSTOMER){
 					if(f->amount > 0){
-						f->amount -= 1;
+						f->amount -= -1;
 					}else if(f->amount == 0){ //collect empty fields
 						f->amount = -1;
 						temp_vec = malloc(sizeof(vector3));
@@ -256,15 +269,17 @@ int move_entity(meta* const mmi,queue_t* const empty_shelfs, entity* const e){
 					 f += FILLVAL;
 				}
 				e->listpos++;
+				}
 			default: break;
 		}
 		ASPathDestroy(e->path);
 		e->path_position = 0;
+		return_val = NEWPATH;
 	}else if(e->listpos >= e->amountItems){ //
 		printf("Error: no exit");
 		exit(EXIT_FAILURE);
 	}
-	return TRUE;
+	return return_val;
 }
 
 /*Move every entity in the entity_queue, dequeue if entity reached final destination
@@ -285,21 +300,42 @@ void work_queue(meta * const mmi, queue_t* const entity_queue, queue_t* const em
 
 	if(queue_empty(entity_queue)){
 		printf("empty!");
-		return;
 	}else{
 		entity* first = queue_dequeue(entity_queue);
 		entity* e = first;
 		do{
 			if(!first)first = e;
-			int not_finished = move_entity(mmi, empty_shelfs, e);
-			if(not_finished){
-				queue_enqueue(entity_queue, e);
-			}else {
-				free(e->list);
-				if(e == first) first = NULL;
-				free(e);
-				if(queue_empty(entity_queue)) break;
+			EnS status = move_entity(mmi, empty_shelfs, e);
+			int temp_limit, result = -1;
+			switch (status) {
+				case ENQUEUE	: queue_enqueue(entity_queue, e); break;
+				case NEWPATH	: queue_enqueue(pathf_queue, e); break;
+				case DESTROY	:
+					free(e->list);
+					if(e == first) first = NULL;
+					free(e); break;
+
+				case DOWN	:
+						for(int r = mmi->rank-1; r >= 0; r--){
+							result = r;
+							temp_limit = mmi->linecount / mmi->size * r + MIN(r,mmi->linecount%mmi->size);
+							if( (e->position.y + e->position.z*mmi->columns) > temp_limit) break;
+						}
+						break;
+
+				case UP		:
+						for(int r = mmi->rank+1; r < mmi->size; r++){
+                                                        result = r;
+                                                        temp_limit = mmi->linecount / mmi->size * r + MIN(r,mmi->linecount%mmi->size);
+                                                        if( (e->position.y + e->position.z*mmi->columns) < temp_limit) break;
+                                                }
+						break;
+
+				case EDGEL	: result=mmi->rank-1; break;
+				case EDGER	: result=mmi->rank+1; break;
+				default: break;
 			}
+			if(status == DESTROY && queue_empty(entity_queue)) break;
 			e = queue_dequeue(entity_queue);
 		}while(first != e);
 		if(first == e) queue_enqueue(entity_queue, e); // otherwise one element gets lost
