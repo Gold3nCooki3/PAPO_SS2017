@@ -61,19 +61,19 @@ vector3 get_close_vector3(vector3* const list, int listlength, vector3 start, in
 	return dest;
 }
 
-ASPath generate_localpath(vector3 start, vector3 dest, meta* const mmi){
+ASPath generate_localpath(vector3 start, vector3 dest, meta* const mmi, int* lift_flag){
 	PathNode pathFrom = (PathNode)start;
 	vector3 pathTo_v = dest;
 
 
-	if(in_process(dest)){
 		if(pathTo_v.z != start.z){
 			if(mmi->lift_count > 0){
 				pathTo_v = get_close_vector3(mmi->lift_fields, mmi->lift_count, start, TRUE);
 			}else{
-				return LIFT;
+				lift_flag = TRUE;
+				return NULL;
 			}
-		}else{
+		}else if(in_process(dest)){
 			switch (in_matrix_g(dest)->type){
 				case REGISTER:
 				case SHELF: pathTo_v.x++;
@@ -95,14 +95,14 @@ ASPath generate_localpath(vector3 start, vector3 dest, meta* const mmi){
 			}
 		}
 	}else{
-		return 0;
+		return NULL;
 	}
 
 
 	PathNode pathTo = (PathNode)pathTo_v;
 	ASPath path = ASPathCreate(&PathNodeSource, NULL, &pathFrom, &pathTo);
 	if(ASPathGetCount(path) == 0){ //not vaild
-		return 0;
+		return NULL;
 	}
 	return path;
 }
@@ -339,7 +339,7 @@ void spawn_entity(meta* const mmi, queue_t* const entity_queue, queue_t* const e
 		e->listpos = 0;
 		e->path_position = 0;
 		e->amountItems = 1;
-		vector3 testpos = { 0, 0, 0};
+		vector3 testpos = mmi->exit_fields[rand()%mmi->exit_count];
 		e->position = testpos;
 		e->memory_dest.x = -1;
 		e->list = list;
