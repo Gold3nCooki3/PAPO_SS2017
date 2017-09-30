@@ -4,8 +4,8 @@
 #SBATCH -N 4
 #SBATCH -n 4
 #SBATCH --partition=west
-#SBATCH --output=job.out
-#SBATCH --error=job.err
+#SBATCH --output=out.out
+#SBATCH --error=err.err
 
 . /etc/profile.d/wr-spack.sh
 spack load --dependencies mpi
