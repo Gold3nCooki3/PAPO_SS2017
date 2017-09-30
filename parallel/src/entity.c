@@ -66,33 +66,32 @@ ASPath generate_localpath(vector3 start, vector3 dest, meta* const mmi, int* lif
 	vector3 pathTo_v = dest;
 
 
-		if(pathTo_v.z != start.z){
-			if(mmi->lift_count > 0){
-				pathTo_v = get_close_vector3(mmi->lift_fields, mmi->lift_count, start, TRUE);
-			}else{
-				lift_flag = TRUE;
-				return NULL;
-			}
-		}else if(in_process(dest)){
-			switch (in_matrix_g(dest)->type){
-				case REGISTER:
-				case SHELF: pathTo_v.x++;
+	if(pathTo_v.z != start.z){
+		if(mmi->lift_count > 0){
+			pathTo_v = get_close_vector3(mmi->lift_fields, mmi->lift_count, start, TRUE);
+		}else{
+			lift_flag = TRUE;
+			return NULL;
+		}
+	}else if(in_process(dest)){
+		switch (in_matrix_g(dest)->type){
+			case REGISTER:
+			case SHELF: pathTo_v.x++;
+				if(is_blocked(pathTo_v)){
+					pathTo_v.x-=2;
 					if(is_blocked(pathTo_v)){
-						pathTo_v.x-=2;
+						pathTo_v.x+=1;
+						pathTo_v.y+=1;
 						if(is_blocked(pathTo_v)){
-							pathTo_v.x+=1;
-							pathTo_v.y+=1;
+							pathTo_v.y-=2;
 							if(is_blocked(pathTo_v)){
-								pathTo_v.y-=2;
-								if(is_blocked(pathTo_v)){
 
-								}
 							}
 						}
 					}
-					break;
-				default: break;
-			}
+				}
+				break;
+			default: break;
 		}
 	}else{
 		return NULL;
