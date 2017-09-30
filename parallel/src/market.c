@@ -10,9 +10,14 @@ int vec_equal(vector3 * vec1, vector3 * vec2){
 }
 
 int in_process(vector3 vec){
-	int vec_to_id = vec.y  + vec.z * global__mmi->columns;
-	if((vec_to_id >= global__mmi->startline) && (vec_to_id < global__mmi->startline + global__mmi->linecount))	return TRUE;
-	return FALSE;
+	if(global__mmi){
+		int vec_to_id = vec.y  + vec.z * global__mmi->columns;
+		if((vec_to_id >= global__mmi->startline) && (vec_to_id < global__mmi->startline + (global__mmi->chunksize/global__mmi->rows) + 1)) return TRUE;
+		return FALSE;
+	}else{
+		printf("Error: no global mmi");
+		exit(EXIT_FAILURE);
+	}
 }
 
 /*
@@ -24,7 +29,7 @@ field* in_matrix_g(vector3 vec){
 		int x = vec.x;
 		int y = vec.y;
 		int z = vec.z - global__mmi->startstorey;
-		if(z > global__mmi->stories -1 || z < 0 || y > global__mmi->columns -1|| y < 0 || x > global__mmi->rows -1 || x < 0) return 0;
+		if(z >= global__mmi->stories || z < 0 || y >= global__mmi->columns || y < 0 || x >= global__mmi->rows || x < 0) return 0;
 		return global__market[z][y][x];
 	}else{
 		printf("Error: no global matrix");
@@ -63,7 +68,7 @@ field* readfile(MPI_File *fh, meta * const mmi) {
 	MPI_Request req;
 	MPI_Datatype MPI_field;
 
-	int *firstline, fieldcount, linecount, chunksize, overlap = 0, flinecount = 8;
+	int *firstline, fieldcount, linecount, chunksize, overlap = 1, flinecount = 8;
 	int rank = mmi->rank, size = mmi->size;
 	field *field_chunk;
 
@@ -133,7 +138,7 @@ field* readfile(MPI_File *fh, meta * const mmi) {
 
 	}
 
- 	/*Print for testing
+ 	/*Print for testing*/
 	if( rank == 0 ){
 		printf("Process %d:\n", rank);
                 for(int t = 0; t < flinecount; t++){
@@ -157,6 +162,7 @@ field* readfile(MPI_File *fh, meta * const mmi) {
 			field* print_chunk = malloc(print_size * sizeof(field));
 			err += MPI_Recv(print_chunk, print_size, MPI_field, source, DEBUGTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
        			printf("CS: %d  GI: %d\n", print_size, gi);
+			gi -= overlap * firstline[0]; //remove overlap from count
 			for(int i = 0; i < print_size; i++){
 		     	        int z = (gi / (firstline[1] * firstline[0]));
                        		int y = (gi % (firstline[1] * firstline[0])) / firstline[1];
@@ -170,7 +176,7 @@ field* readfile(MPI_File *fh, meta * const mmi) {
 	}else{
 		MPI_Isend(&chunksize, 1, MPI_INT, MASTER, DEBUGTAG, MPI_COMM_WORLD, &req);
 	 	MPI_Isend(field_chunk, chunksize, MPI_field, MASTER, DEBUGTAG, MPI_COMM_WORLD, &req);
-	}*/
+	}/**/
 	free(firstline);
 	return field_chunk;
 }
@@ -217,7 +223,7 @@ field**** import_market(char* path, meta *mmi){
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	field**** market = create_market(mmi->rows, mmi->columns, mmi->stories);
-	printf("rank: %3d, s: %5d, l: %3d, st: %3d, r: %3d, e: %3d\n", mmi->rank, mmi->shelf_count, mmi->lift_count, mmi->stock_count, mmi->register_count, mmi->exit_count);
+	//printf("rank: %3d, s: %5d, l: %3d, st: %3d, r: %3d, e: %3d\n", mmi->rank, mmi->shelf_count, mmi->lift_count, mmi->stock_count, mmi->register_count, mmi->exit_count);
 	int startcolumn = mmi->startline % mmi->columns;
 	int startstorey = mmi->startline / mmi->columns;
 	mmi->startcolumn = startcolumn;
@@ -255,17 +261,34 @@ field**** import_market(char* path, meta *mmi){
 		}
 	}
 
+	global__mmi = mmi;			//this needs to be set bevor the use of is_blocked, in_matrix or in_process
+        global__mmi->matrix = matrix;
+
 	//find outer fields
+	int edgecount = 0;
+	int endline = (mmi->startcolumn + (mmi->chunksize / mmi->rows))%mmi->columns - 1;
+        int endstorey = mmi->startstorey + mmi->stories - 1;
+	vector3* edgefields = calloc(2*mmi->rows, sizeof(vector3));
+	for(int x = 0; x < mmi->rows; x++){
+		vector3 edge_left = {x, mmi->startcolumn, mmi->startstorey}; //check possible empty edgefields
+		if(mmi->rank != 0 && !is_blocked(edge_left)){
+			edgefields[edgecount++] = edge_left;
+		}
+		vector3 edge_right = {x, endline, endstorey}; //check possible empty edgefields
+                if(mmi->rank != mmi->size-1 && !is_blocked(edge_right) ){
+                        edgefields[edgecount++] = edge_right;
+                }
 
-
-
+	}
+	edgefields = realloc(edgefields, edgecount * sizeof(vector3)); //remove empty cells
+	printf("R: %d EdgeC: %d\n", mmi->rank, edgecount);
+	mmi->edge_count = edgecount;
+	mmi->edge_fields = edgefields;
 	mmi->shelf_fields = shelves;
 	mmi->lift_fields = lifts;
 	mmi->stock_fields = stocks;
 	mmi->register_fields = registers;
 	mmi->exit_fields = exits;
-	global__mmi = mmi;
-	global__mmi->matrix = matrix;
 return market;
 }
 

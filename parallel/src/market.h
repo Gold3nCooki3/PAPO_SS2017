@@ -47,6 +47,7 @@ marketmetainfo {
 	int rank;
 	int size;
 
+	int edge_count;
 	int shelf_count;
 	int lift_count;
 	int stock_count;
@@ -57,6 +58,7 @@ marketmetainfo {
 	int empty_count;
 	int entity_count;
 
+	vector3* edge_fields;
 	vector3* shelf_fields;
 	vector3* lift_fields;
 	vector3* stock_fields;
