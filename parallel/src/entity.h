@@ -58,6 +58,8 @@ PathEssentials{
 };
 typedef struct PathEssentials PE;
 
+static vector3 start_vec;
+
 /*Spawn an entity and enqueue it
  * @param queue 	: queue of all entities
  * @param position 	: position where the entity is spawned

@@ -44,6 +44,11 @@ static const ASPathNodeSource PathNodeSource = {
     NULL
 };
 /*===================================================================================================*/
+void force_stop(){
+free_market();
+free_meta();
+exit(5);
+}
 
 
 vector3 get_close_vector3(vector3* const list, int listlength, vector3 start, int forceSameLevel){
@@ -64,13 +69,15 @@ vector3 get_close_vector3(vector3* const list, int listlength, vector3 start, in
 ASPath generate_localpath(vector3 start, vector3 dest, meta* const mmi, int* lift_flag){
 	PathNode pathFrom = (PathNode)start;
 	vector3 pathTo_v = dest;
-
+	printf("PF_ Hey\n");
+	printf("PF_ Start: %d, %d \n", pathTo_v.z, start.z);
 
 	if(pathTo_v.z != start.z){
 		if(mmi->lift_count > 0){
+			printf("PF_ searching for lift \n");
 			pathTo_v = get_close_vector3(mmi->lift_fields, mmi->lift_count, start, TRUE);
 		}else{
-			lift_flag = TRUE;
+			*lift_flag = TRUE;
 			return NULL;
 		}
 	}else if(in_process(dest)){
@@ -106,6 +113,19 @@ ASPath generate_localpath(vector3 start, vector3 dest, meta* const mmi, int* lif
 	return path;
 }
 
+int compfunc(const void * a, const void * b){
+	vector3 vec_a = *(vector3*)a;
+	vector3 vec_b = *(vector3*)b;
+	int dista = (start_vec.z == vec_a.z) ? abs(start_vec.x - vec_a.x) - abs(start_vec.y - vec_a.y) : -1;
+	int distb = (start_vec.z == vec_b.z) ? abs(start_vec.x - vec_b.x) - abs(start_vec.y - vec_b.y) : -1;
+
+	if(dista > distb) return -1;
+	if(dista == distb) return 0;
+	if(dista < distb) return 1;
+
+	return 0;
+}
+
 void generate_paths(queue_t* const queue, meta* const mmi){
 	struct queue_node_s *node = queue->front;
 	int rightcount = 0, leftcount = 0, rank = mmi->rank, size= mmi->size;
@@ -121,33 +141,31 @@ void generate_paths(queue_t* const queue, meta* const mmi){
 
 	while(node != NULL){
 		entity* e = node->data;
-		ASPath tempPath = generate_localpath(e->position, e->list[e->listpos], mmi);
-		if(!tempPath){
+		int lift_flag = FALSE;
+		ASPath tempPath = generate_localpath(e->position, e->list[e->listpos], mmi, &lift_flag);
+		if(ASPathGetCount(tempPath) > 0){
 			e->path = tempPath;
 		}else{
-			vector3 start = e->position;
-			vector3 dest, tempdest;
+			start_vec = e->position;
+			int result = -1;
 
-			int directioncolumn = (TRUE) ? mmi->startcolumn + mmi->linecount : mmi->startcolumn;
-
-			for(int r = 0 ; r < mmi->rows; r++){ /* TODO EDGEFIELDS */
-				int tempmin, min = -1;
-				int d = abs(r - e->list[e->listpos].x) + abs(directioncolumn - e->list[e->listpos].y);
-				if(d < min || min == -1){
-					tempmin = d;
-					tempdest.x = r;
-					tempdest.y = directioncolumn;
-					tempdest.z = e->position.z;
-					if(!is_blocked(tempdest)){
-						ASPath path = ASPathCreate(&PathNodeSource, NULL, &start, &tempdest);
-						if(ASPathGetCount(path) == 0) continue;
-						dest = tempdest;
-						min = tempmin;
-					}
+			qsort(mmi->edge_fields, mmi->edge_count, sizeof(vector3), compfunc);
+			for(int c = 0; c < mmi->edge_count; c++) printf(" [%2d, %2d, %2d];", mmi->edge_fields[c].x, mmi->edge_fields[c].y, mmi->edge_fields[c].z);
+			printf("\n");
+			force_stop();
+			for(int c = 0; c < mmi->edge_count; c++){
+				ASPath path = ASPathCreate(&PathNodeSource, NULL, &start_vec, &(mmi->edge_fields[c]));
+        			if(ASPathGetCount(path) > 0){ //is path vaild
+                			result = c;
+					e->path = path;
+					break;
+			        }
+				if(c == mmi->edge_count-1){
+				printf("Error");
 				}
 			}
 
-			PE p = {e->id, 0, dest, e->list[e->listpos]};
+			PE p = {e->id, 0, mmi->edge_fields[result], e->list[e->listpos]};
 			if(TRUE){
 				local_r[rightcount++] = p;
 			}else{
@@ -158,8 +176,8 @@ void generate_paths(queue_t* const queue, meta* const mmi){
 	}
 	rightcount++;leftcount++;
 
-	int t= 0;
-	while(t++ < 1){
+	/*int t= 0;*/
+	while(FALSE){
 
 		if(rank != size-1){
 			MPI_Isend(&leftcount, 1, MPI_INT, rank+1, PATHTAG, MPI_COMM_WORLD, &req);
@@ -193,7 +211,6 @@ void generate_paths(queue_t* const queue, meta* const mmi){
 		}
 
 
-
 	}
 }
 
@@ -212,6 +229,7 @@ int move_entity(meta* const mmi,queue_t* const empty_shelfs, entity* const e){
 
 	// exit
 	if(ASPathGetCount(e->path) == e->path_position){
+		printf("in here");
 		field* f;
 		vector3* temp_vec;
 		switch (in_matrix_g(e->memory_dest)->type){
@@ -220,7 +238,8 @@ int move_entity(meta* const mmi,queue_t* const empty_shelfs, entity* const e){
 				ASPathDestroy(e->path);
 				return FALSE; break;
 			case ESCALATOR:
-			case LIFT: e->position.z = (e->position.z > e->list[e->listpos].z) ?  e->position.z-1 : e->position.z+1; break;
+			case LIFT: printf("PF_ Takeing the lift");
+				e->position.z = (e->position.z > e->list[e->listpos].z) ?  e->position.z-1 : e->position.z+1; break;
 			case CORRIDOR:
 				f = in_matrix_g(e->list[e->listpos]);
 				if(e->type == CUSTOMER){
@@ -255,8 +274,13 @@ int move_entity(meta* const mmi,queue_t* const empty_shelfs, entity* const e){
 void work_queue(meta * const mmi, queue_t* const entity_queue, queue_t* const empty_shelfs, queue_t* const pathf_queue){
 	if(!queue_empty(pathf_queue)){
 		generate_paths(pathf_queue, mmi);
+		while(!queue_empty(pathf_queue)){
+			entity* e = queue_dequeue(pathf_queue);
+			queue_enqueue(entity_queue, e);
+			mmi->entity_count++;
+		}
 	}else{
-		printf("Nothing to spawn");
+		//printf("Nothing to spawn");
 	}
 
 	if(queue_empty(entity_queue)){

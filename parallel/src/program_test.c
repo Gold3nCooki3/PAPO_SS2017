@@ -42,19 +42,17 @@ void print_queue_parallel(queue_t* const queue, meta *mmi , int chunk_length){
 
 	if(mmi->rank == MASTER){
 		//print own data
-		printf("PRINT EQ s: %d cl: %d\n", MASTER, chunk_length);
 		collect_entities(queue, MASTER, chunk_length, print_chunk);
 		// get data
 		for(int source = 1; source < mmi->size; source++){
 			int old_cl = chunk_length;
 			MPI_Recv(&chunk_length, 1, MPI_INT, source, PRINTTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-			printf("PRINT EQ s: %d cl: %d\n", source, chunk_length);
 			if(old_cl != chunk_length) print_chunk = realloc(print_chunk, chunk_length * sizeof(PrintEntity));
 			MPI_Recv(print_chunk, chunk_length, MPI_PrintEntity, source, PRINTTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 			// print data
 			for(int i = 0; i < chunk_length; i++ ){
-				printf("id: %4d, type: %d, pathpos: %3d, pathcount: %3d,  pos: (%2d,%2d,%2d), dest: (%2d,%2d,%2d) \n",
-						print_chunk[i].id, print_chunk[i].type, print_chunk[i].pathpos, print_chunk[i].pathcount,
+				printf("rank: %2d, id: %4d, type: %d, pathpos: %3d, pathcount: %3d,  pos: (%2d,%2d,%2d), dest: (%2d,%2d,%2d) \n",
+						mmi->rank, print_chunk[i].id, print_chunk[i].type, print_chunk[i].pathpos, print_chunk[i].pathcount,
 						print_chunk[i].posx, print_chunk[i].posy, print_chunk[i].posz,
 						print_chunk[i].destx, print_chunk[i].desty, print_chunk[i].destz);
 			}

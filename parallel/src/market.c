@@ -281,7 +281,7 @@ field**** import_market(char* path, meta *mmi){
 
 	}
 	edgefields = realloc(edgefields, edgecount * sizeof(vector3)); //remove empty cells
-	printf("R: %d EdgeC: %d\n", mmi->rank, edgecount);
+
 	mmi->edge_count = edgecount;
 	mmi->edge_fields = edgefields;
 	mmi->shelf_fields = shelves;
