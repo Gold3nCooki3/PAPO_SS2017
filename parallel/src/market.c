@@ -87,7 +87,7 @@ field* readfile(MPI_File *fh, meta * const mmi) {
 	linecount	= fieldcount / firstline[0];
 	chunksize 	= (rank < linecount%size) ? linecount/size + 1 : linecount/size ;
 
-	start 		= rank * linecount + MIN(rank, linecount%size);
+	start 		= rank * chunksize + MIN(rank, linecount%size);
 	end   		= start + chunksize;
 	if (rank == size-1) end = linecount;
 
@@ -108,10 +108,11 @@ field* readfile(MPI_File *fh, meta * const mmi) {
 	/* import values in meta object */
 	mmi->rows = firstline[0];
 	mmi->columns = firstline[1];
-	mmi->stories = chunksize / (firstline[0] *  firstline[1]);
-	mmi->stories = ( mmi->stories == 0 ) ? 1 : mmi->stories;
+	mmi->stories = (chunksize % (firstline[0] *  firstline[1]) != 0)  ? (chunksize / (firstline[0] *  firstline[1]) + 1) : (chunksize / (firstline[0] *  firstline[1]));
 	mmi->linecount = linecount;
-	mmi->startline = rank * linecount + MIN(rank, linecount%size);
+	mmi->chunksize = chunksize;
+	mmi->startline = rank * (linecount / size) + MIN(rank, linecount%size);
+
 
 	/* switch endianess, when the processor is a little endian processor */
 	for(int t = 0; t < chunksize; t++){
@@ -132,29 +133,30 @@ field* readfile(MPI_File *fh, meta * const mmi) {
 
 	}
 
- 	//Print for testing
+ 	/*Print for testing
 	if( rank == 0 ){
 		printf("Process %d:\n", rank);
                 for(int t = 0; t < flinecount; t++){
                         printf("%d, ", firstline[t]);
                 }
+		printf("\n");
 		for(int i = 0; i < chunksize; i++){
                         int z = i / (firstline[1] * firstline[0]) ;
                         int y = (i % (firstline[1] * firstline[0])) / firstline[1];
                         int x = (i % (firstline[1] * firstline[0])) % firstline[1];
                         printf("X: %2d, Y: %2d, Z: %2d ", x, y, z);
-                        printf("T: %d, C: %d, A: %3d\n", field_chunk[i].type, field_chunk[i].content, field_chunk[i].amount);
+                        printf("T: %2d, C: %3d, A: %3d\n", field_chunk[i].type, field_chunk[i].content, field_chunk[i].amount);
                 }
 		printf("\n");
 
+		int gi = chunksize;
 		for(int source = 1; source < size; source++){
-			printf("Process: %d\n", source);
+			printf("Process: %d, GI: %d\n", source, gi);
 			int print_size;
 			int err = MPI_Recv(&print_size, 1, MPI_INT, source, DEBUGTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 			field* print_chunk = malloc(print_size * sizeof(field));
 			err += MPI_Recv(print_chunk, print_size, MPI_field, source, DEBUGTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-       			int gi = source * chunksize;
-			printf("CS: %d  NS: %d\n", print_size, chunksize);
+       			printf("CS: %d  GI: %d\n", print_size, gi);
 			for(int i = 0; i < print_size; i++){
 		     	        int z = (gi / (firstline[1] * firstline[0]));
                        		int y = (gi % (firstline[1] * firstline[0])) / firstline[1];
@@ -168,7 +170,7 @@ field* readfile(MPI_File *fh, meta * const mmi) {
 	}else{
 		MPI_Isend(&chunksize, 1, MPI_INT, MASTER, DEBUGTAG, MPI_COMM_WORLD, &req);
 	 	MPI_Isend(field_chunk, chunksize, MPI_field, MASTER, DEBUGTAG, MPI_COMM_WORLD, &req);
-	}
+	}*/
 	free(firstline);
 	return field_chunk;
 }
@@ -210,23 +212,24 @@ field**** import_market(char* path, meta *mmi){
 	vector3* registers = malloc(sizeof(vector3)*mmi->register_count);
 	vector3* exits = malloc(sizeof(vector3)*mmi->exit_count);
 
-	int indexcap = mmi->linecount * mmi->rows;
+	int indexcap = mmi->chunksize;
+	printf("DI: %d\n ", indexcap);
 	int q=0, w=0, e=0, r=0, t = 0, index = 0;
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	field**** market = create_market(mmi->rows, mmi->columns, mmi->stories);
 	printf("rank: %3d, s: %5d, l: %3d, st: %3d, r: %3d, e: %3d\n", mmi->rank, mmi->shelf_count, mmi->lift_count, mmi->stock_count, mmi->register_count, mmi->exit_count);
-	int startcolumn = mmi->startline % ( mmi->rows * mmi->columns ) ;
-	int startstorey = mmi->startline / ( mmi->rows * mmi->columns ) ;
+	int startcolumn = mmi->startline % mmi->columns;
+	int startstorey = mmi->startline / mmi->columns;
 	mmi->startcolumn = startcolumn;
 	mmi->startstorey = startstorey;
 	for(int a = 0; a < mmi->stories; a++){
-		//if(index >= indexcap) break;
+		if(index >= indexcap) break;
 		for(int b = 0; b < mmi->columns; b++){
 			if(a == 0 && b == 0) b += startcolumn;
-			//if(index >= indexcap) break;
+			if(index >= indexcap) break;
 			for(int c = 0; c < mmi->rows; c++){
-				if(index >= indexcap) printf("HEY");
+				//if(mmi->rank == 2) printf("i: %d\n", index);
 				market[a][b][c] = &matrix[index++];
 				vector3 v = {c, b , a  + startstorey};
 				switch(market[a][b][c]->type) {

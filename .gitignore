@@ -28,6 +28,7 @@ core
 *.exe
 *.stackdump
 *.out
+*.err
 *.app
 *.i*86
 *.x86_64

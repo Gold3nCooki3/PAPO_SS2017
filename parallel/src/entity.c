@@ -332,7 +332,7 @@ void spawn_entity(meta* const mmi, queue_t* const entity_queue, queue_t* const e
 	static int counter = 0;
 	vector3 * list= malloc(sizeof(vector3));
 	vector3 testdest= { 4, 4, 4};
-	list[1] = testdest;
+	list[0] = testdest;
 	entity* e = calloc(1, sizeof(*e));
 		e->id = 0;
 		e->type = type;

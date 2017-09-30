@@ -42,6 +42,7 @@ marketmetainfo {
 	int startcolumn;
 	int startstorey;
 	int linecount;
+	int chunksize;
 	int startline;
 	int rank;
 	int size;
