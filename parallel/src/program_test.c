@@ -33,23 +33,22 @@ void collect_entities(queue_t* const queue, int rank, int chunk_length, PrintEnt
 }
 
 
-void print_queue_parallel(queue_t* const queue, meta *mmi){
-	int chunk_length = mmi->entity_count;
+void print_queue_parallel(queue_t* const queue, meta *mmi , int chunk_length){
 	MPI_Request req;
-	PrintEntity* print_chunk = malloc(mmi->entity_count * sizeof(PrintEntity));
+	PrintEntity* print_chunk = malloc(chunk_length * sizeof(PrintEntity));
 	MPI_Datatype MPI_PrintEntity;
 	MPI_Type_contiguous(10, MPI_INT, &MPI_PrintEntity);
 	MPI_Type_commit(&MPI_PrintEntity);
 
 	if(mmi->rank == MASTER){
 		//print own data
-		printf("s: %d cl: %d\n", MASTER, chunk_length);
+		printf("PRINT EQ s: %d cl: %d\n", MASTER, chunk_length);
 		collect_entities(queue, MASTER, chunk_length, print_chunk);
 		// get data
 		for(int source = 1; source < mmi->size; source++){
 			int old_cl = chunk_length;
 			MPI_Recv(&chunk_length, 1, MPI_INT, source, PRINTTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-			printf("s: %d cl: %d\n", source, chunk_length);
+			printf("PRINT EQ s: %d cl: %d\n", source, chunk_length);
 			if(old_cl != chunk_length) print_chunk = realloc(print_chunk, chunk_length * sizeof(PrintEntity));
 			MPI_Recv(print_chunk, chunk_length, MPI_PrintEntity, source, PRINTTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 			// print data

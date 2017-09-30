@@ -213,7 +213,6 @@ field**** import_market(char* path, meta *mmi){
 	vector3* exits = malloc(sizeof(vector3)*mmi->exit_count);
 
 	int indexcap = mmi->chunksize;
-	printf("DI: %d\n ", indexcap);
 	int q=0, w=0, e=0, r=0, t = 0, index = 0;
 
 	MPI_Barrier(MPI_COMM_WORLD);

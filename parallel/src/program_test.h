@@ -31,6 +31,6 @@ typedef struct PrintEntity PrintEntity;
 /*
  *print the whole queue of entities
  */
-void print_queue_parallel(queue_t* const queue, meta *mmi);
+void print_queue_parallel(queue_t* const queue, meta *mmi, int chunk_lenth);
 
 #endif
