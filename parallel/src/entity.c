@@ -386,9 +386,9 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
 
 		/*=============================*/
 		/*s_L rank-1, s_R rank+1 , s_ol & s_oR depends on market separation */
-		entity** send_entities = calloc(6, sizeof(entity*));
+		entity*** send_entities = calloc(6, sizeof(entity*));
 		for(int i = 0; i < 6; i++){
-			send_entities[i] = calloc(10, sizeof(entity));
+			send_entities[i] = calloc(10, sizeof(entity*));
 		}
 		int lowerlimit = mmi->linecount / mmi->size * mmi->rank-1 + MIN(mmi->rank-1,mmi->linecount%mmi->size);
 		int upperlimit = mmi->linecount / mmi->size * mmi->rank+1 + MIN(mmi->rank+1,mmi->linecount%mmi->size);
@@ -419,26 +419,26 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
 				case DOWN: if((e->position.y + e->position.z * mmi->columns) < lowerlimit){
 								if((e->position.y + e->position.z * mmi->columns) < second_llimit){
 									fast_realloc(send_entities[4], &s_counts[4], &maxima[4], 10); //ooL
-									send_entities[4][s_counts[4]++] = *e;
+									send_entities[4][s_counts[4]++] = e;
 								}else{
 									fast_realloc(send_entities[2], &s_counts[2], &maxima[2], 10); //oL
-									send_entities[2][s_counts[2]++] = *e;
+									send_entities[2][s_counts[2]++] = e;
 								}
 							}
 				case EDGEL: fast_realloc(send_entities[0], &s_counts[0], &maxima[0], 20);
-							send_entities[0][s_counts[0]++] = *e;	break;
+							send_entities[0][s_counts[0]++] = e;	break;
 
 				case UP: if((e->position.y + e->position.z * mmi->columns) > upperlimit){
 								if((e->position.y + e->position.z * mmi->columns) > second_ulimit){ //ooR
 									fast_realloc(send_entities[5], &s_counts[5], &maxima[5], 10);
-									send_entities[5][s_counts[5]++] = *e;
+									send_entities[5][s_counts[5]++] = e;
 								}else{
 									fast_realloc(send_entities[3], &s_counts[3], &maxima[3], 10);
-									send_entities[3][s_counts[5]++] = *e;
+									send_entities[3][s_counts[5]++] = e;
 								}
 							}
 				case EDGER: fast_realloc(send_entities[1], &s_counts[1], &maxima[1], 20);
-							send_entities[1][s_counts[1]++] = *e;	break;
+							send_entities[1][s_counts[1]++] = e;	break;
 				default: break;
 			}
 			if (status == DESTROY && queue_empty(entity_queue))
@@ -456,25 +456,49 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
 		MPI_Type_contiguous(10 + 3*LISTL, MPI_INT, &MPI_Entity);
 		MPI_Type_commit(&MPI_Entity);
 
-		EssentialEntity* entities_tosend = calloc(s_counts, sizeof(EssentialEntity));
+
 		//SEND ENTITIES
 		for(int i = 0; i < 6; i++){
-			send_entities[t] = realloc(send_entities[t], s_counts[t]*sizeof(entity));
+			send_entities[i] = realloc(send_entities[i], s_counts[i]*sizeof(entity));
+			EssentialEntity* entities_tosend = calloc(s_counts[i], sizeof(EssentialEntity));
+			for(int c = 0;c < s_counts[i];c++){
+				entities_tosend[c].type   = send_entities[i][c]->type;
+				entities_tosend[c].id     = send_entities[i][c]->id;
+				entities_tosend[c].listpos= send_entities[i][c]->listpos;
+				entities_tosend[c].amountItems = send_entities[i][c]->amountItems;
+				entities_tosend[c].position = send_entities[i][c]->position;
+				memcopy(entities_tosend[c].list, send_entities[i][c]->list ,sizeof(vector3) * send_entities[i][c]->amountItems);
+				free(send_entities[i][c]->list);
+				free(send_entities[i][c]); // BYE BYE
+			}
 			MPI_Isend(&s_counts[i], 1, MPI_INT, targets[i], ENTITYTAG, MPI_COMM_WORLD, &req);
-			MPI_Isend(send_entities, s_counts[i],  MPI_Entity, targets[i], ENTITYTAG, MPI_COMM_WORLD, &req);
+			MPI_Isend(entities_tosend, s_counts[i],  MPI_Entity, targets[i], ENTITYTAG, MPI_COMM_WORLD, &req);
+			free(entities_tosend);
+		}
 
-
+		//RECIVE ENTITIES
 		for(int i = 0; i < 6; i++){
 			int count;
 			MPI_Rev(&count, 1, MPI_INT, targets[i], ENTITYTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-			entity * entityarr = malloc(count * sizeof(EssentialEntity));
+			EssentialEntity * entityarr = malloc(count * sizeof(EssentialEntity));
 			MPI_Rev(entityarr, count, MPI_Entity, targets[i], ENTITYTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 			for(int b = 0; b < count; b++){
+				entity* e = calloc(1, sizeof(*e));
+					e->id = entityarr[b].id;
+					e->type = entityarr[b].type;
+					e->listpos = entityarr[b].listpos;
+					e->path_position = 0;
+					e->path = NULL;
+					e->amountItems = entityarr[b].amountItems;
+					e->position = entityarr[b].position;
+					e->memory_dest.x = -1;
+					vector3 * list = malloc(sizeof(vector3) * e->amountItems);
+					memcopy(list, entityarr[b].list ,sizeof(vector3) * e->amountItems);
+					e->list = list;
 				queue_enqueue(pathf_queue, &entityarr[b]);
 			}
 			free(entityarr);
 		}
-		*/
 
 	}
 }
