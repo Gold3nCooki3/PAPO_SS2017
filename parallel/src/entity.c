@@ -394,6 +394,7 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
 		int maxima[6] = { 10, 10, 10, 10, 10, 10 };
 		int s_counts[6] = { 0, 0, 0, 0, 0, 0 };
 
+		/*=============================*/
 		entity* first = queue_dequeue(entity_queue);
 		entity* e = first;
 		do {
@@ -442,18 +443,25 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
 		if (first == e)
 			queue_enqueue(entity_queue, e); // otherwise one element gets lost
 
+		/*=============================*/
+
+		MPI_Datatype MPI_Entity;
+		MPI_Type_contiguous(10 + 3*LISTL, MPI_INT, &MPI_Entity);
+		MPI_Type_commit(&MPI_Entity);
+
+		EssentialEntity* entities_tosend = calloc(s_counts, sizeof(EssentialEntity));
 		//SEND ENTITIES
 		for(int i = 0; i < 6; i++){
 			send_entities[t] = realloc(send_entities[t], s_counts[t]*sizeof(entity));
-			MPI_Isend(&s_counts[i], 1, MPI_INT, targets[i], PATHTAG, MPI_COMM_WORLD, &req);
-			MPI_Isend(send_entities, s_counts[i],  MPI_INT, targets[i], PATHTAG, MPI_COMM_WORLD, &req);
+			MPI_Isend(&s_counts[i], 1, MPI_INT, targets[i], ENTITYTAG, MPI_COMM_WORLD, &req);
+			MPI_Isend(send_entities, s_counts[i],  MPI_Entity, targets[i], ENTITYTAG, MPI_COMM_WORLD, &req);
 		}
 
 		for(int i = 0; i < 6; i++){
 			int count;
-			MPI_Rev(&count, 1, MPI_INT, targets[i], PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-			entity * entityarr = malloc(count * sizeof(enitity));
-			MPI_Rev(entityarr, count, MPI_INT, targets[i], PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			MPI_Rev(&count, 1, MPI_INT, targets[i], ENTITYTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			entity * entityarr = malloc(count * sizeof(EssentialEntity));
+			MPI_Rev(entityarr, count, MPI_Entity, targets[i], ENTITYTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 			for(int b = 0; b < count; b++){
 				queue_enqueue(pathf_queue, &entityarr[b]);
 			}

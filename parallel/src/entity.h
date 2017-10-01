@@ -9,6 +9,7 @@
 #define FILLVAL 10
 
 #define PATHTAG 555
+#define ENTITYTAG 666
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -48,6 +49,18 @@ entity{
 	vector3* list;
 };
 typedef struct entity entity;
+
+struct
+EssentialEntity{
+	EntityType type;
+	int id;
+	int listpos;
+	int amountItems;
+	vector3 position;
+	vector3 memory_dest;
+	vector3 list[LISTL];
+};
+typedef struct EssentialEntity EssentialEntity;
 
 struct
 PathEssentials{
