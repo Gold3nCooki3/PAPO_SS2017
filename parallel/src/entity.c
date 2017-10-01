@@ -325,9 +325,11 @@ void fast_realloc(entity * ptr, int * count, int * max, int size){
 			}
 }
 
-void find_second_limits(meta* const mmi, int * second_ulimit, int * second_llimit, int * upper_rank, int * loverrank) { //BruteForce
-	int result = -1, temp_limit, limit;
-	int helpval = (mmi->start_column + ((mmi->chunksize - 1) / mmi->rows) - 1
+void find_second_limits(meta* const mmi, int * second_ulimit, int * second_llimit, int * upper_rank, int * lowerrank) { //BruteForce
+	int result, temp_limit, limit, helpval;
+
+	if(mmi->rank > mmi->size-1){
+	helpval = (mmi->startcolumn + ((mmi->chunksize - 1) / mmi->rows) - 1
 			+ (mmi->startstorey + 1) * mmi->columns);
 	for (int r = mmi->rank + 1; r < mmi->size; r++) {
 		result = r;
@@ -336,14 +338,15 @@ void find_second_limits(meta* const mmi, int * second_ulimit, int * second_llimi
 		if (helpval < temp_limit){
 			break;
 		}else{
-			limit = temp_limit
+			limit = temp_limit;
 		}
+	}
 	}
 	*upper_rank = result - 1;
 	*second_ulimit = limit;
-	if (rank())
-		helpval = (mmi->start_column + (mmi->start_storey - 1) * mmi->columns);
 
+	if(mmi->rank > 0){
+	helpval = (mmi->startcolumn + (mmi->startstorey - 1) * mmi->columns);
 	for (int r = mmi->rank - 1; r >= 0; r--) {
 		result = r;
 		temp_limit = mmi->linecount / mmi->size
@@ -354,7 +357,8 @@ void find_second_limits(meta* const mmi, int * second_ulimit, int * second_llimi
 			limit = temp_limit;
 		}
 	}
-	*loverrank = result + 1;
+	}
+	*lowerrank = result + 1;
 	*second_llimit = temp_limit;
 }
 
@@ -364,6 +368,7 @@ void find_second_limits(meta* const mmi, int * second_ulimit, int * second_llimi
  */
 void work_queue(meta * const mmi, queue_t* const entity_queue,
 		queue_t* const empty_shelfs, queue_t* const pathf_queue) {
+	MPI_Request req;
 	if (!queue_empty(pathf_queue)) {
 		generate_paths(pathf_queue, mmi);
 		while (!queue_empty(pathf_queue)) {
@@ -400,7 +405,7 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
 			if (!first)
 				first = e;
 			EnS status = move_entity(mmi, empty_shelfs, e);
-			int temp_limit, result = -1;
+			printf("Status: %d \n", status);
 			switch (status) {
 				case ENQUEUE: queue_enqueue(entity_queue, e); break;
 				case NEWPATH: queue_enqueue(pathf_queue, e);break;
@@ -413,52 +418,55 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
 				case DOWN: if((e->position.y + e->position.z * mmi->columns) < lowerlimit){
 								if((e->position.y + e->position.z * mmi->columns) < second_llimit){
 									fast_realloc(send_entities[4], &s_counts[4], &maxima[4], 10); //ooL
-									send_entities[4][s_counts[4]++] = e;
+									send_entities[4][s_counts[4]++] = *e;
 								}else{
 									fast_realloc(send_entities[2], &s_counts[2], &maxima[2], 10); //oL
-									send_entities[2][s_counts[2]++] = e;
+									send_entities[2][s_counts[2]++] = *e;
 								}
 							}
 				case EDGEL: fast_realloc(send_entities[0], &s_counts[0], &maxima[0], 20);
-							send_entities[0][_counts[0]++] = e;	break;
+							send_entities[0][s_counts[0]++] = *e;	break;
 
 				case UP: if((e->position.y + e->position.z * mmi->columns) > upperlimit){
 								if((e->position.y + e->position.z * mmi->columns) > second_ulimit){ //ooR
 									fast_realloc(send_entities[5], &s_counts[5], &maxima[5], 10);
-									send_entities[5][s_counts[5]++] = e;
+									send_entities[5][s_counts[5]++] = *e;
 								}else{
 									fast_realloc(send_entities[3], &s_counts[3], &maxima[3], 10);
-									send_entities[3][s_counts[5]++] = e;
+									send_entities[3][s_counts[5]++] = *e;
 								}
 							}
 				case EDGER: fast_realloc(send_entities[1], &s_counts[1], &maxima[1], 20);
-							send_entities[1][s_counts[1]++] = e;	break;
+							send_entities[1][s_counts[1]++] = *e;	break;
 				default: break;
 			}
 			if (status == DESTROY && queue_empty(entity_queue))
 				break;
+			printf(" 2 - ");
 			e = queue_dequeue(entity_queue);
 		} while (first != e);
 		if (first == e)
 			queue_enqueue(entity_queue, e); // otherwise one element gets lost
 
+		/*
 		//SEND ENTITIES
 		for(int i = 0; i < 6; i++){
-			send_entities[t] = realloc(send_entities[t], s_counts[t]*sizeof(entity));
+			send_entities[i] = realloc(send_entities[i], s_counts[i]*sizeof(entity));
 			MPI_Isend(&s_counts[i], 1, MPI_INT, targets[i], PATHTAG, MPI_COMM_WORLD, &req);
 			MPI_Isend(send_entities, s_counts[i],  MPI_INT, targets[i], PATHTAG, MPI_COMM_WORLD, &req);
 		}
 
 		for(int i = 0; i < 6; i++){
 			int count;
-			MPI_Rev(&count, 1, MPI_INT, targets[i], PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-			entity * entityarr = malloc(count * sizeof(enitity));
-			MPI_Rev(entityarr, count, MPI_INT, targets[i], PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			MPI_Recv(&count, 1, MPI_INT, targets[i], PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			entity * entityarr = malloc(count * sizeof(entity));
+			MPI_Recv(entityarr, count, MPI_INT, targets[i], PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 			for(int b = 0; b < count; b++){
 				queue_enqueue(pathf_queue, &entityarr[b]);
 			}
 			free(entityarr);
 		}
+		*/
 
 	}
 }
