@@ -381,7 +381,6 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
 	}
 
 	if (queue_empty(entity_queue)) {
-		printf("empty!");
 	} else {
 
 		/*=============================*/
