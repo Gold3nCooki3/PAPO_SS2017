@@ -21,14 +21,15 @@ int main(int argc, char *argv[]){
 	meta *mmi = calloc(1, sizeof(meta));
 	MPI_Comm_rank(MPI_COMM_WORLD, &mmi->rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &mmi->size);
+
 	market = import_market(argv[1], mmi);
 	queue_t *empty_shelfs = queue_new();
 	queue_t *entity_queue = queue_new();
 	queue_t *pathf_queue = queue_new();
 	if(mmi->exit_count > 0) spawn_entity(mmi, pathf_queue, empty_shelfs ,CUSTOMER);
 	print_queue_parallel(pathf_queue, mmi, mmi->spawn_count);
-
-	while(TRUE){
+	int i = 0;
+	while(i++ < 20){
 		work_queue(mmi, entity_queue, empty_shelfs, pathf_queue);
 		print_queue_parallel(entity_queue, mmi, mmi->entity_count);
 	}

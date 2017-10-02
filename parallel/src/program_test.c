@@ -13,7 +13,7 @@ void collect_entities(queue_t* const queue, int rank, int chunk_length, PrintEnt
 			entity* e = node->data;
 			int pc = (e->path_position > 0) ? ASPathGetCount(e->path) : 0;
 			if(rank == MASTER){
-				printf("id: %4d, type: %d, pathpos: %3d, pathcount: %3d,  pos: (%2d,%2d,%2d), dest: (%2d,%2d,%2d) \n",
+				printf("rank:  0, id: %4d, type: %d, pathpos: %3d, pathcount: %3d,  pos: (%2d,%2d,%2d), dest: (%2d,%2d,%2d) \n",
 				e->id, e->type,e->path_position, pc, e->position.x, e->position.y, e->position.z, e->list[e->listpos].x, e->list[e->listpos].y, e->list[e->listpos].z);
 			}else{
 				print_chunk[i].pathpos = e->path_position;
@@ -39,7 +39,7 @@ void print_queue_parallel(queue_t* const queue, meta *mmi , int chunk_length){
 	MPI_Datatype MPI_PrintEntity;
 	MPI_Type_contiguous(10, MPI_INT, &MPI_PrintEntity);
 	MPI_Type_commit(&MPI_PrintEntity);
-
+	//printf("rank: %d\n", mmi->rank);
 	if(mmi->rank == MASTER){
 		//print own data
 		collect_entities(queue, MASTER, chunk_length, print_chunk);
@@ -52,7 +52,7 @@ void print_queue_parallel(queue_t* const queue, meta *mmi , int chunk_length){
 			// print data
 			for(int i = 0; i < chunk_length; i++ ){
 				printf("rank: %2d, id: %4d, type: %d, pathpos: %3d, pathcount: %3d,  pos: (%2d,%2d,%2d), dest: (%2d,%2d,%2d) \n",
-						mmi->rank, print_chunk[i].id, print_chunk[i].type, print_chunk[i].pathpos, print_chunk[i].pathcount,
+						source, print_chunk[i].id, print_chunk[i].type, print_chunk[i].pathpos, print_chunk[i].pathcount,
 						print_chunk[i].posx, print_chunk[i].posy, print_chunk[i].posz,
 						print_chunk[i].destx, print_chunk[i].desty, print_chunk[i].destz);
 			}
@@ -66,4 +66,6 @@ void print_queue_parallel(queue_t* const queue, meta *mmi , int chunk_length){
 		MPI_Isend(print_chunk, chunk_length, MPI_PrintEntity, MASTER, PRINTTAG, MPI_COMM_WORLD,  &req);
 	}
 	free(print_chunk);
+//	printf("rank: %d\n", mmi->rank);
+
 }
