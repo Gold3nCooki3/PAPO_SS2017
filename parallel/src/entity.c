@@ -87,7 +87,7 @@ ASPath generate_localpath(vector3 start, vector3 dest, meta* const mmi,
 
 	if (pathTo_v.z != start.z) {
 		if (mmi->lift_count > 0) {
-			printf(" searching for lift \n");
+			//printf(" searching for lift \n");
 			pathTo_v = get_close_vector3(mmi->lift_fields, mmi->lift_count,
 					start, TRUE);
 		} else {
@@ -267,7 +267,7 @@ EnS move_entity(meta* const mmi, queue_t* const empty_shelfs, entity* const e) {
 	if (ASPathGetCount(e->path) == e->path_position) {
 		field* f;
 		vector3* temp_vec;
-		printf("PF_ POS: (%d, %d, %d) -> TPYE: %d\n", e->position.x, e->position.y, e->position.z, in_matrix_g(e->memory_dest)->type);
+		//printf("PF_ POS: (%d, %d, %d) -> TPYE: %d\n", e->position.x, e->position.y, e->position.z, in_matrix_g(e->memory_dest)->type);
 		switch (in_matrix_g(e->memory_dest)->type) {
 		case STOCK:
 		case EXIT:
@@ -286,7 +286,7 @@ EnS move_entity(meta* const mmi, queue_t* const empty_shelfs, entity* const e) {
 				if (!in_process(e->position))
 					return_val = UP;
 			}
-			printf("PF_ Takeing the lift %d, iP: %d\n", return_val, !in_process(e->position));
+			//printf("PF_ Takeing the lift %d, iP: %d\n", return_val, !in_process(e->position));
 			break;
 		case CORRIDOR:
 			if (!in_process(e->list[e->listpos])) {
@@ -395,7 +395,6 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
 		while (!queue_empty(pathf_queue)) {
 			entity* e = queue_dequeue(pathf_queue);
 			queue_enqueue(entity_queue, e);
-			mmi->entity_count++;
 		}
 	} else {
 		//printf("Nothing to spawn");
@@ -430,10 +429,10 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
 	entity* e = first;
 	EnS statusfirst;
 	do {
-		if (!first) first = e;
-		EnS status = move_entity(mmi, empty_shelfs, e);
-		if(e == first) statusfirst = status;
-			printf("status: %d\n", status);
+			if (!first) first = e;
+			EnS status = move_entity(mmi, empty_shelfs, e);
+			if(e == first) statusfirst = status;
+			//printf("status: %d\n", status);
 			switch (status) {
 				case ENQUEUE: 	mmi->entity_count++;
 						queue_enqueue(entity_queue, e); break;
@@ -518,9 +517,9 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
 		MPI_Isend(&s_counts[i], 1, MPI_INT, targets[i], ENTITYTAG, MPI_COMM_WORLD, &req);
 		MPI_Isend(entities_tosend, s_counts[i],  MPI_Entity, targets[i], ENTITYTAG, MPI_COMM_WORLD, &req);
 		send_buffers[i] = entities_tosend;
-		if(mmi->rank == 0 && targets[i] == 1) printf("R 0: COUNT SEND %d \n", s_counts[i]);
+		//if(mmi->rank == 0 && targets[i] == 1) printf("R 0: COUNT SEND %d \n", s_counts[i]);
 	}
-	printf("\n");
+	//printf("\n");
 
 	//RECIVE ENTITIES
 	for(int i = 0; i < 6; i++){
@@ -530,13 +529,12 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
 		MPI_Recv(&count, 1, MPI_INT, targets[i], ENTITYTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		//printf("%d finiched waiting\n", mmi->rank);
 
-		if(mmi->rank == 1 && targets[i] == 0)printf("R 1: COUNT RECV %d\n", count);
+		//if(mmi->rank == 1 && targets[i] == 0)printf("R 1: COUNT RECV %d\n", count);
 
 		EssentialEntity * entityarr = malloc(count * sizeof(EssentialEntity));
 		MPI_Recv(entityarr, count, MPI_Entity, targets[i], ENTITYTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		for(int b = 0; b < count; b++){
-				printf(" GOT ENTITY \n");
-				entity* e = calloc(1, sizeof(*e));
+			entity* e = calloc(1, sizeof(*e));
 				e->id = entityarr[b].id;
 				e->type = entityarr[b].type;
 				e->listpos = entityarr[b].listpos;
@@ -555,7 +553,10 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
 	}
 
 	MPI_Barrier(MPI_COMM_WORLD);
-
+	/*if(mmi->rank == 1) {
+		printf("ENQUEUE c %d \n", mmi->spawn_count);
+		printf("EC %d \n", mmi->entity_count);
+	}*/
 
         for(int i = 0; i < 6; i++){
                 free(send_buffers[i]);
@@ -632,5 +633,5 @@ void spawn_entity(meta* const mmi, queue_t* const entity_queue,
 	e->list = list;
 	queue_enqueue(entity_queue, e);
 	counter++;
-	mmi->spawn_count = counter;
+	mmi->spawn_count++;
 }
