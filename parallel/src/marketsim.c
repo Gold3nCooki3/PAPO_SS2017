@@ -22,6 +22,8 @@ int main(int argc, char *argv[]){
 	MPI_Comm_rank(MPI_COMM_WORLD, &mmi->rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &mmi->size);
 
+	int knownPathmax = KPMAX, knownPath_count = 0;
+	PS* known_Path = calloc(knownPathmax, sizeof(PE));
 	market = import_market(argv[1], mmi);
 	queue_t *empty_shelfs = queue_new();
 	queue_t *entity_queue = queue_new();
@@ -30,7 +32,7 @@ int main(int argc, char *argv[]){
 	print_queue_parallel(pathf_queue, mmi, mmi->spawn_count);
 	int i = 0;
 	while(i++ < 20){
-		work_queue(mmi, entity_queue, empty_shelfs, pathf_queue);
+		work_queue(mmi, entity_queue, empty_shelfs, pathf_queue, known_Path, &knownPathmax, &knownPath_count);
 		print_queue_parallel(entity_queue, mmi, mmi->entity_count);
 	}
 	/*for(int i = 0; i < simulations; i++){//Anlaufen

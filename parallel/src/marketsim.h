@@ -2,6 +2,7 @@
 #define MARKETSIM_H
 #define TURE 1
 #define FALSE 0
+#define KPMAX 10
 
 #include <stdlib.h>  // rand(), srand()
 #include <time.h>    // time()
