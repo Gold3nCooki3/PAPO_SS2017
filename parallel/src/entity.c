@@ -82,21 +82,21 @@ vector3 get_close_vector3(vector3* const list, int listlength, vector3 start,
 	return dest;
 }
 
-void fast_realloc_E(entity * ptr, int * count, int * max, int size){
-			if(*count >= max-1){
+void fast_realloc_E(entity * ptr, int count, int * max, int size){
+			if(count >= *max - 1){
 					*max += size;
 					ptr = realloc(ptr, *max * sizeof(entity));
 			}
 }
 
 void fast_realloc_PE(PE * ptr, int count, int * max, int size){
-			if(count >= max-1){
+			if(count >= *max - 1){
 					*max += size;
 					ptr = realloc(ptr, *max * sizeof(PE));
 			}
 }
 void fast_realloc_PS(PS * ptr, int count, int * max, int size){
-			if(count >= max-1){
+			if(count >= *max -1){
 					*max += size;
 					ptr = realloc(ptr, *max * sizeof(PS));
 			}
@@ -359,35 +359,35 @@ void generate_paths(queue_t* const queue, meta* const mmi, PS* const known_Path,
 					rightcount, leftcount, core_c_r, core_c_l, new_c_r, new_c_l};
 	/*int t= 0;*/
 	while (FALSE) {
-		int pos_r = PA->rightcount - new_c_r;
-		int pos_l = PA->leftcount - new_c_l;
+		int pos_r = PA.rightcount - new_c_r;
+		int pos_l = PA.leftcount - new_c_l;
 
 		if (rank < size - 1) {
-			MPI_Isend(&PA->new_c_r, 1, MPI_INT, rank + 1, PATHTAG, MPI_COMM_WORLD, &dontcare);
-			MPI_Isend(local_r[pos_r], PA->new_c_r, MPI_PathE, rank + 1, PATHTAG, MPI_COMM_WORLD, &req_r);
+			MPI_Isend(&PA.new_c_r, 1, MPI_INT, rank + 1, PATHTAG, MPI_COMM_WORLD, &dontcare);
+			MPI_Isend(&local_r[pos_r], PA.new_c_r, MPI_PathE, rank + 1, PATHTAG, MPI_COMM_WORLD, &req_r);
 		}
 		if (rank > 0) {
-			MPI_Isend(&PA->new_c_l, 1, MPI_INT, rank - 1, PATHTAG, MPI_COMM_WORLD, &dontcare);
-			MPI_Isend(local_l[pos_l], PA->new_c_l, MPI_PathE, rank - 1, PATHTAG,	MPI_COMM_WORLD, &req_l);
+			MPI_Isend(&PA.new_c_l, 1, MPI_INT, rank - 1, PATHTAG, MPI_COMM_WORLD, &dontcare);
+			MPI_Isend(&local_l[pos_l], PA.new_c_l, MPI_PathE, rank - 1, PATHTAG,	MPI_COMM_WORLD, &req_l);
 		}
 
 
 		if (rank > 0) { /* other fields*/
-			MPI_Recv(&PA->new_c_l, 1, MPI_INT, rank - 1, PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-			other_l = calloc(PA->new_c_l, sizeof(PE));
-			MPI_Recv(other_l, PA->new_c_l, MPI_INT, rank - 1, PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			MPI_Recv(&PA.new_c_l, 1, MPI_INT, rank - 1, PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			other_l = calloc(PA.new_c_l, sizeof(PE));
+			MPI_Recv(other_l, PA.new_c_l, MPI_INT, rank - 1, PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		}
 		if (rank < size - 1) {
-			MPI_Recv(&PA->new_c_r, 1, MPI_INT, rank + 1, PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-			other_r = calloc(PA->new_c_r, sizeof(PE));
-			MPI_Recv(other_r, PA->new_c_r, MPI_INT, rank + 1, PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			MPI_Recv(&PA.new_c_r, 1, MPI_INT, rank + 1, PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			other_r = calloc(PA.new_c_r, sizeof(PE));
+			MPI_Recv(other_r, PA.new_c_r, MPI_INT, rank + 1, PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		}
 
 		/*find path for left and right*/
 		/*switch start = dest, find new dest*/
 
-		MPI_Wait(&req_r);
-		MPI_Wait(&req_l);
+		MPI_Wait(&req_r, MPI_STATUS_IGNORE);
+		MPI_Wait(&req_l, MPI_STATUS_IGNORE);
 
 		recursiv_split(mmi, &PA, local_r, local_l, other_r, other_l);
 
@@ -588,35 +588,35 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
 				case DOWN: 	if((e->position.y + e->position.z * mmi->columns) < lowerlimit){
 							if (e == first) first = NULL;
 							if((e->position.y + e->position.z * mmi->columns) < second_llimit){
-								fast_realloc_E(*(send_entities[4]), &s_counts[4], &maxima[4], 10); //ooL
+								fast_realloc_E(*(send_entities[4]), s_counts[4], &maxima[4], 10); //ooL
 								send_entities[4][s_counts[4]] = e;
 								s_counts[4] += 1;
 							}else{
-								fast_realloc_E(*(send_entities[2]), &s_counts[2], &maxima[2], 10); //oL
+								fast_realloc_E(*(send_entities[2]), s_counts[2], &maxima[2], 10); //oL
 								send_entities[2][s_counts[2]] = e;
 								s_counts[2] += 1;
 							}
 						break;
 						}
 				case EDGEL: 	if (e == first) first = NULL;
-						fast_realloc_E(*(send_entities[0]), &s_counts[0], &maxima[0], 20);
+						fast_realloc_E(*(send_entities[0]), s_counts[0], &maxima[0], 20);
 						send_entities[0][s_counts[0]++] = e;
 						s_counts[0] +=	1; break;
 				case UP:	if((e->position.y + e->position.z * mmi->columns) > upperlimit){
 							if (e == first) first = NULL;
 							if((e->position.y + e->position.z * mmi->columns) > second_ulimit){ //ooR
-								fast_realloc_E(*(send_entities[5]), &s_counts[5], &maxima[5], 10);
+								fast_realloc_E(*(send_entities[5]), s_counts[5], &maxima[5], 10);
 								send_entities[5][s_counts[5]] = e;
 								s_counts[5] += 1;
  							}else{
-								fast_realloc_E(*(send_entities[3]), &s_counts[3], &maxima[3], 10);
+								fast_realloc_E(*(send_entities[3]), s_counts[3], &maxima[3], 10);
 								send_entities[3][s_counts[3]] = e;
 								s_counts[3] += 1;
 							}
 						break;
 						}
 				case EDGER: 	if (e == first) first = NULL;
-						fast_realloc_E(*(send_entities[1]), &s_counts[1], &maxima[1], 20);
+						fast_realloc_E(*(send_entities[1]), s_counts[1], &maxima[1], 20);
 						send_entities[1][s_counts[1]] = e;
 						s_counts[1] += 1;	break;
 				default: 	break;
