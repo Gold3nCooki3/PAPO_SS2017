@@ -394,9 +394,9 @@ void generate_paths(queue_t* const queue, meta* const mmi, PS* const known_Path,
 	}
 
 	//Free
-	MPI_Request_free(&req_r);
-	MPI_Request_free(&req_l);
-	MPI_Request_free(&dontcare);
+	//MPI_Request_free(&req_r);
+	//MPI_Request_free(&req_l);
+	//MPI_Request_free(&dontcare);
 	free(local_r);
 	free(local_l);
 	free(other_r);
@@ -672,11 +672,12 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
 		MPI_Recv(&count, 1, MPI_INT, targets[i], ENTITYTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		//printf("%d finiched waiting\n", mmi->rank);
 
-		//if(mmi->rank == 1 && targets[i] == 0)printf("R 1: COUNT RECV %d\n", count);
+		if(mmi->rank == 1 && targets[i] == 0)printf("R 1: COUNT RECV %d\n", count);
 
 		EssentialEntity * entityarr = malloc(count * sizeof(EssentialEntity));
 		MPI_Recv(entityarr, count, MPI_Entity, targets[i], ENTITYTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		for(int b = 0; b < count; b++){
+			printf("TEST\n");
 			entity* e = calloc(1, sizeof(*e));
 				e->id = entityarr[b].id;
 				e->type = entityarr[b].type;
@@ -694,6 +695,7 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
 		}
 		free(entityarr);
 	}
+	//if(mmi->rank == 1) printf("i LEFT\n");
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	/*if(mmi->rank == 1) {
@@ -707,6 +709,7 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
         }
         free(send_buffers);
 	free(send_entities);
+	if(mmi->rank == 1)printf("r %d passed", mmi->rank);
 }
 
 /*===================================================================================================*/

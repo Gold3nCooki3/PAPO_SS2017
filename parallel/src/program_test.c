@@ -9,6 +9,7 @@ rand_vector3(int x, int y, int z){
 void collect_entities(queue_t* const queue, int rank, int chunk_length, PrintEntity* print_chunk){
 	struct queue_node_s *node = queue->front;
 		int i = 0;
+		if(rank == 1) printf("HELLO\n");
 		while(node != NULL && i < chunk_length){
 			entity* e = node->data;
 			int pc = (e->path_position > 0) ? ASPathGetCount(e->path) : 0;
@@ -40,17 +41,19 @@ void print_queue_parallel(queue_t* const queue, meta *mmi , int chunk_length){
 	MPI_Datatype MPI_PrintEntity;
 	MPI_Type_contiguous(10, MPI_INT, &MPI_PrintEntity);
 	MPI_Type_commit(&MPI_PrintEntity);
-	//printf("rank: %d\n", mmi->rank);
+	printf("rank: %d\n HE", mmi->rank);
 	if(mmi->rank == MASTER){
 		//print own data
 		collect_entities(queue, MASTER, chunk_length, print_chunk);
 		// get data
 		for(int source = 1; source < mmi->size; source++){
+			printf("HE %d \n ", source);
 			int old_cl = chunk_length;
 			MPI_Recv(&chunk_length, 1, MPI_INT, source, PRINTTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 			if(old_cl != chunk_length) print_chunk = realloc(print_chunk, chunk_length * sizeof(PrintEntity));
 			MPI_Recv(print_chunk, chunk_length, MPI_PrintEntity, source, PRINTTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 			// print data
+			printf("HERE\n");
 			for(int i = 0; i < chunk_length; i++ ){
 				printf("rank: %2d, id: %4d, type: %d, pathpos: %3d, pathcount: %3d,  pos: (%2d,%2d,%2d), dest: (%2d,%2d,%2d), count %d\n",
 						source, print_chunk[i].id, print_chunk[i].type, print_chunk[i].pathpos, print_chunk[i].pathcount,
@@ -63,8 +66,10 @@ void print_queue_parallel(queue_t* const queue, meta *mmi , int chunk_length){
 		//collect data
 		collect_entities(queue, mmi->rank, chunk_length, print_chunk);
 		//send data
+		printf("R %d SEND\n", mmi->rank);
 		MPI_Isend(&chunk_length, 1, MPI_INT, MASTER, PRINTTAG, MPI_COMM_WORLD, &req);
 		MPI_Isend(print_chunk, chunk_length, MPI_PrintEntity, MASTER, PRINTTAG, MPI_COMM_WORLD,  &req);
+		MPI_Wait(&req, MPI_STATUS_IGNORE);
 	}
 	free(print_chunk);
 //	printf("rank: %d\n", mmi->rank);

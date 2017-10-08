@@ -33,6 +33,7 @@ int main(int argc, char *argv[]){
 	int i = 0;
 	while(i++ < 20){
 		work_queue(mmi, entity_queue, empty_shelfs, pathf_queue, known_Path, &knownPathmax, &knownPath_count);
+		if(mmi->rank == 1) printf("BEFORE Print\n");
 		print_queue_parallel(entity_queue, mmi, mmi->entity_count);
 	}
 	/*for(int i = 0; i < simulations; i++){//Anlaufen
