@@ -248,8 +248,8 @@ void split_one_side(meta*const  mmi, int side, int tracker_ts, int tracker_os, i
 					}
 				}else{ // NOT FOUND IN LOCAL OR FOUND IN LOCAL BUT NEEDS SECOND PASSING
 					int liftflag;
-					vector3 * dontneed;
-					ASPath tempPath = generate_localpath(other[o].dest, other[o].final_dest, mmi, &liftflag, dontneed);
+					vector3 dontneed;
+					ASPath tempPath = generate_localpath(other[o].dest, other[o].final_dest, mmi, &liftflag, &dontneed);
 					if (ASPathGetCount(tempPath) > 0) {
 						fast_realloc_PE(local_ts, (count_ts + tracker_os), ts_max, count_core_ts);
 						local_ts[count_ts + tracker_os++] = other[o];
@@ -352,8 +352,8 @@ void generate_paths(queue_t* const queue, meta* const mmi, PS* const known_Path,
 	int core_c_l = leftcount;
 	int new_c_r = rightcount;
 	int new_c_l = leftcount;
-	PE * other_r;
-	PE * other_l;
+	PE * other_r = NULL;
+	PE * other_l = NULL;
 
 	PathArrays PA = { known_Path, knownPathmax, knownPath_count,
 					rightcount, leftcount, core_c_r, core_c_l, new_c_r, new_c_l};
