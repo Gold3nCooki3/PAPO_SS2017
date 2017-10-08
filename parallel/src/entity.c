@@ -82,24 +82,27 @@ vector3 get_close_vector3(vector3* const list, int listlength, vector3 start,
 	return dest;
 }
 
-void fast_realloc_E(entity * ptr, int count, int * max, int size){
+entity * fast_realloc_E(entity * ptr, int count, int * max, int size){
 			if(count >= *max - 1){
 					*max += size;
 					ptr = realloc(ptr, *max * sizeof(entity));
 			}
+			return ptr;
 }
 
-void fast_realloc_PE(PE * ptr, int count, int * max, int size){
+PE * fast_realloc_PE(PE * ptr, int count, int * max, int size){
 			if(count >= *max - 1){
 					*max += size;
 					ptr = realloc(ptr, *max * sizeof(PE));
 			}
+			return ptr;
 }
-void fast_realloc_PS(PS * ptr, int count, int * max, int size){
+PS * fast_realloc_PS(PS * ptr, int count, int * max, int size){
 			if(count >= *max -1){
 					*max += size;
 					ptr = realloc(ptr, *max * sizeof(PS));
 			}
+			return ptr;
 }
 
 int compfunc(const void * a, const void * b) {
@@ -143,7 +146,6 @@ ASPath generate_localpath(vector3 start, vector3 dest, meta* const mmi,
 
 	if (pathTo_v.z != start.z) {
 		if (mmi->lift_count > 0) {
-			//printf(" searching for lift \n");
 			pathTo_v = get_close_vector3(mmi->lift_fields, mmi->lift_count,
 					start, TRUE);
 		} else {
@@ -182,7 +184,6 @@ ASPath generate_localpath(vector3 start, vector3 dest, meta* const mmi,
 		return NULL;
 	}
 	*memory = pathTo_v;
-	//printf("mem dest : (%d %d %d), Tpye %d", pathTo.z, pathTo.x, pathTo.z, in_matrix_g(pathTo)->type);
 	return path;
 }
 
@@ -225,7 +226,7 @@ void split_one_side(meta*const  mmi, int side, int tracker_ts, int tracker_os, i
 								local_ts[count_ts - tracker_ts - 1] = local_ts[count_ts - 1];
 								count_ts--;
 							}
-							fast_realloc_PE(local_os, count_os + tracker_os, os_max, count_new_ts);
+							local_os = fast_realloc_PE(local_os, count_os + tracker_os, os_max, count_new_ts);
 							local_os[count_os + tracker_os++] = temp;
 						}
 					}else if(other[i].status == COMPL){ //PATH FOUND
@@ -237,9 +238,9 @@ void split_one_side(meta*const  mmi, int side, int tracker_ts, int tracker_os, i
 								local_ts[count_ts - tracker_ts - 1] = local_ts[count_ts - 1];
 								count_ts--;
 							}
-							fast_realloc_PE(local_os, count_os + tracker_os, os_max, count_new_ts);
+							local_os = fast_realloc_PE(local_os, count_os + tracker_os, os_max, count_new_ts);
 							local_os[count_ts + tracker_os++] = temp;
-							fast_realloc_PS(PA->known_Path, *PA->knownPath_count, PA->knownPathmax, 10);
+							PA->known_Path = fast_realloc_PS(PA->known_Path, *PA->knownPath_count, PA->knownPathmax, 10);
 							PA->known_Path[*(PA->knownPath_count)].id = temp.id;
 							PA->known_Path[(*(PA->knownPath_count))++].dest = temp.dest;
 						}else{
@@ -251,7 +252,7 @@ void split_one_side(meta*const  mmi, int side, int tracker_ts, int tracker_os, i
 					vector3 dontneed;
 					ASPath tempPath = generate_localpath(other[o].dest, other[o].final_dest, mmi, &liftflag, &dontneed);
 					if (ASPathGetCount(tempPath) > 0) {
-						fast_realloc_PE(local_ts, (count_ts + tracker_os), ts_max, count_core_ts);
+						local_ts = fast_realloc_PE(local_ts, (count_ts + tracker_os), ts_max, count_core_ts);
 						local_ts[count_ts + tracker_os++] = other[o];
 					} else {
 						other[o].start = other[o].dest;
@@ -261,10 +262,10 @@ void split_one_side(meta*const  mmi, int side, int tracker_ts, int tracker_os, i
 						other[o].dest = mmi->edge_fields[other[o].status];
 						int destid = other[o].dest.y + other[o].dest.z * mmi->columns;
 						if ( destid > mmi->startline ) {
-							fast_realloc_PE(local_ts, (count_ts + tracker_ts), ts_max, count_new_os);
+							local_ts = fast_realloc_PE(local_ts, (count_ts + tracker_ts), ts_max, count_new_os);
 							local_ts[count_ts + tracker_ts++] = other[o];
 						} else {
-							fast_realloc_PE(local_os, (count_os + tracker_os), os_max, count_new_ts);
+							local_os = fast_realloc_PE(local_os, (count_os + tracker_os), os_max, count_new_ts);
 							local_os[count_os + tracker_os++] = other[o];
 						}
 					}
@@ -426,7 +427,6 @@ EnS move_entity(meta* const mmi, queue_t* const empty_shelfs, entity* const e) {
 	if (ASPathGetCount(e->path) == e->path_position) {
 		field* f;
 		vector3* temp_vec;
-		//printf("PF_ POS: (%d, %d, %d) -> TPYE: %d\n", e->position.x, e->position.y, e->position.z, in_matrix_g(e->memory_dest)->type);
 		switch (in_matrix_g(e->memory_dest)->type) {
 		case STOCK:
 		case EXIT:
@@ -545,7 +545,7 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
 
 	/*s_L rank-1, s_R rank+1 , s_ol & s_oR depends on market separation */
 	/*==============================================================================================*/
-	entity*** send_entities = calloc(6, sizeof(entity*));
+	entity** send_entities = calloc(6, sizeof(entity**));
 	for(int i = 0; i < 6; i++){
 		send_entities[i] = calloc(10, sizeof(entity*));
 	}
@@ -556,11 +556,6 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
 	//printf("Rank : %d, LIMITS UP %d, LW %d, SUP %d, SLW %d\n", mmi->rank, upperlimit, lowerlimit, second_ulimit, second_llimit);
 	int targets[6] = { mmi->rank-1, mmi->rank+1, lower_rank+1, upper_rank-1, lower_rank, upper_rank };
 	replace_dublicates(targets);
-
-
-	//printf("R: %d", mmi->rank);
-	//for(int i = 0; i < 6; i++) printf(" %d ", targets[i]);
-	//printf("\n");
 
 	int maxima[6] = { 10, 10, 10, 10, 10, 10 };
 	int s_counts[6] = { 0, 0, 0, 0, 0, 0 };
@@ -588,35 +583,35 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
 				case DOWN: 	if((e->position.y + e->position.z * mmi->columns) < lowerlimit){
 							if (e == first) first = NULL;
 							if((e->position.y + e->position.z * mmi->columns) < second_llimit){
-								fast_realloc_E(*(send_entities[4]), s_counts[4], &maxima[4], 10); //ooL
+								send_entities[4] = fast_realloc_E(&(send_entities[4]), s_counts[4], &maxima[4], 10); //ooL
 								send_entities[4][s_counts[4]] = e;
 								s_counts[4] += 1;
 							}else{
-								fast_realloc_E(*(send_entities[2]), s_counts[2], &maxima[2], 10); //oL
+								send_entities[2] = fast_realloc_E(&(send_entities[2]), s_counts[2], &maxima[2], 10); //oL
 								send_entities[2][s_counts[2]] = e;
 								s_counts[2] += 1;
 							}
 						break;
 						}
 				case EDGEL: 	if (e == first) first = NULL;
-						fast_realloc_E(*(send_entities[0]), s_counts[0], &maxima[0], 20);
+						send_entities[2] = fast_realloc_E(send_entities[0], s_counts[0], &maxima[0], 20);
 						send_entities[0][s_counts[0]++] = e;
 						s_counts[0] +=	1; break;
 				case UP:	if((e->position.y + e->position.z * mmi->columns) > upperlimit){
 							if (e == first) first = NULL;
 							if((e->position.y + e->position.z * mmi->columns) > second_ulimit){ //ooR
-								fast_realloc_E(*(send_entities[5]), s_counts[5], &maxima[5], 10);
+								send_entities[5] = fast_realloc_E(send_entities[5], s_counts[5], &maxima[5], 10);
 								send_entities[5][s_counts[5]] = e;
 								s_counts[5] += 1;
  							}else{
-								fast_realloc_E(*(send_entities[3]), s_counts[3], &maxima[3], 10);
+ 								send_entities[3] = fast_realloc_E(send_entities[3], s_counts[3], &maxima[3], 10);
 								send_entities[3][s_counts[3]] = e;
 								s_counts[3] += 1;
 							}
 						break;
 						}
 				case EDGER: 	if (e == first) first = NULL;
-						fast_realloc_E(*(send_entities[1]), s_counts[1], &maxima[1], 20);
+						send_entities[1] = fast_realloc_E(send_entities[1], s_counts[1], &maxima[1], 20);
 						send_entities[1][s_counts[1]] = e;
 						s_counts[1] += 1;	break;
 				default: 	break;
@@ -627,14 +622,9 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
 	} while (first != e);
 
 	if ((statusfirst == ENQUEUE) && (first == e)){
-	//	printf("!!!! ENQUEUE AGAIN \n");
 		queue_enqueue(entity_queue, e); // otherwise one element gets lost
 	}
-
 	}
-
-	//printf("??? is Q empty %d\n", queue_empty(entity_queue));
-
 	EssentialEntity** send_buffers = calloc(6, sizeof(EssentialEntity*));
 
 	/*=============================*/
@@ -668,16 +658,12 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
 	for(int i = 0; i < 6; i++){
 		int count = 0;
 		if(targets[i] >= mmi->size || targets[i] < 0 || targets[i] == mmi->rank) continue;
-		//printf("%d waiting for %d\n", mmi->rank, targets[i]);
 		MPI_Recv(&count, 1, MPI_INT, targets[i], ENTITYTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-		//printf("%d finiched waiting\n", mmi->rank);
-
-		if(mmi->rank == 1 && targets[i] == 0)printf("R 1: COUNT RECV %d\n", count);
+		//if(mmi->rank == 1 && targets[i] == 0)printf("R 1: COUNT RECV %d\n", count);
 
 		EssentialEntity * entityarr = malloc(count * sizeof(EssentialEntity));
 		MPI_Recv(entityarr, count, MPI_Entity, targets[i], ENTITYTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		for(int b = 0; b < count; b++){
-			printf("TEST\n");
 			entity* e = calloc(1, sizeof(*e));
 				e->id = entityarr[b].id;
 				e->type = entityarr[b].type;
@@ -695,7 +681,6 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
 		}
 		free(entityarr);
 	}
-	//if(mmi->rank == 1) printf("i LEFT\n");
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	/*if(mmi->rank == 1) {
