@@ -405,8 +405,8 @@ void generate_paths(queue_t* const queue, meta* const mmi, PS* known_Path, int* 
 	mmi->spawn_count = 0;
 	free(local_r);
 	free(local_l);
-	/*free(other_r);
-	free(other_l);*/
+	free(other_r);
+	free(other_l);
 }
 
 /*Moves an entity towards their destination,
