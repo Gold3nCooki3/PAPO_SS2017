@@ -28,10 +28,10 @@ int main(int argc, char *argv[]){
 	queue_t *pathf_queue = queue_new();
 	if(mmi->exit_count > 0) spawn_entity(mmi, pathf_queue, empty_shelfs ,CUSTOMER);
 	print_queue_parallel(pathf_queue, mmi, mmi->spawn_count);
-	int i = 0, knownPathmax = 10, knownPath_count;
+	int i = 0, knownPathmax = 10, knownPath_count = 0;
 	PS* known_Path = malloc(knownPathmax * sizeof(PS));
 	while(i++ < 20){
-		work_queue(mmi, entity_queue, empty_shelfs, pathf_queue, known_Path, knownPathmax, knownPath_count);
+		work_queue(mmi, entity_queue, empty_shelfs, pathf_queue, known_Path, &knownPathmax, &knownPath_count);
 		print_queue_parallel(entity_queue, mmi, mmi->entity_count);
 	}
 	free(known_Path);

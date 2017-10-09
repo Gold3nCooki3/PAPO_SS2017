@@ -69,7 +69,7 @@ PE * fast_realloc_PE(PE * ptr, int count, int * max, int size){
 			return ptr;
 }
 
-void fast_realloc_PS(PathArrays PA, int * count, int * max, int size){
+void fast_realloc_PS(PathArrays* PA, int * count, int * max, int size){
 			if(*count >= *max -1){
 					*max += size;
 					PA->known_Path = realloc(PA->known_Path, *max * sizeof(PS));
@@ -268,7 +268,7 @@ void split_one_side(meta*const  mmi, int side, int tracker_ts, int tracker_os, i
 						other[o].status = find_edge_field(mmi->edge_fields, start_vec, mmi->edge_count, local_ts[i].status);
 						other[o].dest = mmi->edge_fields[other[o].status];
 						int destid = other[o].dest.y + other[o].dest.z * mmi->columns;
-						if ( (destid > mmi->startline && (side == 1)) || (destid <= startline && (side != 1))) {
+						if ( (destid > mmi->startline && (side == 1)) || (destid <= mmi->startline && (side != 1))) {
 							local_ts = fast_realloc_PE(local_ts, (count_ts + tracker_ts), ts_max, count_new_os);
 							local_ts[count_ts + tracker_ts++] = other[o];
 						} else {
@@ -284,15 +284,15 @@ void split_one_side(meta*const  mmi, int side, int tracker_ts, int tracker_os, i
 
 }
 
-void recursiv_split(meta* const mmi, PathArrays* const PA, PE * local_r, PE * local_l, PE * const other_r, PE * const other_l){
+void recursiv_split(meta* const mmi, PathArrays* const PA, PE * const other_r, PE * const other_l){
 
 	int leftmax = PA->leftcount + PA->new_c_l, rightmax = PA->rightcount + PA->new_c_r, tracker_r = 1, tracker_l = 1 ;
 
 	local_r = realloc (local_r, PA->rightcount * sizeof(PE));
 	local_l = realloc (local_l, PA->leftcount * sizeof(PE));
 
-	split_one_side(mmi, 1, tracker_r, tracker_l, &rightmax, &leftmax, PA, local_r, local_l, other_r);
-	split_one_side(mmi, 0, tracker_l, tracker_r, &leftmax, &rightmax, PA, local_l, local_r, other_l);
+	split_one_side(mmi, 1, tracker_r, tracker_l, &rightmax, &leftmax, PA, other_r);
+	split_one_side(mmi, 0, tracker_l, tracker_r, &leftmax, &rightmax, PA, other_l);
 
 	PA->rightcount = PA->rightcount + tracker_r;
 	PA->leftcount  = PA->leftcount + tracker_l;
@@ -371,12 +371,12 @@ void generate_paths(queue_t* const queue, meta* const mmi, PS* known_Path, int* 
 
 		if (rank <= size - 1) {
 			MPI_Isend(&PA.rightcount, 1, MPI_INT, rank - 1, PATHTAG, MPI_COMM_WORLD, &req);
-			MPI_Isend(PA.local_r[pos_r], PA.new_c_r, MPI_PathE, rank - 1, PATHTAG,
+			MPI_Isend(&PA.local_r[pos_r], PA.new_c_r, MPI_PathE, rank - 1, PATHTAG,
 					MPI_COMM_WORLD, &req_r);
 		}
 		if (rank > 0) {
 			MPI_Isend(&PA.leftcount, 1, MPI_INT, rank + 1, PATHTAG, MPI_COMM_WORLD, &req);
-			MPI_Isend(PA.local_l[pos_l], PA.new_c_l, MPI_PathE, rank + 1, PATHTAG,
+			MPI_Isend(&PA.local_l[pos_l], PA.new_c_l, MPI_PathE, rank + 1, PATHTAG,
 					MPI_COMM_WORLD, &req_l);
 		}
 
@@ -536,7 +536,7 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
 		queue_t* const empty_shelfs, queue_t* const pathf_queue,  PS* known_Path, int* knownPathmax, int* knownPath_count) {
 	MPI_Request req;
 	if (!queue_empty(pathf_queue)) {
-		generate_paths(pathf_queue, mmi);
+		generate_paths(pathf_queue, mmi, known_Path, knownPathmax, knownPath_count);
 		while (!queue_empty(pathf_queue)) {
 			entity* e = queue_dequeue(pathf_queue);
 			queue_enqueue(entity_queue, e);
