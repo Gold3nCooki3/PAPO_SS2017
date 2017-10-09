@@ -288,8 +288,8 @@ void recursiv_split(meta* const mmi, PathArrays* const PA, PE * const other_r, P
 
 	int leftmax = PA->leftcount + PA->new_c_l, rightmax = PA->rightcount + PA->new_c_r, tracker_r = 1, tracker_l = 1 ;
 
-	local_r = realloc (local_r, PA->rightcount * sizeof(PE));
-	local_l = realloc (local_l, PA->leftcount * sizeof(PE));
+	PA->local_r = realloc (PA->local_r, PA->rightcount * sizeof(PE));
+	PA->local_l = realloc (PA->local_l, PA->leftcount * sizeof(PE));
 
 	split_one_side(mmi, 1, tracker_r, tracker_l, &rightmax, &leftmax, PA, other_r);
 	split_one_side(mmi, 0, tracker_l, tracker_r, &leftmax, &rightmax, PA, other_l);
