@@ -24,6 +24,7 @@
 #include "AStar.h"
 
 
+typedef enum PATHF_STATUS {ERR = -1, COMPL = -2} PATHF_STATUS;
 typedef enum EntityType {CUSTOMER, EMPLOYEE=5} EntityType;
 typedef enum EnqueueStatus {ENQUEUE, NEWPATH, DESTROY, UP, DOWN, EDGEL, EDGER} EnS;
 
@@ -81,7 +82,7 @@ typedef struct PathSave PS;
 
 struct
 PathArrays{
-	PS * const known_Path;
+	PS * known_Path;
 	int* knownPathmax;
 	int* knownPath_count;
 	int rightcount;

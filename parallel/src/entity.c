@@ -203,7 +203,7 @@ ASPath generate_localpath(vector3 start, vector3 dest, meta* const mmi,
 
 
 void split_one_side(meta*const  mmi, int side, int tracker_ts, int tracker_os, int* ts_max, int* os_max,
-		PathArrays* const  PA, PE* const  local_ts,PE* const  local_os, PE* const  other){
+		PathArrays* const  PA, PE* local_ts,PE*  local_os, PE* const  other){
 	int	count_new_ts = (side == 1) ? PA->new_c_r : PA->new_c_l;
 	int	count_new_os = (side == 1) ? PA->new_c_l : PA->new_c_r;
 	int		count_ts = (side == 1) ? PA->rightcount : PA->leftcount;
@@ -301,7 +301,7 @@ void recursiv_split(meta* const mmi, PathArrays* const PA, PE * local_r, PE * lo
 void generate_paths(queue_t* const queue, meta* const mmi) {
 	struct queue_node_s *node = queue->front;
 	int rightcount = 0, leftcount = 0, rank = mmi->rank, size = mmi->size;
-	MPI_Request req;
+	MPI_Request req, req_r, req_l;
 
 	PE* local_r = malloc(mmi->spawn_count * sizeof(PE));
 	PE* local_l = malloc(mmi->spawn_count * sizeof(PE));
@@ -361,12 +361,12 @@ void generate_paths(queue_t* const queue, meta* const mmi) {
 		if (rank != size - 1) {
 			MPI_Isend(&leftcount, 1, MPI_INT, rank + 1, PATHTAG, MPI_COMM_WORLD, &req);
 			MPI_Isend(local_l, leftcount, MPI_PathE, rank + 1, PATHTAG,
-					MPI_COMM_WORLD, &req);
+					MPI_COMM_WORLD, &req_l);
 		}
 		if (rank != 0) {
 			MPI_Isend(&rightcount, 1, MPI_INT, rank - 1, PATHTAG, MPI_COMM_WORLD, &req);
 			MPI_Isend(local_r, rightcount, MPI_PathE, rank - 1, PATHTAG,
-					MPI_COMM_WORLD, &req);
+					MPI_COMM_WORLD, &req_r);
 		}
 
 		int temp_rc, temp_lc;
