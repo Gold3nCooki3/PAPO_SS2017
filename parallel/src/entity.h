@@ -68,8 +68,30 @@ PathEssentials{
 	int status;
 	vector3 start;
 	vector3 dest;
+	vector3 final_dest;
 };
 typedef struct PathEssentials PE;
+
+struct
+PathSave{
+	int id;
+	vector3 dest;
+};
+typedef struct PathSave PS;
+
+struct
+PathArrays{
+	PS * const known_Path;
+	int* knownPathmax;
+	int* knownPath_count;
+	int rightcount;
+	int leftcount;
+	int core_c_r;
+	int core_c_l;
+	int new_c_r;
+	int new_c_l;
+};
+typedef struct PathArrays PathArrays;
 
 static vector3 start_vec;
 

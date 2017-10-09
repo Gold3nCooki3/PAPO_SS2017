@@ -59,6 +59,31 @@ void force_stop() {
 	exit(5);
 }
 
+
+PE * fast_realloc_PE(PE * ptr, int count, int * max, int size){
+			if(count >= *max - 1){
+					*max += size;
+					ptr = realloc(ptr, *max * sizeof(PE));
+			}
+			return ptr;
+}
+PS * fast_realloc_PS(PS * ptr, int count, int * max, int size){
+			if(count >= *max -1){
+					*max += size;
+					ptr = realloc(ptr, *max * sizeof(PS));
+			}
+			return ptr;
+}
+
+void fast_realloc(entity * ptr, int * count, int * max, int size){
+			if(*count == *max-1){
+					*max += size;
+					ptr = realloc(ptr, *max * sizeof(entity));
+			}
+}
+
+
+
 vector3 get_close_vector3(vector3* const list, int listlength, vector3 start,
 		int forceSameLevel) {
 	vector3 dest;
@@ -79,6 +104,52 @@ vector3 get_close_vector3(vector3* const list, int listlength, vector3 start,
 	}
 	return dest;
 }
+
+int compfunc(const void * a, const void * b) {
+	vector3 vec_a = *(vector3*) a;
+	vector3 vec_b = *(vector3*) b;
+	int dista =
+			(start_vec.z == vec_a.z) ?
+					abs(start_vec.x - vec_a.x) - abs(start_vec.y - vec_a.y) :
+					-1;
+	int distb =
+			(start_vec.z == vec_b.z) ?
+					abs(start_vec.x - vec_b.x) - abs(start_vec.y - vec_b.y) :
+					-1;
+
+	if (dista > distb)
+		return -1;
+	if (dista == distb)
+		return 0;
+	if (dista < distb)
+		return 1;
+
+	return 0;
+}
+
+
+int find_edge_field(vector3* edge_fields, vector3 start_vec, int edge_count, int start){
+	for (int c = start; c < edge_count; c++) {
+					ASPath path = ASPathCreate(&PathNodeSource, NULL, &start_vec,
+							&(edge_fields[c]));
+					if (ASPathGetCount(path) > 0) { //is path vaild
+						return c;
+					}
+				}
+	return ERR;
+}
+
+void replace_dublicates(int* targets){
+	for(int o = 0; o < 6; o++){
+		if(targets[o] < 0) continue;
+		int temp = targets[o];
+		for(int i = o+1; i < 6; i++){
+			if(temp == targets[i]) targets[i] = -1;
+		}
+	}
+}
+
+/*========================================================================================*/
 
 ASPath generate_localpath(vector3 start, vector3 dest, meta* const mmi,
 		int* lift_flag, vector3 * memory) {
@@ -130,26 +201,101 @@ ASPath generate_localpath(vector3 start, vector3 dest, meta* const mmi,
 	return path;
 }
 
-int compfunc(const void * a, const void * b) {
-	vector3 vec_a = *(vector3*) a;
-	vector3 vec_b = *(vector3*) b;
-	int dista =
-			(start_vec.z == vec_a.z) ?
-					abs(start_vec.x - vec_a.x) - abs(start_vec.y - vec_a.y) :
-					-1;
-	int distb =
-			(start_vec.z == vec_b.z) ?
-					abs(start_vec.x - vec_b.x) - abs(start_vec.y - vec_b.y) :
-					-1;
 
-	if (dista > distb)
-		return -1;
-	if (dista == distb)
-		return 0;
-	if (dista < distb)
-		return 1;
+void split_one_side(meta*const  mmi, int side, int tracker_ts, int tracker_os, int* ts_max, int* os_max,
+		PathArrays* const  PA, PE* const  local_ts,PE* const  local_os, PE* const  other){
+	int	count_new_ts = (side == 1) ? PA->new_c_r : PA->new_c_l;
+	int	count_new_os = (side == 1) ? PA->new_c_l : PA->new_c_r;
+	int		count_ts = (side == 1) ? PA->rightcount : PA->leftcount;
+	int		count_os = (side == 1) ? PA->leftcount : PA->rightcount;
+	int	count_core_ts = (side == 1) ? PA->core_c_r : PA->core_c_l;
 
-	return 0;
+	for (int o = 0; o < count_new_ts; o++) {
+			for(int i = count_ts-1; i >= 0 ; i--){
+				if(local_ts[i].id == other[o].id && other[o].status < 0){
+					if(other[o].status == ERR){ //NO PATH FOUND
+						if(local_ts[i].status < mmi->edge_count){  //SWAP TO END TO SEND AGAIN
+							qsort(mmi->edge_fields, mmi->edge_count, sizeof(vector3), compfunc);
+							local_ts[i].status = local_ts[i].status+1;
+							int next_field = find_edge_field(mmi->edge_fields, local_ts[i].start, mmi->edge_count, local_ts[i].status);
+							local_ts[i].dest = mmi->edge_fields[next_field];
+							PE temp  = local_ts[i];
+							local_ts[i] = local_ts[count_ts - tracker_ts - 1];
+							local_ts[count_ts - 1- tracker_ts++ ] = temp;
+						}else{ //SWAP R -> L & DELETE IN R
+							local_ts[i].status = ERR;
+							PE temp  = local_ts[i];
+							local_ts[i] = local_ts[count_ts - tracker_ts - 1];
+							if(tracker_ts > 1){
+								local_ts[count_ts - tracker_ts - 1] = local_ts[count_ts - 1];
+								count_ts--;
+							}
+							local_os = fast_realloc_PE(local_os, count_os + tracker_os, os_max, count_new_ts);
+							local_os[count_os + tracker_os++] = temp;
+						}
+					}else if(other[i].status == COMPL){ //PATH FOUND
+						if(i >= count_core_ts){ //SWAP R -> L & SAVE PATH & DELETE IN R
+							local_ts[i].status = COMPL;
+							PE temp  = local_ts[i];
+							local_ts[i] = local_ts[count_ts - tracker_ts - 1];
+							if(tracker_ts > 1){
+								local_ts[count_ts - tracker_ts - 1] = local_ts[count_ts - 1];
+								count_ts--;
+							}
+							local_os = fast_realloc_PE(local_os, count_os + tracker_os, os_max, count_new_ts);
+							local_os[count_ts + tracker_os++] = temp;
+							PA->known_Path = fast_realloc_PS(PA->known_Path, *PA->knownPath_count, PA->knownPathmax, 10);
+							PA->known_Path[*(PA->knownPath_count)].id = temp.id;
+							PA->known_Path[(*(PA->knownPath_count))++].dest = temp.dest;
+						}else{
+							//save path
+						}
+					}
+				}else{ // NOT FOUND IN LOCAL OR FOUND IN LOCAL BUT NEEDS SECOND PASSING
+					int liftflag;
+					vector3 dontneed;
+					ASPath tempPath = generate_localpath(other[o].dest, other[o].final_dest, mmi, &liftflag, &dontneed);
+					if (ASPathGetCount(tempPath) > 0) {
+						local_ts = fast_realloc_PE(local_ts, (count_ts + tracker_os), ts_max, count_core_ts);
+						local_ts[count_ts + tracker_os++] = other[o];
+					} else {
+						other[o].start = other[o].dest;
+						start_vec = other[o].start;
+						qsort(mmi->edge_fields, mmi->edge_count, sizeof(vector3), compfunc);
+						other[o].status = find_edge_field(mmi->edge_fields, start_vec, mmi->edge_count, local_ts[i].status);
+						other[o].dest = mmi->edge_fields[other[o].status];
+						int destid = other[o].dest.y + other[o].dest.z * mmi->columns;
+						if ( destid > mmi->startline ) {
+							local_ts = fast_realloc_PE(local_ts, (count_ts + tracker_ts), ts_max, count_new_os);
+							local_ts[count_ts + tracker_ts++] = other[o];
+						} else {
+							local_os = fast_realloc_PE(local_os, (count_os + tracker_os), os_max, count_new_ts);
+							local_os[count_os + tracker_os++] = other[o];
+						}
+					}
+				}
+				break;
+			}
+		}
+
+}
+
+void recursiv_split(meta* const mmi, PathArrays* const PA, PE * local_r, PE * local_l, PE * const other_r, PE * const other_l){
+
+	int leftmax = PA->leftcount + PA->new_c_l, rightmax = PA->rightcount + PA->new_c_r, tracker_r = 1, tracker_l = 1 ;
+
+	local_r = realloc (local_r, PA->rightcount * sizeof(PE));
+	local_l = realloc (local_l, PA->leftcount * sizeof(PE));
+
+	split_one_side(mmi, 1, tracker_r, tracker_l, &rightmax, &leftmax, PA, local_r, local_l, other_r);
+	split_one_side(mmi, 0, tracker_l, tracker_r, &leftmax, &rightmax, PA, local_l, local_r, other_l);
+
+	PA->rightcount = PA->rightcount + tracker_r;
+	PA->leftcount  = PA->leftcount + tracker_l;
+	PA->new_c_r = tracker_r;
+	PA->new_c_l = tracker_l;
+
+
 }
 
 void generate_paths(queue_t* const queue, meta* const mmi) {
@@ -161,7 +307,7 @@ void generate_paths(queue_t* const queue, meta* const mmi) {
 	PE* local_l = malloc(mmi->spawn_count * sizeof(PE));
 
 	MPI_Datatype MPI_PathE;
-	MPI_Type_contiguous(8, MPI_INT, &MPI_PathE);
+	MPI_Type_contiguous(11, MPI_INT, &MPI_PathE);
 	MPI_Type_commit(&MPI_PathE);
 
 	while (node != NULL) {
@@ -207,6 +353,8 @@ void generate_paths(queue_t* const queue, meta* const mmi) {
 	rightcount++;
 	leftcount++;
 
+	PE * other_r;
+	PE * other_l;
 	/*int t= 0;*/
 	while (FALSE) {
 
@@ -224,29 +372,31 @@ void generate_paths(queue_t* const queue, meta* const mmi) {
 		int temp_rc, temp_lc;
 		if (rank != 0) { /* other fields*/
 			MPI_Recv(&temp_rc, 1, MPI_INT, rank - 1, PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-			PE * other_r = calloc(temp_rc, sizeof(PE));
+			other_r = calloc(temp_rc, sizeof(PE));
 			MPI_Recv(other_r, temp_rc, MPI_INT, rank - 1, PATHTAG,
 					MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		}
 		if (rank != size - 1) {
 			MPI_Recv(&temp_lc, 1, MPI_INT, rank + 1, PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-			PE * other_l = calloc(temp_lc, sizeof(PE));
+			other_l = calloc(temp_lc, sizeof(PE));
 			MPI_Recv(other_l, temp_lc, MPI_INT, rank + 1, PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		}
 
 		/*find path for left and right*/
 		/*switch start = dest, find new dest*/
+		MPI_Wait(&req_r, MPI_STATUS_IGNORE);
+		MPI_Wait(&req_l, MPI_STATUS_IGNORE);
 
-		for (int i = 0; i < temp_rc; i++) {
+		//recursiv_split(mmi, &PA, local_r, local_l, other_r, other_l);
 
-		}
-		for (int i = 0; i < temp_lc; i++) {
-
-		}
 
 	}
 	mmi->entity_count += mmi->spawn_count;
 	mmi->spawn_count = 0;
+	/*free(local_r);
+	free(local_l);
+	free(other_r);
+	free(other_l);*/
 }
 
 /*Moves an entity towards their destination,
@@ -321,12 +471,6 @@ EnS move_entity(meta* const mmi, queue_t* const empty_shelfs, entity* const e) {
 	return return_val;
 }
 
-void fast_realloc(entity * ptr, int * count, int * max, int size){
-			if(*count == *max-1){
-					*max += size;
-					ptr = realloc(ptr, *max * sizeof(entity));
-			}
-}
 
 void find_second_limits(meta* const mmi, int * second_ulimit, int * second_llimit, int * upper_rank, int * lowerrank) { //BruteForce
 	int resultup = 0, resultdown = 0, temp_lup = 0, temp_ldown = 0, limitdown, limitup, helpval;
@@ -373,15 +517,6 @@ void find_second_limits(meta* const mmi, int * second_ulimit, int * second_llimi
 	*second_llimit = limitdown;
 }
 
-void replace_dublicates(int* targets){
-	for(int o = 0; o < 6; o++){
-		if(targets[o] < 0) continue;
-		int temp = targets[o];
-		for(int i = o+1; i < 6; i++){
-			if(temp == targets[i]) targets[i] = -1;
-		}
-	}
-}
 
 /*Move every entity in the entity_queue, dequeue if entity reached final destination
  * @param market 	: fields where entities move within
