@@ -82,6 +82,8 @@ typedef struct PathSave PS;
 
 struct
 PathArrays{
+	PE * local_r;
+	PE * local_l;
 	PS * known_Path;
 	int* knownPathmax;
 	int* knownPath_count;

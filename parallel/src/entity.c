@@ -60,7 +60,7 @@ void force_stop() {
 }
 
 
-PE * fast_realloc_PE(PE * ptr, int count, int * max, int size){
+void fast_realloc_PE(PE ** ptr, int count, int * max, int size){
 			if(count >= *max - 1){
 					*max += size;
 					ptr = realloc(ptr, *max * sizeof(PE));
@@ -75,10 +75,10 @@ PS * fast_realloc_PS(PS * ptr, int count, int * max, int size){
 			return ptr;
 }
 
-void fast_realloc(entity * ptr, int * count, int * max, int size){
-			if(*count == *max-1){
-					*max += size;
-					ptr = realloc(ptr, *max * sizeof(entity));
+void fast_realloc(entity *** ptr, int * count, int * max, int index, int size){
+			if(count[index] >= max[index]-1){
+					max[index] += size;
+					ptr[index] = realloc(ptr[index], max[index] * sizeof(entity*));
 			}
 }
 
@@ -203,7 +203,9 @@ ASPath generate_localpath(vector3 start, vector3 dest, meta* const mmi,
 
 
 void split_one_side(meta*const  mmi, int side, int tracker_ts, int tracker_os, int* ts_max, int* os_max,
-		PathArrays* const  PA, PE* local_ts,PE*  local_os, PE* const  other){
+		PathArrays* const  PA, PE* const  other){
+	PE* local_ts = (side == 1) ? PA->local_r : PA->local_l;
+	PE* local_os = (side == 1) ? PA->local_l : PA->local_r;
 	int	count_new_ts = (side == 1) ? PA->new_c_r : PA->new_c_l;
 	int	count_new_os = (side == 1) ? PA->new_c_l : PA->new_c_r;
 	int		count_ts = (side == 1) ? PA->rightcount : PA->leftcount;
@@ -230,7 +232,7 @@ void split_one_side(meta*const  mmi, int side, int tracker_ts, int tracker_os, i
 								local_ts[count_ts - tracker_ts - 1] = local_ts[count_ts - 1];
 								count_ts--;
 							}
-							local_os = fast_realloc_PE(local_os, count_os + tracker_os, os_max, count_new_ts);
+							fast_realloc_PE(local_os, count_os + tracker_os, os_max, count_new_ts);
 							local_os[count_os + tracker_os++] = temp;
 						}
 					}else if(other[i].status == COMPL){ //PATH FOUND
@@ -242,7 +244,7 @@ void split_one_side(meta*const  mmi, int side, int tracker_ts, int tracker_os, i
 								local_ts[count_ts - tracker_ts - 1] = local_ts[count_ts - 1];
 								count_ts--;
 							}
-							local_os = fast_realloc_PE(local_os, count_os + tracker_os, os_max, count_new_ts);
+							fast_realloc_PE(local_os, count_os + tracker_os, os_max, count_new_ts);
 							local_os[count_ts + tracker_os++] = temp;
 							PA->known_Path = fast_realloc_PS(PA->known_Path, *PA->knownPath_count, PA->knownPathmax, 10);
 							PA->known_Path[*(PA->knownPath_count)].id = temp.id;
@@ -256,7 +258,7 @@ void split_one_side(meta*const  mmi, int side, int tracker_ts, int tracker_os, i
 					vector3 dontneed;
 					ASPath tempPath = generate_localpath(other[o].dest, other[o].final_dest, mmi, &liftflag, &dontneed);
 					if (ASPathGetCount(tempPath) > 0) {
-						local_ts = fast_realloc_PE(local_ts, (count_ts + tracker_os), ts_max, count_core_ts);
+						fast_realloc_PE(local_ts, (count_ts + tracker_os), ts_max, count_core_ts);
 						local_ts[count_ts + tracker_os++] = other[o];
 					} else {
 						other[o].start = other[o].dest;
@@ -266,10 +268,10 @@ void split_one_side(meta*const  mmi, int side, int tracker_ts, int tracker_os, i
 						other[o].dest = mmi->edge_fields[other[o].status];
 						int destid = other[o].dest.y + other[o].dest.z * mmi->columns;
 						if ( destid > mmi->startline ) {
-							local_ts = fast_realloc_PE(local_ts, (count_ts + tracker_ts), ts_max, count_new_os);
+							fast_realloc_PE(local_ts, (count_ts + tracker_ts), ts_max, count_new_os);
 							local_ts[count_ts + tracker_ts++] = other[o];
 						} else {
-							local_os = fast_realloc_PE(local_os, (count_os + tracker_os), os_max, count_new_ts);
+							fast_realloc_PE(local_os, (count_os + tracker_os), os_max, count_new_ts);
 							local_os[count_os + tracker_os++] = other[o];
 						}
 					}
@@ -277,6 +279,7 @@ void split_one_side(meta*const  mmi, int side, int tracker_ts, int tracker_os, i
 				break;
 			}
 		}
+
 
 }
 
@@ -298,7 +301,7 @@ void recursiv_split(meta* const mmi, PathArrays* const PA, PE * local_r, PE * lo
 
 }
 
-void generate_paths(queue_t* const queue, meta* const mmi) {
+void generate_paths(queue_t* const queue, meta* const mmi, PS* known_Path, int* knownPathmax, int* knownPath_count) {
 	struct queue_node_s *node = queue->front;
 	int rightcount = 0, leftcount = 0, rank = mmi->rank, size = mmi->size;
 	MPI_Request req, req_r, req_l;
@@ -350,11 +353,16 @@ void generate_paths(queue_t* const queue, meta* const mmi) {
 		}
 		node = node->next;
 	}
-	rightcount++;
-	leftcount++;
+	int core_c_r = rightcount;
+	int core_c_l = leftcount;
+	int new_c_r = rightcount;
+	int new_c_l = leftcount;
 
-	PE * other_r;
-	PE * other_l;
+	PE * other_r = NULL;
+	PE * other_l = NULL;
+
+	PathArrays PA = { local_r, local_l, known_Path, knownPathmax, knownPath_count,
+			rightcount, leftcount, core_c_r ,core_c_l, new_c_r, new_c_l};
 	/*int t= 0;*/
 	while (FALSE) {
 
@@ -387,15 +395,15 @@ void generate_paths(queue_t* const queue, meta* const mmi) {
 		MPI_Wait(&req_r, MPI_STATUS_IGNORE);
 		MPI_Wait(&req_l, MPI_STATUS_IGNORE);
 
-		//recursiv_split(mmi, &PA, local_r, local_l, other_r, other_l);
+		//recursiv_split(mmi, &PA, other_r, other_l);
 
 
 	}
 	mmi->entity_count += mmi->spawn_count;
 	mmi->spawn_count = 0;
-	/*free(local_r);
+	free(local_r);
 	free(local_l);
-	free(other_r);
+	/*free(other_r);
 	free(other_l);*/
 }
 
@@ -523,7 +531,7 @@ void find_second_limits(meta* const mmi, int * second_ulimit, int * second_llimi
  * @param entity_queue 	: queue of all entities
  */
 void work_queue(meta * const mmi, queue_t* const entity_queue,
-		queue_t* const empty_shelfs, queue_t* const pathf_queue) {
+		queue_t* const empty_shelfs, queue_t* const pathf_queue,  PS* known_Path, int* knownPathmax, int* knownPath_count) {
 	MPI_Request req;
 	if (!queue_empty(pathf_queue)) {
 		generate_paths(pathf_queue, mmi);
@@ -580,35 +588,35 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
 				case DOWN: 	if((e->position.y + e->position.z * mmi->columns) < lowerlimit){
 							if (e == first) first = NULL;
 							if((e->position.y + e->position.z * mmi->columns) < second_llimit){
-								fast_realloc(*(send_entities[4]), &s_counts[4], &maxima[4], 10); //ooL
+								fast_realloc(send_entities,s_counts, maxima,4, 10); //ooL
 								send_entities[4][s_counts[4]] = e;
 								s_counts[4] += 1;
 							}else{
-								fast_realloc(*(send_entities[2]), &s_counts[2], &maxima[2], 10); //oL
+								fast_realloc(send_entities,s_counts, maxima,2, 10); //oL
 								send_entities[2][s_counts[2]] = e;
 								s_counts[2] += 1;
 							}
 						break;
 						}
 				case EDGEL: 	if (e == first) first = NULL;
-						fast_realloc(*(send_entities[0]), &s_counts[0], &maxima[0], 20);
+						fast_realloc(send_entities,s_counts, maxima,0, 20);
 						send_entities[0][s_counts[0]++] = e;
 						s_counts[0] +=	1; break;
 				case UP:	if((e->position.y + e->position.z * mmi->columns) > upperlimit){
 							if (e == first) first = NULL;
 							if((e->position.y + e->position.z * mmi->columns) > second_ulimit){ //ooR
-								fast_realloc(*(send_entities[5]), &s_counts[5], &maxima[5], 10);
+								fast_realloc(send_entities,s_counts, maxima,5, 10);
 								send_entities[5][s_counts[5]] = e;
 								s_counts[5] += 1;
  							}else{
-								fast_realloc(*(send_entities[3]), &s_counts[3], &maxima[3], 10);
+ 								fast_realloc(send_entities,s_counts, maxima,3, 10);
 								send_entities[3][s_counts[3]] = e;
 								s_counts[3] += 1;
 							}
 						break;
 						}
 				case EDGER: 	if (e == first) first = NULL;
-						fast_realloc(*(send_entities[1]), &s_counts[1], &maxima[1], 20);
+						fast_realloc(send_entities,s_counts, maxima,1, 10);
 						send_entities[1][s_counts[1]] = e;
 						s_counts[1] += 1;	break;
 				default: 	break;
@@ -660,9 +668,7 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
 	for(int i = 0; i < 6; i++){
 		int count = 0;
 		if(targets[i] >= mmi->size || targets[i] < 0 || targets[i] == mmi->rank) continue;
-		//printf("%d waiting for %d\n", mmi->rank, targets[i]);
 		MPI_Recv(&count, 1, MPI_INT, targets[i], ENTITYTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-		//printf("%d finiched waiting\n", mmi->rank);
 
 		//if(mmi->rank == 1 && targets[i] == 0)printf("R 1: COUNT RECV %d\n", count);
 
