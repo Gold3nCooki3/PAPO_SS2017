@@ -322,7 +322,7 @@ EnS move_entity(meta* const mmi, queue_t* const empty_shelfs, entity* const e) {
 }
 
 void fast_realloc(entity * ptr, int * count, int * max, int size){
-			if(count == max-1){
+			if(*count == *max-1){
 					*max += size;
 					ptr = realloc(ptr, *max * sizeof(entity));
 			}
