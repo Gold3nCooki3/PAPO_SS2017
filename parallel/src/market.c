@@ -11,8 +11,11 @@ int vec_equal(vector3 * vec1, vector3 * vec2){
 
 int in_process(vector3 vec){
 	if(global__mmi){
+                if(vec.z - global__mmi->startstorey >= global__mmi->stories || vec.z - global__mmi->startstorey < 0
+			|| vec.y >= global__mmi->columns || vec.y < 0 || vec.x >= global__mmi->rows || vec.x < 0) return FALSE;
 		int vec_to_id = vec.y  + vec.z * global__mmi->columns;
-		if((vec_to_id >= global__mmi->startline) && (vec_to_id < global__mmi->startline + (global__mmi->chunksize/global__mmi->rows) + 1)) return TRUE;
+		//printf("vec id %d start %d end %d  ", vec_to_id, global__mmi->startline,  global__mmi->startline + (global__mmi->chunksize/global__mmi->rows));
+		if((vec_to_id >= global__mmi->startline) && (vec_to_id < global__mmi->startline + (global__mmi->chunksize/global__mmi->rows))) return TRUE;
 		return FALSE;
 	}else{
 		printf("Error: no global mmi");
@@ -25,12 +28,8 @@ int in_process(vector3 vec){
  */
 field* in_matrix_g(vector3 vec){
 	if(global__market){
-		if(!in_process(vec)) return 0;
-		int x = vec.x;
-		int y = vec.y;
-		int z = vec.z - global__mmi->startstorey;
-		if(z >= global__mmi->stories || z < 0 || y >= global__mmi->columns || y < 0 || x >= global__mmi->rows || x < 0) return 0;
-		return global__market[z][y][x];
+		if(!in_process(vec)) return NULL;
+		return global__market[vec.z - global__mmi->startstorey][vec.y][vec.x];
 	}else{
 		printf("Error: no global matrix");
 		exit(EXIT_FAILURE);
@@ -43,6 +42,7 @@ field* in_matrix_g(vector3 vec){
  */
 int is_blocked(vector3 vec){
 	field* f= in_matrix_g(vec);
+	//printf(" vec : (%d, %d, %d)\n", vec.x, vec.y, vec.z);
 	if(f != NULL){
 		switch (f->type){
 			case CORRIDOR:

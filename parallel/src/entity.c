@@ -214,9 +214,11 @@ void split_one_side(meta*const  mmi, int side, int tracker_ts, int tracker_os, i
 	int		count_os = (side == 1) ? PA->leftcount : PA->rightcount;
 	int	count_core_ts = (side == 1) ? PA->core_c_r : PA->core_c_l;
 
+	//printf("R: %d in split\n", mmi->rank);
 	for (int o = 0; o < count_new_ts; o++) {
 			for(int i = count_ts-1; i >= 0 ; i--){
-				if(local_ts[i].id == other[o].id && other[o].status < 0){
+				if(local_ts[i].id == other[o].id){
+				printf("R: %d known\n", mmi->rank);
 					if(other[o].status == ERR){ //NO PATH FOUND
 						if(local_ts[i].status < mmi->edge_count){  //SWAP TO END TO SEND AGAIN
 							qsort(mmi->edge_fields, mmi->edge_count, sizeof(vector3), compfunc);
@@ -251,28 +253,38 @@ void split_one_side(meta*const  mmi, int side, int tracker_ts, int tracker_os, i
 							fast_realloc_PS(PA, PA->knownPath_count, PA->knownPathmax, 10);
 							PA->known_Path[*(PA->knownPath_count)].id = temp.id;
 							PA->known_Path[(*(PA->knownPath_count))++].dest = temp.dest;
+							printf("R %d OTHER COMPL \n", mmi->rank);
 						}else{
+							printf("R %d LOCAL COMPL \n", mmi->rank);
 							PA->not_completed--;
-						}
+					}else{
+						;
 					}
+				}
 				}else{ // NOT FOUND IN LOCAL OR FOUND IN LOCAL BUT NEEDS SECOND PASSING
 					int liftflag;
 					vector3 dontneed;
+
+					printf("dest (%d, %d, %d) final dest(%d, %d, %d)\n", other[o].dest.x, other[o].dest.y, other[o].dest.z,
+										 other[o].final_dest.x, other[o].final_dest.y, other[o].final_dest.z);
 					ASPath tempPath = generate_localpath(other[o].dest, other[o].final_dest, mmi, &liftflag, &dontneed);
 					if (ASPathGetCount(tempPath) > 0) {
 						local_ts = fast_realloc_PE(local_ts, (count_ts + tracker_os), ts_max, count_core_ts);
 						local_ts[count_ts + tracker_os++] = other[o];
 						local_ts[count_ts + tracker_os].status = COMPL;
+						printf("R: %d FOUND PATH \n", mmi->rank);
 					} else {
+						printf("R: %d dindt found PATH SPLITTING \n", mmi->rank);
 						other[o].start = other[o].dest;
 						start_vec = other[o].start;
 						qsort(mmi->edge_fields, mmi->edge_count, sizeof(vector3), compfunc);
-						other[o].status = find_edge_field(mmi->edge_fields, start_vec, mmi->edge_count, local_ts[i].status);
+						other[o].status = find_edge_field(mmi->edge_fields, start_vec, mmi->edge_count, 0);
 						other[o].dest = mmi->edge_fields[other[o].status];
 						int destid = other[o].dest.y + other[o].dest.z * mmi->columns;
 						if ( (destid > mmi->startline && (side == 1)) || (destid <= mmi->startline && (side != 1))) {
 							local_ts = fast_realloc_PE(local_ts, (count_ts + tracker_ts), ts_max, count_new_os);
 							local_ts[count_ts + tracker_ts++] = other[o];
+							// loacl_ts[count_ts + tracker_ts].status = ERR;
 						} else {
 							local_os = fast_realloc_PE(local_os, (count_os + tracker_os), os_max, count_new_ts);
 							local_os[count_os + tracker_os++] = other[o];
@@ -288,10 +300,10 @@ void split_one_side(meta*const  mmi, int side, int tracker_ts, int tracker_os, i
 
 void recursiv_split(meta* const mmi, PathArrays* const PA, PE * const other_r, PE * const other_l){
 
-	int leftmax = PA->leftcount + PA->new_c_l, rightmax = PA->rightcount + PA->new_c_r, tracker_r = 1, tracker_l = 1 ;
+	int leftmax = PA->leftcount + PA->new_c_l + 1, rightmax = PA->rightcount + PA->new_c_r + 1, tracker_r = 1, tracker_l = 1 ;
 
-	PA->local_r = realloc (PA->local_r, PA->rightcount * sizeof(PE));
-	PA->local_l = realloc (PA->local_l, PA->leftcount * sizeof(PE));
+	PA->local_r = realloc (PA->local_r, rightmax * sizeof(PE));
+	PA->local_l = realloc (PA->local_l, leftmax * sizeof(PE));
 
 	split_one_side(mmi, 1, tracker_r, tracker_l, &rightmax, &leftmax, PA, other_r);
 	split_one_side(mmi, 0, tracker_l, tracker_r, &leftmax, &rightmax, PA, other_l);
@@ -307,7 +319,7 @@ void recursiv_split(meta* const mmi, PathArrays* const PA, PE * const other_r, P
 void generate_paths(queue_t* const queue, meta* const mmi, PS* known_Path, int* knownPathmax, int* knownPath_count) {
 	struct queue_node_s *node = queue->front;
 	int rightcount = 0, leftcount = 0, rank = mmi->rank, size = mmi->size;
-	MPI_Request req, req_r, req_l;
+	MPI_Request req_c_r, req_c_l, req_r, req_l;
 
 	PE* local_r = malloc(mmi->spawn_count * sizeof(PE));
 	PE* local_l = malloc(mmi->spawn_count * sizeof(PE));
@@ -325,9 +337,9 @@ void generate_paths(queue_t* const queue, meta* const mmi, PS* known_Path, int* 
 			e->path = tempPath;
 		} else {
 			start_vec = e->position;
-			for(int counter = 0; counter < knownPath_count; counter){
+			for(int counter = 0; counter < *knownPath_count; counter++){
 				if (e->id == known_Path[counter].id) {
-					e->path = ASPathCreate(&PathNodeSource, NULL, &start_vec, known_Path[counter].dest);
+					e->path = ASPathCreate(&PathNodeSource, NULL, &start_vec, &known_Path[counter].dest);
 				}
 			}
 			int result = -1;
@@ -339,12 +351,17 @@ void generate_paths(queue_t* const queue, meta* const mmi, PS* known_Path, int* 
 				printf(" [%2d, %2d, %2d];", mmi->edge_fields[c].x,
 						mmi->edge_fields[c].y, mmi->edge_fields[c].z);
 			printf("\n");
-			force_stop();
+			//force_stop();
 			/**/
 
 			for (int c = 0; c < mmi->edge_count; c++) {
+				//printf("path %d \n", c);
+				printf("start  [%d, %d, %d]\n", start_vec.x, start_vec.y, start_vec.z);
+				printf("edge  [%d, %d, %d] ", mmi->edge_fields[c].x, mmi->edge_fields[c].y, mmi->edge_fields[c].z);
+				//printf("in P %d\n", in_process(mmi->edge_fields[c]));
 				ASPath path = ASPathCreate(&PathNodeSource, NULL, &start_vec,
 						&(mmi->edge_fields[c]));
+				//printf("path %d \n", c);
 				if (ASPathGetCount(path) > 0) { //is path vaild
 					result = c;
 					e->path = path;
@@ -352,12 +369,15 @@ void generate_paths(queue_t* const queue, meta* const mmi, PS* known_Path, int* 
 				}
 				if (c == mmi->edge_count - 1) {
 					printf("Error");
+					exit(EXIT_FAILURE);
 				}
 			}
+			printf("\n Edge [%d %d %d] \n", mmi->edge_fields[result].x, mmi->edge_fields[result].y, mmi->edge_fields[result].z);
 
-			PE p = { e->id, result, mmi->edge_fields[result],
+			PE p = { e->id, result, start_vec, mmi->edge_fields[result],
 					e->list[e->listpos] };
-			if (TRUE) {
+			int destid = e->list[e->listpos].y + e->list[e->listpos].z * mmi->columns;
+			if ( destid > mmi->startline ) {
 				local_r[rightcount++] = p;
 			} else {
 				local_l[leftcount++] = p;
@@ -365,6 +385,7 @@ void generate_paths(queue_t* const queue, meta* const mmi, PS* known_Path, int* 
 		}
 		node = node->next;
 	}
+
 	int core_c_r = rightcount;
 	int core_c_l = leftcount;
 	int new_c_r = rightcount;
@@ -376,43 +397,64 @@ void generate_paths(queue_t* const queue, meta* const mmi, PS* known_Path, int* 
 
 	PathArrays PA = { local_r, local_l, known_Path, knownPathmax, knownPath_count,
 			rightcount, leftcount, core_c_r ,core_c_l, new_c_r, new_c_l, not_completed};
+
 	//int max_iter = 0;
 	while (TURE) {
 		int pos_r = PA.rightcount - new_c_r;
 		int pos_l = PA.leftcount - new_c_l;
 
-		if (rank <= size - 1) {
-			MPI_Isend(&PA.rightcount, 1, MPI_INT, rank - 1, PATHTAG, MPI_COMM_WORLD, &req);
-			MPI_Isend(&PA.local_r[pos_r], PA.new_c_r, MPI_PathE, rank - 1, PATHTAG,
+		MPI_Status st_1, st_2, st_3, st_4;
+                int temp;
+                MPI_Allreduce(&PA.not_completed, &temp, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+                //if(PA.not_completed == 0) break;
+                PA.not_completed = temp;
+
+		if (rank < size - 1) {
+			MPI_Isend(&PA.rightcount, 1, MPI_INT, rank + 1, PATHTAG-1, MPI_COMM_WORLD, &req_c_r);
+			MPI_Isend(&PA.local_r[pos_r], PA.new_c_r, MPI_PathE, rank + 1, PATHTAG-2,
 					MPI_COMM_WORLD, &req_r);
+			if(rank == 0) printf("SEND dest (%d %d %d)\n", PA.local_r[0].dest.x, PA.local_r[0].dest.y, PA.local_r[0].dest.z);
+
 		}
 		if (rank > 0) {
-			MPI_Isend(&PA.leftcount, 1, MPI_INT, rank + 1, PATHTAG, MPI_COMM_WORLD, &req);
-			MPI_Isend(&PA.local_l[pos_l], PA.new_c_l, MPI_PathE, rank + 1, PATHTAG,
+			MPI_Isend(&PA.leftcount, 1, MPI_INT, rank - 1, PATHTAG +1, MPI_COMM_WORLD, &req_c_l);
+			MPI_Isend(&PA.local_l[pos_l], PA.new_c_l, MPI_PathE, rank - 1, PATHTAG+2,
 					MPI_COMM_WORLD, &req_l);
 		}
 
 
 		if (rank > 0) { /* other fields*/
-			MPI_Recv(&PA.new_c_l, 1, MPI_INT, rank + 1, PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			MPI_Recv(&PA.new_c_l, 1, MPI_INT, rank - 1, PATHTAG -1 , MPI_COMM_WORLD, &st_1);
 			other_l = calloc(PA.new_c_l, sizeof(PE));
-			MPI_Recv(other_l, PA.new_c_l, MPI_INT, rank + 1, PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			MPI_Recv(other_l, PA.new_c_l, MPI_PathE, rank - 1, PATHTAG -2, MPI_COMM_WORLD, &st_2);
+			if(PA.new_c_l > 0) printf("RECV start (%d %d %d)\n", other_l[0].dest.x, other_l[0].dest.y, other_l[0].dest.z);
+
 		}
 		if (rank < size - 1) {
-			MPI_Recv(&PA.new_c_r, 1, MPI_INT, rank - 1, PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			MPI_Recv(&PA.new_c_r, 1, MPI_INT, rank + 1, PATHTAG +1, MPI_COMM_WORLD, &st_3);
 			other_r = calloc(PA.new_c_r, sizeof(PE));
-			MPI_Recv(other_r, PA.new_c_r, MPI_INT, rank - 1, PATHTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			MPI_Recv(other_r, PA.new_c_r, MPI_PathE, rank + 1, PATHTAG +2, MPI_COMM_WORLD, &st_4);
 		}
 
 		/*find path for left and right*/
 		/*switch start = dest, find new dest*/
-		MPI_Wait(&req_r, MPI_STATUS_IGNORE);
-		MPI_Wait(&req_l, MPI_STATUS_IGNORE);
+		if (rank < size-1){
+			MPI_Wait(&req_c_r, &st_1);
+			MPI_Wait(&req_r, &st_2);
+	      		MPI_Request_free(&req_c_r);
+			MPI_Request_free(&req_r);
+		}
+		if (rank > 0){
+			MPI_Wait(&req_c_l, &st_3);
+			MPI_Wait(&req_l, &st_4);
+			MPI_Request_free(&req_c_l);
+			MPI_Request_free(&req_l);
+		}
 
 		recursiv_split(mmi, &PA, other_r, other_l);
 
-		MPI_Allreduce(&PA->not_completed, &PA->not_completed, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-		if(PA->not_completed == 0) break;
+		MPI_Allreduce(&PA.not_completed, &temp, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+		if(PA.not_completed == 0) break;
 	}
 
 	int i = 0, r= 0, l=0;
@@ -424,16 +466,17 @@ void generate_paths(queue_t* const queue, meta* const mmi, PS* known_Path, int* 
 		}else if(local_l[l].id == e->id){
 			e->path = ASPathCreate(&PathNodeSource, NULL, &e->position, &local_l[l++].dest);
 		}else{
-			prinf("This should not have happend\n");
-			exit(EXIT_FAILURE);
+			printf("This should not have happend\n");
+			exit(3);
 		}
 		node = node->next;
 		i++;
 	}
+
 	mmi->entity_count += mmi->spawn_count;
 	mmi->spawn_count = 0;
-	free(local_r);
-	free(local_l);
+	free(PA.local_r);
+	free(PA.local_l);
 	free(other_r);
 	free(other_l);
 }
@@ -667,14 +710,13 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
 	//printf("??? is Q empty %d\n", queue_empty(entity_queue));
 
 	EssentialEntity** send_buffers = calloc(6, sizeof(EssentialEntity*));
-
 	/*=============================*/
 	MPI_Datatype MPI_Entity;
 	MPI_Type_contiguous(10 + 3*LISTL, MPI_INT, &MPI_Entity);
 	MPI_Type_commit(&MPI_Entity);
 	//SEND ENTITIES
-	//printf("%d Send :", mmi->rank);
 	for(int i = 0; i < 6; i++){
+		//printf("R %d Sending to %d c %d\n",mmi->rank, targets[i], s_counts[i]);
 		if(targets[i] >= mmi->size || targets[i] < 0 || targets[i] == mmi->rank) continue;
 		send_entities[i] = realloc(send_entities[i], s_counts[i]*sizeof(entity));
 		EssentialEntity* entities_tosend = calloc(s_counts[i], sizeof(EssentialEntity));
@@ -688,6 +730,7 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
 			free(send_entities[i][c]->list);
 			free(send_entities[i][c]); // BYE BYE
 		}
+		//if(mmi->rank == 1)printf("!!rank 1 %d\n", s_counts[i]);
 		MPI_Isend(&s_counts[i], 1, MPI_INT, targets[i], ENTITYTAG, MPI_COMM_WORLD, &req);
 		MPI_Isend(entities_tosend, s_counts[i],  MPI_Entity, targets[i], ENTITYTAG, MPI_COMM_WORLD, &req);
 		send_buffers[i] = entities_tosend;
@@ -790,16 +833,18 @@ vector3* generate_list(meta* const mmi, queue_t* empty_shelfs, int* items,
 void spawn_entity(meta* const mmi, queue_t* const entity_queue,
 		queue_t* const empty_shelfs, EntityType type) {
 	static int counter = 0;
-	vector3 * list = malloc(sizeof(vector3));
+	vector3 * list = malloc(2* sizeof(vector3));
 	vector3 testdest = { 4, 4, 4 };
-	list[0] = testdest;
+	vector3 testdest2 = { 17, 17, 2};
+	list[0] = testdest2;
+	list[1] = testdest;
 	entity* e = calloc(1, sizeof(*e));
 	e->id = 0;
 	e->type = type;
 	e->listpos = 0;
 	e->path_position = 0;
 	e->amountItems = 1;
-	vector3 testpos = mmi->exit_fields[rand() % mmi->exit_count];
+	vector3 testpos = {24, 11, 1};
 	e->position = testpos;
 	e->memory_dest.x = -1;
 	e->list = list;

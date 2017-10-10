@@ -8,8 +8,8 @@
 #define LISTL 10
 #define FILLVAL 10
 
-#define PATHTAG 555
-#define ENTITYTAG 666
+#define PATHTAG 55
+#define ENTITYTAG 66
 
 #include <stdio.h>
 #include <stdlib.h>
