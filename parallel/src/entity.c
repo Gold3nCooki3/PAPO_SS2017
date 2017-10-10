@@ -189,6 +189,7 @@ ASPath generate_localpath(vector3 start, vector3 dest, meta* const mmi,
 			break;
 		}
 	} else {
+		//search
 		return NULL;
 	}
 
@@ -251,7 +252,7 @@ void split_one_side(meta*const  mmi, int side, int tracker_ts, int tracker_os, i
 							PA->known_Path[*(PA->knownPath_count)].id = temp.id;
 							PA->known_Path[(*(PA->knownPath_count))++].dest = temp.dest;
 						}else{
-							//save path
+							PA->not_completed--;
 						}
 					}
 				}else{ // NOT FOUND IN LOCAL OR FOUND IN LOCAL BUT NEEDS SECOND PASSING
@@ -261,6 +262,7 @@ void split_one_side(meta*const  mmi, int side, int tracker_ts, int tracker_os, i
 					if (ASPathGetCount(tempPath) > 0) {
 						local_ts = fast_realloc_PE(local_ts, (count_ts + tracker_os), ts_max, count_core_ts);
 						local_ts[count_ts + tracker_os++] = other[o];
+						local_ts[count_ts + tracker_os].status = COMPL;
 					} else {
 						other[o].start = other[o].dest;
 						start_vec = other[o].start;
@@ -323,14 +325,23 @@ void generate_paths(queue_t* const queue, meta* const mmi, PS* known_Path, int* 
 			e->path = tempPath;
 		} else {
 			start_vec = e->position;
+			for(int counter = 0; counter < knownPath_count; counter){
+				if (e->id == known_Path[counter].id) {
+					e->path = ASPathCreate(&PathNodeSource, NULL, &start_vec, known_Path[counter].dest);
+				}
+			}
 			int result = -1;
 
 			qsort(mmi->edge_fields, mmi->edge_count, sizeof(vector3), compfunc);
+
+			/**/
 			for (int c = 0; c < mmi->edge_count; c++)
 				printf(" [%2d, %2d, %2d];", mmi->edge_fields[c].x,
 						mmi->edge_fields[c].y, mmi->edge_fields[c].z);
 			printf("\n");
 			force_stop();
+			/**/
+
 			for (int c = 0; c < mmi->edge_count; c++) {
 				ASPath path = ASPathCreate(&PathNodeSource, NULL, &start_vec,
 						&(mmi->edge_fields[c]));
@@ -358,14 +369,15 @@ void generate_paths(queue_t* const queue, meta* const mmi, PS* known_Path, int* 
 	int core_c_l = leftcount;
 	int new_c_r = rightcount;
 	int new_c_l = leftcount;
+	int not_completed = rightcount + leftcount;
 
 	PE * other_r = NULL;
 	PE * other_l = NULL;
 
 	PathArrays PA = { local_r, local_l, known_Path, knownPathmax, knownPath_count,
-			rightcount, leftcount, core_c_r ,core_c_l, new_c_r, new_c_l};
-	/*int t= 0;*/
-	while (FALSE) {
+			rightcount, leftcount, core_c_r ,core_c_l, new_c_r, new_c_l, not_completed};
+	//int max_iter = 0;
+	while (TURE) {
 		int pos_r = PA.rightcount - new_c_r;
 		int pos_l = PA.leftcount - new_c_l;
 
@@ -399,7 +411,24 @@ void generate_paths(queue_t* const queue, meta* const mmi, PS* known_Path, int* 
 
 		recursiv_split(mmi, &PA, other_r, other_l);
 
+		MPI_Allreduce(&PA->not_completed, &PA->not_completed, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+		if(PA->not_completed == 0) break;
+	}
 
+	int i = 0, r= 0, l=0;
+	node = queue->front;
+	while( i < core_c_l + core_c_r && node != NULL){
+		entity* e = node->data;
+		if(local_r[r].id == e->id){
+			e->path = ASPathCreate(&PathNodeSource, NULL, &e->position, &local_r[r++].dest);
+		}else if(local_l[l].id == e->id){
+			e->path = ASPathCreate(&PathNodeSource, NULL, &e->position, &local_l[l++].dest);
+		}else{
+			prinf("This should not have happend\n");
+			exit(EXIT_FAILURE);
+		}
+		node = node->next;
+		i++;
 	}
 	mmi->entity_count += mmi->spawn_count;
 	mmi->spawn_count = 0;
@@ -542,7 +571,7 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
 			queue_enqueue(entity_queue, e);
 		}
 	} else {
-		//printf("Nothing to spawn");
+		generate_paths(pathf_queue, mmi, known_Path, knownPathmax, knownPath_count);
 	}
 	/*=============================*/
 	/*s_L rank-1, s_R rank+1 , s_ol & s_oR depends on market separation */

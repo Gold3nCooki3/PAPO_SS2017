@@ -93,6 +93,7 @@ PathArrays{
 	int core_c_l;
 	int new_c_r;
 	int new_c_l;
+	int not_completed;
 };
 typedef struct PathArrays PathArrays;
 
