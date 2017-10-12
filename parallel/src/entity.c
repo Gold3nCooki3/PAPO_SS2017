@@ -204,97 +204,129 @@ ASPath generate_localpath(vector3 start, vector3 dest, meta* const mmi,
 }
 
 
-void split_one_side(meta*const  mmi, int side, int tracker_ts, int tracker_os, int* ts_max, int* os_max,
-		PathArrays* const  PA, PE* const  other){
+void split_one_side(meta* const mmi, int side, int tracker_ts, int tracker_os,
+		int* ts_max, int* os_max, PathArrays* const PA, PE* const other) {
 	PE* local_ts = (side == 1) ? PA->local_r : PA->local_l;
 	PE* local_os = (side == 1) ? PA->local_l : PA->local_r;
-	int	count_new_ts = (side == 1) ? PA->new_c_r : PA->new_c_l;
-	int	count_new_os = (side == 1) ? PA->new_c_l : PA->new_c_r;
-	int		count_ts = (side == 1) ? PA->rightcount : PA->leftcount;
-	int		count_os = (side == 1) ? PA->leftcount : PA->rightcount;
-	int	count_core_ts = (side == 1) ? PA->core_c_r : PA->core_c_l;
+	int count_new_ts = (side == 1) ? PA->new_c_r : PA->new_c_l;
+	int count_new_os = (side == 1) ? PA->new_c_l : PA->new_c_r;
+	int count_ts = (side == 1) ? PA->rightcount : PA->leftcount;
+	int count_os = (side == 1) ? PA->leftcount : PA->rightcount;
+	int count_core_ts = (side == 1) ? PA->core_c_r : PA->core_c_l;
+	int find_next_part = FALSE;
 
 	//printf("R: %d in split\n", mmi->rank);
 	for (int o = 0; o < count_new_ts; o++) {
-			for(int i = count_ts-1; i >= 0 ; i--){
-				if(local_ts[i].id == other[o].id){
+		for (int i = count_ts - 1; i >= 0; i--) {
+			if (local_ts[i].id == other[o].id) {
 				printf("R: %d known\n", mmi->rank);
-					if(other[o].status == ERR){ //NO PATH FOUND
-						if(local_ts[i].status < mmi->edge_count){  //SWAP TO END TO SEND AGAIN
-							qsort(mmi->edge_fields, mmi->edge_count, sizeof(vector3), compfunc);
-							local_ts[i].status = local_ts[i].status+1;
-							int next_field = find_edge_field(mmi->edge_fields, local_ts[i].start, mmi->edge_count, local_ts[i].status);
-							local_ts[i].dest = mmi->edge_fields[next_field];
-							PE temp  = local_ts[i];
-							local_ts[i] = local_ts[count_ts - tracker_ts - 1];
-							local_ts[count_ts - 1- tracker_ts++ ] = temp;
-						}else{ //SWAP R -> L & DELETE IN R
-							local_ts[i].status = ERR;
-							PE temp  = local_ts[i];
-							local_ts[i] = local_ts[count_ts - tracker_ts - 1];
-							if(tracker_ts > 1){
-								local_ts[count_ts - tracker_ts - 1] = local_ts[count_ts - 1];
-								count_ts--;
-							}
-							local_os = fast_realloc_PE(local_os, count_os + tracker_os, os_max, count_new_ts);
-							local_os[count_os + tracker_os++] = temp;
+				if (other[o].status == ERR) { //NO PATH FOUND
+					if (local_ts[i].status < mmi->edge_count) { //SWAP TO END TO SEND AGAIN
+						qsort(mmi->edge_fields, mmi->edge_count,
+								sizeof(vector3), compfunc);
+						local_ts[i].status = local_ts[i].status + 1;
+						int next_field = find_edge_field(mmi->edge_fields,
+								local_ts[i].start, mmi->edge_count,
+								local_ts[i].status);
+						local_ts[i].dest = mmi->edge_fields[next_field];
+						PE temp = local_ts[i];
+						local_ts[i] = local_ts[count_ts - tracker_ts - 1];
+						local_ts[count_ts - 1 - tracker_ts++] = temp;
+					} else { //SWAP R -> L & DELETE IN R
+						local_ts[i].status = ERR;
+						PE temp = local_ts[i];
+						local_ts[i] = local_ts[count_ts - tracker_ts - 1];
+						if (tracker_ts > 1) {
+							local_ts[count_ts - tracker_ts - 1] =
+									local_ts[count_ts - 1];
+							count_ts--;
 						}
-					}else if(other[i].status == COMPL){ //PATH FOUND
-						if(i >= count_core_ts){ //SWAP R -> L & SAVE PATH & DELETE IN R
-							local_ts[i].status = COMPL;
-							PE temp  = local_ts[i];
-							local_ts[i] = local_ts[count_ts - tracker_ts - 1];
-							if(tracker_ts > 1){
-								local_ts[count_ts - tracker_ts - 1] = local_ts[count_ts - 1];
-								count_ts--;
-							}
-							local_os = fast_realloc_PE(local_os, count_os + tracker_os, os_max, count_new_ts);
-							local_os[count_ts + tracker_os++] = temp;
-							fast_realloc_PS(PA, PA->knownPath_count, PA->knownPathmax, 10);
-							PA->known_Path[*(PA->knownPath_count)].id = temp.id;
-							PA->known_Path[(*(PA->knownPath_count))++].dest = temp.dest;
-							printf("R %d OTHER COMPL \n", mmi->rank);
-						}else{
-							printf("R %d LOCAL COMPL \n", mmi->rank);
-							PA->not_completed--;
-					}else{
-						;
+						local_os = fast_realloc_PE(local_os,
+								count_os + tracker_os, os_max, count_new_ts);
+						local_os[count_os + tracker_os++] = temp;
 					}
-				}
-				}else{ // NOT FOUND IN LOCAL OR FOUND IN LOCAL BUT NEEDS SECOND PASSING
-					int liftflag;
-					vector3 dontneed;
-
-					printf("dest (%d, %d, %d) final dest(%d, %d, %d)\n", other[o].dest.x, other[o].dest.y, other[o].dest.z,
-										 other[o].final_dest.x, other[o].final_dest.y, other[o].final_dest.z);
-					ASPath tempPath = generate_localpath(other[o].dest, other[o].final_dest, mmi, &liftflag, &dontneed);
-					if (ASPathGetCount(tempPath) > 0) {
-						local_ts = fast_realloc_PE(local_ts, (count_ts + tracker_os), ts_max, count_core_ts);
-						local_ts[count_ts + tracker_os++] = other[o];
-						local_ts[count_ts + tracker_os].status = COMPL;
-						printf("R: %d FOUND PATH \n", mmi->rank);
+				} else if (other[i].status == COMPL) { //PATH FOUND
+					if (i >= count_core_ts) { //SWAP R -> L & SAVE PATH & DELETE IN R
+						local_ts[i].status = COMPL;
+						PE temp = local_ts[i];
+						local_ts[i] = local_ts[count_ts - tracker_ts - 1];
+						if (tracker_ts > 1) {
+							local_ts[count_ts - tracker_ts - 1] =
+									local_ts[count_ts - 1];
+							count_ts--;
+						}
+						local_os = fast_realloc_PE(local_os,
+								count_os + tracker_os, os_max, count_new_ts);
+						local_os[count_ts + tracker_os++] = temp;
+						fast_realloc_PS(PA, PA->knownPath_count,
+								PA->knownPathmax, 10);
+						PA->known_Path[*(PA->knownPath_count)].id = temp.id;
+						PA->known_Path[(*(PA->knownPath_count))++].dest =
+								temp.dest;
+						printf("R %d OTHER COMPL \n", mmi->rank);
 					} else {
-						printf("R: %d dindt found PATH SPLITTING \n", mmi->rank);
-						other[o].start = other[o].dest;
-						start_vec = other[o].start;
-						qsort(mmi->edge_fields, mmi->edge_count, sizeof(vector3), compfunc);
-						other[o].status = find_edge_field(mmi->edge_fields, start_vec, mmi->edge_count, 0);
-						other[o].dest = mmi->edge_fields[other[o].status];
-						int destid = other[o].dest.y + other[o].dest.z * mmi->columns;
-						if ( (destid > mmi->startline && (side == 1)) || (destid <= mmi->startline && (side != 1))) {
-							local_ts = fast_realloc_PE(local_ts, (count_ts + tracker_ts), ts_max, count_new_os);
-							local_ts[count_ts + tracker_ts++] = other[o];
-							// loacl_ts[count_ts + tracker_ts].status = ERR;
-						} else {
-							local_os = fast_realloc_PE(local_os, (count_os + tracker_os), os_max, count_new_ts);
-							local_os[count_os + tracker_os++] = other[o];
-						}
+						printf("R %d LOCAL COMPL \n", mmi->rank);
+						PA->not_completed--;
+					}
+				} else {
+					ASPath exists = ASPathCreate(&PathNodeSource, NULL,
+							other[o].dest, list[i].start);
+					if (ASPathGetCount(tempPath) > 0) { //Check if Way is necessary
+						//send err
+						local_ts[count_ts - 1 - tracker_ts++] = other[o];
+						local_ts[count_ts - 1 - tracker_ts].status = ERR;
+					} else {
+						find_next_part = TRUE;
 					}
 				}
-				break;
+			} else {
+				if (i == 0)
+					find_next_part = TRUE;
+				continue;
+			}
+		}
+		// NOT FOUND IN LOCAL OR FOUND IN LOCAL BUT NEEDS SECOND PASSING
+		if (find_next_part) {
+			int liftflag;
+			vector3 dontneed;
+
+			printf("dest (%d, %d, %d) final dest(%d, %d, %d)\n",
+					other[o].dest.x, other[o].dest.y, other[o].dest.z,
+					other[o].final_dest.x, other[o].final_dest.y,
+					other[o].final_dest.z);
+			ASPath tempPath = generate_localpath(other[o].dest,
+					other[o].final_dest, mmi, &liftflag, &dontneed);
+			if (ASPathGetCount(tempPath) > 0) {
+				local_ts = fast_realloc_PE(local_ts, (count_ts + tracker_os),
+						ts_max, count_core_ts);
+				local_ts[count_ts + tracker_os++] = other[o];
+				local_ts[count_ts + tracker_os].status = COMPL;
+				printf("R: %d FOUND PATH \n", mmi->rank);
+			} else {
+				printf("R: %d dindt found PATH SPLITTING \n", mmi->rank);
+				other[o].start = other[o].dest;
+				start_vec = other[o].start;
+				qsort(mmi->edge_fields, mmi->edge_count, sizeof(vector3),
+						compfunc);
+				other[o].status = find_edge_field(mmi->edge_fields, start_vec,
+						mmi->edge_count, 0);
+				other[o].dest = mmi->edge_fields[other[o].status];
+				int destid = other[o].dest.y + other[o].dest.z * mmi->columns;
+				if ((destid > mmi->startline && (side == 1))
+						|| (destid <= mmi->startline && (side != 1))) {
+					local_ts = fast_realloc_PE(local_ts,
+							(count_ts + tracker_ts), ts_max, count_new_os);
+					local_ts[count_ts + tracker_ts++] = other[o];
+					// loacl_ts[count_ts + tracker_ts].status = ERR;
+				} else {
+					local_os = fast_realloc_PE(local_os,
+							(count_os + tracker_os), os_max, count_new_ts);
+					local_os[count_os + tracker_os++] = other[o];
+				}
 			}
 		}
 
+	}
 
 }
 
