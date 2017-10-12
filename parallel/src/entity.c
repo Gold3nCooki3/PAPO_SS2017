@@ -204,7 +204,7 @@ ASPath generate_localpath(vector3 start, vector3 dest, meta* const mmi,
 }
 
 
-void split_one_side(meta* const mmi, int side, int tracker_ts, int tracker_os,
+void split_one_side(meta* const mmi, int side, int * *tracker_ts, int * *tracker_os,
 		int* ts_max, int* os_max, PathArrays* const PA, PE* const other) {
 	PE* local_ts = (side == 1) ? PA->local_r : PA->local_l;
 	PE* local_os = (side == 1) ? PA->local_l : PA->local_r;
@@ -232,35 +232,35 @@ void split_one_side(meta* const mmi, int side, int tracker_ts, int tracker_os,
 								local_ts[i].status);
 						local_ts[i].dest = mmi->edge_fields[next_field];
 						PE temp = local_ts[i];
-						local_ts[i] = local_ts[count_ts - tracker_ts - 1];
-						local_ts[count_ts - 1 - tracker_ts++] = temp;
+						local_ts[i] = local_ts[count_ts - *tracker_ts - 1];
+						local_ts[count_ts - 1 - (*tracker_ts)++] = temp;
 					} else { //SWAP R -> L & DELETE IN R
 						local_ts[i].status = ERR;
 						PE temp = local_ts[i];
-						local_ts[i] = local_ts[count_ts - tracker_ts - 1];
-						if (tracker_ts > 1) {
-							local_ts[count_ts - tracker_ts - 1] =
+						local_ts[i] = local_ts[count_ts - *tracker_ts - 1];
+						if (*tracker_ts > 1) {
+							local_ts[count_ts - *tracker_ts - 1] =
 									local_ts[count_ts - 1];
 							count_ts--;
 						}
 						local_os = fast_realloc_PE(local_os,
-								count_os + tracker_os, os_max, count_new_ts);
-						local_os[count_os + tracker_os++] = temp;
+								count_os + *tracker_os, os_max, count_new_ts);
+						local_os[count_os + (*tracker_os)++] = temp;
 					}
 					break;
 				} else if (other[i].status == COMPL) { //PATH FOUND
 					if (i >= count_core_ts) { //SWAP R -> L & SAVE PATH & DELETE IN R
 						local_ts[i].status = COMPL;
 						PE temp = local_ts[i];
-						local_ts[i] = local_ts[count_ts - tracker_ts - 1];
-						if (tracker_ts > 1) {
-							local_ts[count_ts - tracker_ts - 1] =
+						local_ts[i] = local_ts[count_ts - *tracker_ts - 1];
+						if (*tracker_ts > 1) {
+							local_ts[count_ts - *tracker_ts - 1] =
 									local_ts[count_ts - 1];
 							count_ts--;
 						}
 						local_os = fast_realloc_PE(local_os,
-								count_os + tracker_os, os_max, count_new_ts);
-						local_os[count_os + tracker_os++] = temp;
+								count_os + *tracker_os, os_max, count_new_ts);
+						local_os[count_os + (*tracker_os)++] = temp;
 						fast_realloc_PS(PA, PA->knownPath_count,
 								PA->knownPathmax, 10);
 						PA->known_Path[*(PA->knownPath_count)].id = temp.id;
@@ -277,8 +277,8 @@ void split_one_side(meta* const mmi, int side, int tracker_ts, int tracker_os,
 							&other[o].dest, &local_ts[i].start);
 					if (ASPathGetCount(exist) > 0) { //Check if Way is necessary
 						//send err
-						local_ts[count_ts - 1 - tracker_ts] = other[o];
-						local_ts[count_ts - 1 - tracker_ts++].status = ERR;
+						local_ts[count_ts - 1 - *tracker_ts] = other[o];
+						local_ts[count_ts - 1 - (*tracker_ts)++].status = ERR;
 					} else {
 						find_next_part = TRUE;
 					}
@@ -301,11 +301,11 @@ void split_one_side(meta* const mmi, int side, int tracker_ts, int tracker_os,
 			ASPath tempPath = generate_localpath(other[o].dest,
 					other[o].final_dest, mmi, &liftflag, &dontneed);
 			if (ASPathGetCount(tempPath) > 0) {
-				local_ts = fast_realloc_PE(local_ts, (count_ts + tracker_os),
+				local_ts = fast_realloc_PE(local_ts, (count_ts + *tracker_os),
 						ts_max, count_core_ts);
-				local_ts[count_ts + tracker_ts] = other[o];
-				local_ts[count_ts + tracker_ts++].status = COMPL;
-				printf("R: %d FOUND PATH tracker %d\n", mmi->rank, tracker_ts);
+				local_ts[count_ts + *tracker_ts] = other[o];
+				local_ts[count_ts + (*tracker_ts)++].status = COMPL;
+				printf("R: %d FOUND PATH *tracker %d\n", mmi->rank, *tracker_ts);
 			} else {
 				printf("R: %d dindt found PATH SPLITTING \n", mmi->rank);
 				other[o].start = other[o].dest;
@@ -319,13 +319,13 @@ void split_one_side(meta* const mmi, int side, int tracker_ts, int tracker_os,
 				if ((destid > mmi->startline && (side == 1))
 						|| (destid <= mmi->startline && (side != 1))) {
 					local_ts = fast_realloc_PE(local_ts,
-							(count_ts + tracker_ts), ts_max, count_new_os);
-					local_ts[count_ts + tracker_ts++] = other[o];
-					// loacl_ts[count_ts + tracker_ts].status = ERR;
+							(count_ts + *tracker_ts), ts_max, count_new_os);
+					local_ts[count_ts + (*tracker_ts)++] = other[o];
+					// loacl_ts[count_ts + *tracker_ts].status = ERR;
 				} else {
 					local_os = fast_realloc_PE(local_os,
-							(count_os + tracker_os), os_max, count_new_ts);
-					local_os[count_os + tracker_os++] = other[o];
+							(count_os + *tracker_os), os_max, count_new_ts);
+					local_os[count_os + (*tracker_os)++] = other[o];
 				}
 			}
 		}
@@ -341,8 +341,8 @@ void recursiv_split(meta* const mmi, PathArrays* const PA, PE * const other_r, P
 	PA->local_r = realloc (PA->local_r, rightmax * sizeof(PE));
 	PA->local_l = realloc (PA->local_l, leftmax * sizeof(PE));
 
-	split_one_side(mmi, 1, tracker_r, tracker_l, &rightmax, &leftmax, PA, other_r);
-	split_one_side(mmi, 0, tracker_l, tracker_r, &leftmax, &rightmax, PA, other_l);
+	split_one_side(mmi, 1, &tracker_r, &tracker_l, &rightmax, &leftmax, PA, other_r);
+	split_one_side(mmi, 0, &tracker_l, &tracker_r, &leftmax, &rightmax, PA, other_l);
 	if(mmi->rank == 1)printf("links %d rechts %d\n", tracker_l, tracker_r);
 	PA->rightcount = PA->rightcount + tracker_r;
 	PA->leftcount  = PA->leftcount + tracker_l;
