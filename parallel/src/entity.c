@@ -788,11 +788,11 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
 	//RECIVE ENTITIES
 	for(int i = 0; i < 6; i++){
 		int count = 0;
+		if(targets[i] == 1)printf("R %d: COUNT RECV %d\n",mmi->rank, count);
 		if(targets[i] >= mmi->size || targets[i] < 0 || targets[i] == mmi->rank) continue;
 		MPI_Recv(&count, 1, MPI_INT, targets[i], ENTITYTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-		//if(mmi->rank == 1 && targets[i] == 0)printf("R 1: COUNT RECV %d\n", count);
-
+		if(targets[i] == 1)printf("R 1: COUNT RECV %d\n", count);
 		EssentialEntity * entityarr = malloc(count * sizeof(EssentialEntity));
 		MPI_Recv(entityarr, count, MPI_Entity, targets[i], ENTITYTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		for(int b = 0; b < count; b++){
