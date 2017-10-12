@@ -218,7 +218,7 @@ void split_one_side(meta* const mmi, int side, int tracker_ts, int tracker_os,
 	//printf("R: %d in split\n", mmi->rank);
 	for (int o = 0; o < count_new_ts; o++) {
 		for (int i = count_ts - 1; i >= 0; i--) {
-			printf("looping oid %d lid %d\n", other[o].i, local_ts[i].id);
+			printf("looping oid %d lid %d\n", other[o].id, local_ts[i].id);
 			if (local_ts[i].id == other[o].id) {
 				find_next_part = FALSE;
 				printf("R: %d known\n", mmi->rank);
@@ -260,7 +260,7 @@ void split_one_side(meta* const mmi, int side, int tracker_ts, int tracker_os,
 						}
 						local_os = fast_realloc_PE(local_os,
 								count_os + tracker_os, os_max, count_new_ts);
-						local_os[count_ts + tracker_os++] = temp;
+						local_os[count_os + tracker_os++] = temp;
 						fast_realloc_PS(PA, PA->knownPath_count,
 								PA->knownPathmax, 10);
 						PA->known_Path[*(PA->knownPath_count)].id = temp.id;
@@ -277,8 +277,8 @@ void split_one_side(meta* const mmi, int side, int tracker_ts, int tracker_os,
 							&other[o].dest, &local_ts[i].start);
 					if (ASPathGetCount(exist) > 0) { //Check if Way is necessary
 						//send err
-						local_ts[count_ts - 1 - tracker_ts++] = other[o];
-						local_ts[count_ts - 1 - tracker_ts].status = ERR;
+						local_ts[count_ts - 1 - tracker_ts] = other[o];
+						local_ts[count_ts - 1 - tracker_ts++].status = ERR;
 					} else {
 						find_next_part = TRUE;
 					}
@@ -303,9 +303,9 @@ void split_one_side(meta* const mmi, int side, int tracker_ts, int tracker_os,
 			if (ASPathGetCount(tempPath) > 0) {
 				local_ts = fast_realloc_PE(local_ts, (count_ts + tracker_os),
 						ts_max, count_core_ts);
-				local_ts[count_ts + tracker_os++] = other[o];
-				local_ts[count_ts + tracker_os].status = COMPL;
-				printf("R: %d FOUND PATH \n", mmi->rank);
+				local_ts[count_ts + tracker_ts] = other[o];
+				local_ts[count_ts + tracker_ts++].status = COMPL;
+				printf("R: %d FOUND PATH tracker %d\n", mmi->rank, tracker_ts);
 			} else {
 				printf("R: %d dindt found PATH SPLITTING \n", mmi->rank);
 				other[o].start = other[o].dest;
@@ -336,18 +336,18 @@ void split_one_side(meta* const mmi, int side, int tracker_ts, int tracker_os,
 
 void recursiv_split(meta* const mmi, PathArrays* const PA, PE * const other_r, PE * const other_l){
 
-	int leftmax = PA->leftcount + PA->new_c_l + 1, rightmax = PA->rightcount + PA->new_c_r + 1, tracker_r = 1, tracker_l = 1 ;
+	int leftmax = PA->leftcount + PA->new_c_l + 1, rightmax = PA->rightcount + PA->new_c_r + 1, tracker_r = 0, tracker_l = 0 ;
 
 	PA->local_r = realloc (PA->local_r, rightmax * sizeof(PE));
 	PA->local_l = realloc (PA->local_l, leftmax * sizeof(PE));
 
 	split_one_side(mmi, 1, tracker_r, tracker_l, &rightmax, &leftmax, PA, other_r);
 	split_one_side(mmi, 0, tracker_l, tracker_r, &leftmax, &rightmax, PA, other_l);
-
+	if(mmi->rank == 1)printf("links %d rechts %d\n", tracker_l, tracker_r);
 	PA->rightcount = PA->rightcount + tracker_r;
 	PA->leftcount  = PA->leftcount + tracker_l;
-	PA->new_c_r = tracker_r - 1;
-	PA->new_c_l = tracker_l - 1;
+	PA->new_c_r = tracker_r;
+	PA->new_c_l = tracker_l;
 
 }
 
@@ -440,21 +440,24 @@ void generate_paths(queue_t* const queue, meta* const mmi, PS* known_Path, int* 
 
 		MPI_Status st_1, st_2, st_3, st_4;
                 int temp;
-                MPI_Allreduce(&PA.not_completed, &temp, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+                MPI_Allreduce(&PA.not_completed, &temp, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
                 //if(PA.not_completed == 0) break;
+		if( rank == 0 ) printf("Z: %d\n", temp);
                 PA.not_completed = temp;
 
 		if (rank < size - 1) {
-			MPI_Isend(&PA.rightcount, 1, MPI_INT, rank + 1, PATHTAG-1, MPI_COMM_WORLD, &req_c_r);
+			MPI_Isend(&PA.new_c_r, 1, MPI_INT, rank + 1, PATHTAG-1, MPI_COMM_WORLD, &req_c_r);
 			MPI_Isend(&PA.local_r[pos_r], PA.new_c_r, MPI_PathE, rank + 1, PATHTAG-2,
 					MPI_COMM_WORLD, &req_r);
-			if(rank == 0) printf("SEND dest (%d %d %d)\n", PA.local_r[0].dest.x, PA.local_r[0].dest.y, PA.local_r[0].dest.z);
+			if(rank == 0) printf("0 : SEND dest (%d %d %d) , pos_r %d new_c %d\n", PA.local_r[0].dest.x, PA.local_r[0].dest.y, 
+							PA.local_r[0].dest.z, pos_r, PA.new_c_r);
 
 		}
 		if (rank > 0) {
-			MPI_Isend(&PA.leftcount, 1, MPI_INT, rank - 1, PATHTAG +1, MPI_COMM_WORLD, &req_c_l);
+			MPI_Isend(&PA.new_c_l, 1, MPI_INT, rank - 1, PATHTAG +1, MPI_COMM_WORLD, &req_c_l);
 			MPI_Isend(&PA.local_l[pos_l], PA.new_c_l, MPI_PathE, rank - 1, PATHTAG+2,
 					MPI_COMM_WORLD, &req_l);
+			 if(rank == 1) printf("1: SEND count %d\n", PA.new_c_l);
 		}
 
 
@@ -488,8 +491,8 @@ void generate_paths(queue_t* const queue, meta* const mmi, PS* known_Path, int* 
 
 		recursiv_split(mmi, &PA, other_r, other_l);
 
-		MPI_Allreduce(&PA.not_completed, &temp, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-		if(PA.not_completed == 0) break;
+		MPI_Allreduce(&PA.not_completed, &temp, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+		if(PA.not_completed <= 0) break;
 	}
 
 	int i = 0, r= 0, l=0;
