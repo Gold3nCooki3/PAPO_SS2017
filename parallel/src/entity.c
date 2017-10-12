@@ -213,12 +213,14 @@ void split_one_side(meta* const mmi, int side, int tracker_ts, int tracker_os,
 	int count_ts = (side == 1) ? PA->rightcount : PA->leftcount;
 	int count_os = (side == 1) ? PA->leftcount : PA->rightcount;
 	int count_core_ts = (side == 1) ? PA->core_c_r : PA->core_c_l;
-	int find_next_part = FALSE;
+	int find_next_part = TRUE;
 
 	//printf("R: %d in split\n", mmi->rank);
 	for (int o = 0; o < count_new_ts; o++) {
 		for (int i = count_ts - 1; i >= 0; i--) {
+			printf("looping oid %d lid %d\n", other[o].i, local_ts[i].id);
 			if (local_ts[i].id == other[o].id) {
+				find_next_part = FALSE;
 				printf("R: %d known\n", mmi->rank);
 				if (other[o].status == ERR) { //NO PATH FOUND
 					if (local_ts[i].status < mmi->edge_count) { //SWAP TO END TO SEND AGAIN
@@ -245,6 +247,7 @@ void split_one_side(meta* const mmi, int side, int tracker_ts, int tracker_os,
 								count_os + tracker_os, os_max, count_new_ts);
 						local_os[count_os + tracker_os++] = temp;
 					}
+					break;
 				} else if (other[i].status == COMPL) { //PATH FOUND
 					if (i >= count_core_ts) { //SWAP R -> L & SAVE PATH & DELETE IN R
 						local_ts[i].status = COMPL;
@@ -268,6 +271,7 @@ void split_one_side(meta* const mmi, int side, int tracker_ts, int tracker_os,
 						printf("R %d LOCAL COMPL \n", mmi->rank);
 						PA->not_completed--;
 					}
+					break;
 				} else {
 					ASPath exist = ASPathCreate(&PathNodeSource, NULL,
 							&other[o].dest, &local_ts[i].start);
@@ -278,11 +282,11 @@ void split_one_side(meta* const mmi, int side, int tracker_ts, int tracker_os,
 					} else {
 						find_next_part = TRUE;
 					}
+					break;
 				}
 			} else {
 				if (i == 0)
 					find_next_part = TRUE;
-				continue;
 			}
 		}
 		// NOT FOUND IN LOCAL OR FOUND IN LOCAL BUT NEEDS SECOND PASSING
@@ -342,9 +346,8 @@ void recursiv_split(meta* const mmi, PathArrays* const PA, PE * const other_r, P
 
 	PA->rightcount = PA->rightcount + tracker_r;
 	PA->leftcount  = PA->leftcount + tracker_l;
-	PA->new_c_r = tracker_r;
-	PA->new_c_l = tracker_l;
-
+	PA->new_c_r = tracker_r - 1;
+	PA->new_c_l = tracker_l - 1;
 
 }
 
