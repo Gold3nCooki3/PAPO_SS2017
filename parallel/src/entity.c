@@ -37,8 +37,10 @@ static void PathNodeNeighbors(ASNeighborList neighbors, void *node,
 static float PathNodeHeuristic(void *fromNode, void *toNode, void *context) {
 	PathNode *from = (PathNode *) fromNode;
 	PathNode *to = (PathNode *) toNode;
-	if (from->z != to->z)
+	if (from->z != to->z){
+		MPI_Abort(1);
 		exit(EXIT_FAILURE);
+	}
 	return (fabs(from->x - to->x) + fabs(from->y - to->y));
 }
 
@@ -56,6 +58,7 @@ static const ASPathNodeSource PathNodeSource = { sizeof(PathNode),
 void force_stop() {
 	free_market();
 	free_meta();
+	MPI_Abort(1);
 	exit(5);
 }
 
@@ -101,6 +104,7 @@ vector3 get_close_vector3(vector3* const list, int listlength, vector3 start,
 	}
 	if (mindistance == -1) {
 		printf("error");
+		MPI_Abort(1);
 		exit(EXIT_FAILURE);
 	}
 	return dest;
@@ -407,6 +411,7 @@ void generate_paths(queue_t* const queue, meta* const mmi, PS* known_Path, int* 
 				}
 				if (c == mmi->edge_count - 1) {
 					printf("Error");
+					MPI_Abort(1);
 					exit(EXIT_FAILURE);
 				}
 			}
@@ -514,6 +519,7 @@ void generate_paths(queue_t* const queue, meta* const mmi, PS* known_Path, int* 
 			e->path = ASPathCreate(&PathNodeSource, NULL, &e->position, &local_l[l++].dest);
 		}else{
 			printf("This should not have happend\n");
+			MPI_Abort(1);
 			exit(3);
 		}
 		node = node->next;
@@ -595,6 +601,7 @@ EnS move_entity(meta* const mmi, queue_t* const empty_shelfs, entity* const e) {
 		e->path_position = 0;
 	} else if (e->listpos >= e->amountItems) { //
 		printf("Error: no exit");
+		MPI_Abort(1);
 		exit(EXIT_FAILURE);
 	}
 	return return_val;
