@@ -269,9 +269,9 @@ void split_one_side(meta* const mmi, int side, int tracker_ts, int tracker_os,
 						PA->not_completed--;
 					}
 				} else {
-					ASPath exists = ASPathCreate(&PathNodeSource, NULL,
-							other[o].dest, list[i].start);
-					if (ASPathGetCount(tempPath) > 0) { //Check if Way is necessary
+					ASPath exist = ASPathCreate(&PathNodeSource, NULL,
+							&other[o].dest, &local_ts[i].start);
+					if (ASPathGetCount(exist) > 0) { //Check if Way is necessary
 						//send err
 						local_ts[count_ts - 1 - tracker_ts++] = other[o];
 						local_ts[count_ts - 1 - tracker_ts].status = ERR;
