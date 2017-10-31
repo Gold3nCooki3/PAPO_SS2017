@@ -1,1 +1,5 @@
 \section{Parallelisierungsschema}
+
+Das Parallelisierungschema von SMITH ergibt sich durch die Datenaufteilung.\\
+Das Kaufhaus wird als dreidimensionale Matrix betrachtet, die zeilenweise auf die vorhandenen MPI-Prozesse aufgeteilt wird. Diese Daten bleiben statisch und werden nicht verändert, bis auf die Menge der Artikel in einem Regal.\\
+Die Aufteilung der Kunden ist abhängig von ihren Einkaufslisten. So werden die Kunden zwar innerhalb bestimmter Prozesse in das Kaufhaus eingesetzt (auf den Eingangs- und Ausgangsfeldern), jedoch verteilen diese sich um ihre zufallsgenerierte Einkaufsliste zu bearbeiten. Wird hierbei eine Zeile betreten, welche zu einem anderen MPI-Prozess gehört, so wird die Kunden-Entität mit allen anderen auszutauschenden Entitäten gesammelt und in gebündelt einer zum nächsten Prozess verschickt. Dieser nächste Prozess kann entweder einen geringeren oder höheren Zeilenindex haben, sich aber im selben "`Stockwerk"' befinden wie derjenige, der sendende, oder aber über oder unterhalb des Prozesses liegen. Hierbei kann es ein Maximum von sechs Nachbarprozessen geben, bedingt durch die zeilenweise Aufteilung.
