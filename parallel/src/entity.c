@@ -38,8 +38,8 @@ static float PathNodeHeuristic(void *fromNode, void *toNode, void *context) {
 	PathNode *from = (PathNode *) fromNode;
 	PathNode *to = (PathNode *) toNode;
 	if (from->z != to->z){
-//TODO!		MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-//		exit(EXIT_FAILURE);
+		MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+		exit(EXIT_FAILURE);
 		return 0;
 	}
 	return (fabs(from->x - to->x) + fabs(from->y - to->y));
@@ -97,14 +97,15 @@ vector3 get_close_vector3(vector3* const list, int listlength, vector3 start,
 	for (int i = 0; i < listlength; i++) {
 		distance = abs(list[i].x - start.x) + abs(list[i].y - start.y) + 10
 				+ abs(list[i].z - start.z);
-		if ((!forceSameLevel || list[i].z == start.z)
-				&& (distance < mindistance || mindistance == -1)) {
+		if ((!forceSameLevel || list[i].z == start.z) && (distance < mindistance || mindistance == -1)) {
 			mindistance = distance;
 			dest = list[i];
 		}
 	}
 	if (mindistance == -1) {
-		printf("error");
+		printf("[%d, %d, %d]\n", start.x,start.y,start.z);
+		 for (int i = 0; i < listlength; i++) printf(" [%d, %d, %d]", list[i].x, list[i].y, list[i].z);
+		printf("\nerror nothing found, listlength: %d\n", listlength);
 		MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		exit(EXIT_FAILURE);
 	}
@@ -162,17 +163,19 @@ ASPath generate_localpath(vector3 start, vector3 dest, meta* const mmi,
 	PathNode pathFrom = (PathNode) start;
 	vector3 pathTo_v = dest;
 
-	if (pathTo_v.z != start.z) {/*
+	if (pathTo_v.z != start.z) {
 		if (mmi->lift_count > 0) {
-			//printf(" searching for lift \n");
+			//printf("%d %d %d searching for lift %d %d %d \n", start.x, start.y,start.z, );
 			pathTo_v = get_close_vector3(mmi->lift_fields, mmi->lift_count,
 					start, TRUE);
-		} else {
 			*lift_flag = TRUE;
+			//printf("\n%d %d %d searching for lift %d %d %d \n", start.x, start.y,start.z, pathTo_v.x,pathTo_v.y,pathTo_v.z);
+		} else {
+			*lift_flag = FALSE;
 			return NULL;
-		}*/
-                *lift_flag = FALSE;
-                return NULL;
+		}
+                // *lift_flag = FALSE;
+                //return NULL;
 	} else if (in_process(dest)) {
 		switch (in_matrix_g(dest)->type) {
 		case REGISTER:
@@ -197,13 +200,17 @@ ASPath generate_localpath(vector3 start, vector3 dest, meta* const mmi,
 		}
 	} else {
 		//search
+		//printf("Not Here 1")
 		return NULL;
 	}
 
-	PathNode pathTo = (PathNode) pathTo_v;
-	ASPath path = ASPathCreate(&PathNodeSource, NULL, &pathFrom, &pathTo);
+	//PathNode pathTo = (PathNode) pathTo_v;
+	//printf("wat wat");
+	ASPath path = ASPathCreate(&PathNodeSource, NULL, &pathFrom, &pathTo_v);
+	//printf("Path Count in Gen %d\n", ASPathGetCount(path) );
 	if (ASPathGetCount(path) == 0) { //not vaild
 		return NULL;
+		printf("Not valid\n");
 	}
 	*memory = pathTo_v;
 	//printf("mem dest : (%d %d %d), Tpye %d", pathTo.z, pathTo.x, pathTo.z, in_matrix_g(pathTo)->type);
@@ -299,15 +306,15 @@ void split_one_side(meta* const mmi, int side, int *tracker_ts, int *tracker_os,
 		// NOT FOUND IN LOCAL OR FOUND IN LOCAL BUT NEEDS SECOND PASSING
 		if (find_next_part) {
 			int liftflag;
-			vector3 dontneed;
+			vector3 need = {-1, 0, 0};
 
 			printf("dest (%d, %d, %d) final dest(%d, %d, %d)\n",
 					other[o].dest.x, other[o].dest.y, other[o].dest.z,
 					other[o].final_dest.x, other[o].final_dest.y,
 					other[o].final_dest.z);
 			ASPath tempPath = generate_localpath(other[o].dest,
-					other[o].final_dest, mmi, &liftflag, &dontneed);
-			if (ASPathGetCount(tempPath) > 0) {
+					other[o].final_dest, mmi, &liftflag, &need);
+			if (ASPathGetCount(tempPath) > 0 || (liftflag == TRUE && need.x != -1 && ASPathGetCount(tempPath) > 0)) {
 				local_ts = fast_realloc_PE(local_ts, (count_ts + *tracker_os),
 						ts_max, count_core_ts);
 				local_ts[count_ts + *tracker_ts] = other[o];
@@ -315,6 +322,8 @@ void split_one_side(meta* const mmi, int side, int *tracker_ts, int *tracker_os,
 				printf("R: %d FOUND PATH *tracker %d, status %d\n", mmi->rank, *tracker_ts,  local_ts[count_ts + (*tracker_ts)-1].status);
 			} else {
 				printf("R: %d dindt found PATH SPLITTING \n", mmi->rank);
+				if(need.x != -1 && liftflag == TRUE)
+					other[o].dest = need;
 				other[o].start = other[o].dest;
 				start_vec = other[o].start;
 				qsort(mmi->edge_fields, mmi->edge_count, sizeof(vector3),
@@ -328,7 +337,7 @@ void split_one_side(meta* const mmi, int side, int *tracker_ts, int *tracker_os,
 					local_ts = fast_realloc_PE(local_ts,
 							(count_ts + *tracker_ts), ts_max, count_new_os);
 					local_ts[count_ts + (*tracker_ts)++] = other[o];
-					// loacl_ts[count_ts + *tracker_ts].status = ERR;
+					//loacl_ts[count_ts + *tracker_ts].status = ERR;
 				} else {
 					local_os = fast_realloc_PE(local_os,
 							(count_os + *tracker_os), os_max, count_new_ts);
@@ -372,21 +381,25 @@ void generate_paths(queue_t* const queue, meta* const mmi, PS* known_Path, int* 
 	MPI_Datatype MPI_PathE;
 	MPI_Type_contiguous(11, MPI_INT, &MPI_PathE);
 	MPI_Type_commit(&MPI_PathE);
-
+	//printf("c %d\n", mmi->spawn_count);
 	while (node != NULL) {
 		entity* e = node->data;
 		int lift_flag = FALSE;
-		printf("e->list[e->listpos]: %i,%i,%i", e->list[e->listpos].x, e->list[e->listpos].y, e->list[e->listpos].z);
-                if(e->list[e->listpos].z != e->list[e->listpos+1].z) {
-                        e->listpos++;
-                        printf("WECHSLE STOCKWERK!");
-                        continue;
-                }
+		//printf("e->list[e->listpos]: %i,%i,%i\n", e->list[e->listpos].x, e->list[e->listpos].y, e->list[e->listpos].z);
+                //if(e->list[e->listpos].z != e->list[e->listpos+1].z) {
+                        //e->listpos++;
+                        //printf("WECHSLE STOCKWERK!\n");
+                        //continue;
+                //}
+		printf("start pf for %d\n", e->id);
 		ASPath tempPath = generate_localpath(e->position, e->list[e->listpos],
 				mmi, &lift_flag, &e->memory_dest);
+		//printf("Path count : %d form %p \n", ASPathGetCount(tempPath), &tempPath);
 		if (ASPathGetCount(tempPath) > 0) {
 			e->path = tempPath;
+			printf("Found Path\n");
 		} else {
+			printf("e->list[e->listpos]: %i,%i,%i\n", e->list[e->listpos].x, e->list[e->listpos].y, e->list[e->listpos].z);
 			start_vec = e->position;
 			for(int counter = 0; counter < *knownPath_count; counter++){
 				if (e->id == known_Path[counter].id) {
@@ -395,13 +408,26 @@ void generate_paths(queue_t* const queue, meta* const mmi, PS* known_Path, int* 
 			}
 			int result = -1;
 
-			qsort(mmi->edge_fields, mmi->edge_count, sizeof(vector3), compfunc);
+			//qsort(mmi->edge_fields, mmi->edge_count, sizeof(vector3), compfunc);
 
+			if(FALSE == TRUE){
+				//printf("lift flag\n");
+
+				//qsort(mmi->edge_fields, mmi->edge_count, sizeof(vector3), compfunc);
+				//for (int c = 0; c < mmi->edge_count/2; c++){
+
+				//}
+
+				//PE p = { e->id, result, start_vec, mmi->edge_fields[c],e->list[e->listpos]};
+
+			        //local_r[rightcount++] = p;
 			/**/
-			for (int c = 0; c < mmi->edge_count; c++)
-				printf(" [%2d, %2d, %2d];", mmi->edge_fields[c].x,
-						mmi->edge_fields[c].y, mmi->edge_fields[c].z);
-			printf("\n");
+			}else{
+				qsort(mmi->edge_fields, mmi->edge_count, sizeof(vector3), compfunc);
+				for (int c = 0; c < mmi->edge_count; c++)
+					printf(" [%2d, %2d, %2d];", mmi->edge_fields[c].x,
+							mmi->edge_fields[c].y, mmi->edge_fields[c].z);
+				printf("\n");
 			//force_stop();
 			/**/
 
@@ -418,7 +444,7 @@ void generate_paths(queue_t* const queue, meta* const mmi, PS* known_Path, int* 
 					e->path = path;
 					break;
 				}else if (c == mmi->edge_count - 1) {
-					printf("Error");
+					printf("Error last edge");
 					MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 					exit(EXIT_FAILURE);
 				}
@@ -432,6 +458,7 @@ void generate_paths(queue_t* const queue, meta* const mmi, PS* known_Path, int* 
 				local_r[rightcount++] = p;
 			} else {
 				local_l[leftcount++] = p;
+			}
 			}
 		}
 		node = node->next;
@@ -512,10 +539,12 @@ void generate_paths(queue_t* const queue, meta* const mmi, PS* known_Path, int* 
 
 
 
-		//MPI_Allreduce(&PA.not_completed, &temp, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+		MPI_Allreduce(&PA.not_completed, &temp, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 		if( rank == 0 ) printf("ZZ: %d\n", PA.not_completed);
-	//if(temp <= 0) break;
+		if(temp <= 0) break;
 	}
+
+	//printf("C ount is now %d", mmi->spawn_count);
 
 	int i = 0, r= 0, l=0;
 	node = queue->front;
@@ -551,6 +580,7 @@ void generate_paths(queue_t* const queue, meta* const mmi, PS* known_Path, int* 
 EnS move_entity(meta* const mmi, queue_t* const empty_shelfs, entity* const e) {
 
 	//Get to new Position
+	//PathNode* new_pos  = calloc(1,sizeof(PathNode));
 	PathNode* new_pos = ASPathGetNode(e->path, e->path_position);
 	e->position = *new_pos;
 	e->path_position++;
@@ -571,19 +601,27 @@ EnS move_entity(meta* const mmi, queue_t* const empty_shelfs, entity* const e) {
 		case ESCALATOR:
 		case LIFT:
 			return_val = NEWPATH;
+			printf(" %d Lift - ", e->id);
 			if (e->position.z > e->list[e->listpos].z) {
 				e->position.z -= 1;
-				if (!in_process(e->position))
+				printf(" Down ");
+				if (!in_process(e->position)){
 					return_val = DOWN;
+					printf(" - other p");
+				}
 			} else {
 				e->position.z += 1;
-				if (!in_process(e->position))
+				printf(" Up ");
+				if (!in_process(e->position)){
 					return_val = UP;
+					printf(" - other p");
+				}
 			}
-                        new_pos = ASPathGetNode(e->path, e->path_position);
-                        e->position = *new_pos;
-                        e->path_position++;
-                        return_val = NEWPATH;
+			printf("\n");
+                        //new_pos = ASPathGetNode(e->path, e->path_position);
+                        //e->position = *new_pos;
+                        //e->path_position++;
+                        //return_val = NEWPATH;
 			//printf("PF_ Taking the lift %d, iP: %d\n", return_val, !in_process(e->position));
 			break;
 		case CORRIDOR:
@@ -618,6 +656,8 @@ EnS move_entity(meta* const mmi, queue_t* const empty_shelfs, entity* const e) {
 		MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		exit(EXIT_FAILURE);
 	}
+	//free(new_pos);
+	printf(" return val %d ", return_val);
 	return return_val;
 }
 
@@ -684,6 +724,7 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
 	} else {
 		generate_paths(pathf_queue, mmi, known_Path, knownPathmax, knownPath_count);
 	}
+	//printf("exit pf\n");
 	/*=============================*/
 	/*s_L rank-1, s_R rank+1 , s_ol & s_oR depends on market separation */
 	entity*** send_entities = calloc(6, sizeof(entity*));
@@ -706,18 +747,24 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
 	int maxima[6] = { 10, 10, 10, 10, 10, 10 };
 	int s_counts[6] = { 0, 0, 0, 0, 0, 0 };
 
+	//printf("EC %d, Q: %d", mmi->entity_count, queue_empty(entity_queue));
 		/*=============================*/
 	 if (queue_empty(entity_queue)) {
 
 	} else {
+
 	entity* first = queue_dequeue(entity_queue);
 	entity* e = first;
 	EnS statusfirst;
 	do {
 			if (!first) first = e;
+			/*printf("ID %d\n", e->id);
+			for(int a = 0; a < e->amountItems; a++){
+				printf("[%d, %d, %d] \n",e->list[a].x, e->list[a].y, e->list[a].z);
+			}*/
 			EnS status = move_entity(mmi, empty_shelfs, e);
 			if(e == first) statusfirst = status;
-			//printf("status: %d\n", status);
+			printf(" %d status: %d \n", e->id, status);
 			switch (status) {
 				case ENQUEUE: 	mmi->entity_count++;
 						queue_enqueue(entity_queue, e); break;
@@ -742,7 +789,7 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
 						}
 				case EDGEL: 	if (e == first) first = NULL;
 						fast_realloc(send_entities,s_counts, maxima,0, 20);
-						send_entities[0][s_counts[0]++] = e;
+						send_entities[0][s_counts[0]] = e;
 						s_counts[0] +=	1; break;
 				case UP:	if((e->position.y + e->position.z * mmi->columns) > upperlimit){
 							if (e == first) first = NULL;
@@ -784,11 +831,12 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
 	MPI_Type_commit(&MPI_Entity);
 	//SEND ENTITIES
 	for(int i = 0; i < 6; i++){
-		//printf("R %d Sending to %d c %d\n",mmi->rank, targets[i], s_counts[i]);
+		printf("R %d Sending to %d c %d\n",mmi->rank, targets[i], s_counts[i]);
 		if(targets[i] >= mmi->size || targets[i] < 0 || targets[i] == mmi->rank) continue;
 		send_entities[i] = realloc(send_entities[i], s_counts[i]*sizeof(entity));
 		EssentialEntity* entities_tosend = calloc(s_counts[i], sizeof(EssentialEntity));
 		for(int c = 0;c < s_counts[i];c++){
+			printf("c %d", c);
 			entities_tosend[c].type   = send_entities[i][c]->type;
 			entities_tosend[c].id     = send_entities[i][c]->id;
 			entities_tosend[c].listpos= send_entities[i][c]->listpos;
@@ -802,18 +850,18 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
 		MPI_Isend(&s_counts[i], 1, MPI_INT, targets[i], ENTITYTAG, MPI_COMM_WORLD, &req);
 		MPI_Isend(entities_tosend, s_counts[i],  MPI_Entity, targets[i], ENTITYTAG, MPI_COMM_WORLD, &req);
 		send_buffers[i] = entities_tosend;
-		//if(mmi->rank == 0 && targets[i] == 1) printf("R 0: COUNT SEND %d \n", s_counts[i]);
+		if(s_counts[i] != 0) printf("R %d: COUNT SEND %d to %d\n", mmi->rank, s_counts[i], targets[i]);
 	}
 	//printf("\n");
 
 	//RECIVE ENTITIES
 	for(int i = 0; i < 6; i++){
 		int count = 0;
-		if(targets[i] == 1)printf("R %d: COUNT RECV %d\n",mmi->rank, count);
+		//if(targets[i] == 1)printf("R %d: COUNT RECV %d\n",mmi->rank, count);
 		if(targets[i] >= mmi->size || targets[i] < 0 || targets[i] == mmi->rank) continue;
 		MPI_Recv(&count, 1, MPI_INT, targets[i], ENTITYTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-		if(targets[i] == 1)printf("R 1: COUNT RECV %d\n", count);
+		//if(targets[i] == 1)printf("R 1: COUNT RECV %d\n", count);
 		EssentialEntity * entityarr = malloc((count+1) * sizeof(EssentialEntity));
 		MPI_Recv(entityarr, count, MPI_Entity, targets[i], ENTITYTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		for(int b = 0; b < count; b++){
@@ -833,6 +881,7 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
 			mmi->spawn_count++;
 		}
 		free(entityarr);
+		if(count) printf("R %d: COUNT RECV %d from %d\n", mmi->rank, count, targets[i]);
 	}
 
 	MPI_Barrier(MPI_COMM_WORLD);
@@ -847,6 +896,7 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
         }
         free(send_buffers);
 	free(send_entities);
+	//printf("exit w queue\n");
 }
 
 /**
@@ -944,14 +994,14 @@ int readInit(MPI_File *fh) {
  * @param *fh           : file pointer
  * @param entid         : the id of the entity to read [0, ecount]
  */
-entity* readEntity(meta* const mmi, MPI_File *fh, int entid) {
+void readEntity(meta* const mmi, MPI_File *fh, int entid, queue_t* const pathf_queue) {
         int offset = (entid * (items*3+1) +2) * 4;
         MPI_File_read_at(*fh, offset, readbuf, items*3+1, MPI_INT, MPI_STATUS_IGNORE);
-
+	printf("items = %d \n", items*3);
         //Generate list
         vector3* list = calloc(3*items, sizeof(vector3));
         int o = 0;
-
+	printf("ID: %d \n", __builtin_bswap32(readbuf[0]));
         for(int i = 0; i < items*3; i++) {
         #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
         //readbuf[i+1] = __builtin_bswap32(readbuf[i+1]);
@@ -961,6 +1011,7 @@ entity* readEntity(meta* const mmi, MPI_File *fh, int entid) {
         #elif
                 list[o] = (vector3) {readbuf[i+1], readbuf[i+2], readbuf[i+3]};
         #endif
+		printf("     [%d, %d, %d]\n", list[o].x,list[o].y,list[o].z);
                 o++;
         }
 /*        printf("-------------------------\n");
@@ -969,7 +1020,7 @@ for(int i = 0; i < items*3; i+=3) {
 }*/
 
         entity* e = calloc(1, sizeof(*e));
-                e->id = readbuf[0];
+                e->id = __builtin_bswap32(readbuf[0]);
                 e->type = CUSTOMER;
                 e->listpos = 0;
                 e->path_position = 0;
@@ -979,7 +1030,7 @@ for(int i = 0; i < items*3; i+=3) {
 
 	int addedfields = 1;
 	vector3* resolvedlist = calloc(3*items*3+3, sizeof(vector3));
-        resolvedlist[0] = e->position;
+        /*resolvedlist[0] = e->position;
 	//check if first item and entry are in same story
 	if(e->position.z != list[0].z) {
 		resolvedlist[addedfields] = mmi->lift_fields[rand() % mmi->lift_count];
@@ -990,54 +1041,65 @@ for(int i = 0; i < items*3; i+=3) {
                 addedfields++;
                 resolvedlist[addedfields] = list[0];
                 addedfields++;
-	}
+	}*/
 	//Resolve story changes
         int c = 1;
-        for(c = 1;c < items; c++) {
-            if(list[c*3].x == 0 && list[c*3].y == 0 && list[c*3].z == 0) break;
-            if(list[c*3-1].z == list[c*3].z) {                  //fields are on same level
-                resolvedlist[addedfields] = list[c*3];
+        for(c = 1;c < o; c++) {
+            if(list[c].x == 0 && list[c].y == 0 && list[c].z == 0) break;
+            //if(list[c*3-1].z == list[c*3].z) {                  //fields are on same level
+                resolvedlist[addedfields] = list[c];
                 addedfields++;
-            } else {                                        //levelchange needed, get to next elevator
-                resolvedlist[addedfields] = mmi->lift_fields[rand() % mmi->lift_count];
+            //} else {                                        //levelchange needed, get to next elevator
+               /* resolvedlist[addedfields] = mmi->lift_fields[rand() % mmi->lift_count];
                 resolvedlist[addedfields].z = resolvedlist[addedfields-1].z;
                 addedfields++;
                 resolvedlist[addedfields] = resolvedlist[addedfields-1];
                 resolvedlist[addedfields].z = list[c*3].z;
                 addedfields++;
                 resolvedlist[addedfields] = list[c*3];
-                addedfields++;
-            }
+                addedfields++;*/
+            //}
         }
         //Get back to exit (entrance == exit)
-        if(list[c*3].z != e->position.z) {
-            resolvedlist[addedfields] = mmi->lift_fields[rand() % mmi->lift_count];
+        resolvedlist[addedfields++] = mmi->exit_fields[rand() % mmi->exit_count];
+	//if(list[c*3].z != e->position.z) {
+            /*resolvedlist[addedfields] = mmi->lift_fields[rand() % mmi->lift_count];
             resolvedlist[addedfields].z = list[c*3-1].z;
             addedfields++;
             resolvedlist[addedfields] = resolvedlist[addedfields-1];
             resolvedlist[addedfields].z = list[c*3].z;
             addedfields++;
-            resolvedlist[addedfields] = list[c*3];
-        } else {
-            resolvedlist[addedfields] = list[c*3];
-        }
-        printf("-------------------------%i\n",addedfields);
-for(int i = 0; i < addedfields; i++) {
+            resolvedlist[addedfields] = list[c*3];*/
+        //} else {
+        //    resolvedlist[addedfields] = list[c*3];
+        //}
+      //  printf("-------------------------%i\n",addedfields);
+printf("Before Realloc \n");
+for(int i = 0; i < o; i++) {
     printf("%d,%d,%d\n", resolvedlist[i].x, resolvedlist[i].y, resolvedlist[i].z);
 }/*
 for(int i = 0; i < items*3; i+=3) {
     printf("%d,%d,%d\n", list[i].x, list[i].y, list[i].z);
 }*/
         vector3* tmp;
-	tmp = realloc(resolvedlist, addedfields);
+	tmp = realloc(resolvedlist, addedfields*sizeof(vector3));
         if(tmp == NULL) {
             MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
         }
+printf("Afer Ralloc \n");
+for(int i = 0; i < addedfields; i++) {
+    printf("%d,%d,%d\n", resolvedlist[i].x, resolvedlist[i].y, resolvedlist[i].z);
+}
         resolvedlist = tmp;
-        e->list = resolvedlist;
+        //for(int b = 0; i )
+	e->list = resolvedlist;
 //	e->list = list;
 	free(list);
-        return e;
+	printf(" e %p \n", e);
+        //return e;
+	e->position = mmi->exit_fields[rand() % mmi->exit_count];
+	queue_enqueue(pathf_queue, e);
+	mmi->spawn_count++;
 }
 
 void pathWriterInit(MPI_File outputfh) {
@@ -1057,7 +1119,7 @@ void writePath(ASPath path, entity* e) {
 		writecontainer[i*3+5] = field->y;
 		writecontainer[i*3+6] = field->z;
 	}
-	printf("--------------------------------------%i",size);
+	printf("--------------------------------------%i ",size);
 	MPI_File_write_shared(output, writecontainer, size, MPI_INT, MPI_STATUS_IGNORE);
 //	MPI_File_write_shared(output, &e->id, 1, MPI_INT, MPI_STATUS_IGNORE);
 }

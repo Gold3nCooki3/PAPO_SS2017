@@ -90,14 +90,13 @@ int main(int argc, char *argv[]){
 	}
 	free(known_Path);
 */
-entity* e;
+//entity* e;
 	//Spawn first entity
 	if(mmi->exit_count > 0 && entryrank == 0 && entlist_size > 0) {
-		e = readEntity(mmi, &entlist, current_customers);
-		
-		spawn_entity(mmi, pathf_queue, empty_shelfs, e, CUSTOMER);
+		readEntity(mmi, &entlist, current_customers, pathf_queue);
+		printf("spawn\n");
+		//spawn_entity(mmi, pathf_queue, empty_shelfs, e, CUSTOMER);
 		current_customers++;
-		mmi->spawn_count++;
 		customerindex++;
 /*                e = readEntity(&entlist, current_customers);
 		e->position = mmi->exit_fields[rand() % mmi->exit_count];
@@ -109,9 +108,10 @@ entity* e;
 	}
 	
 	print_queue_parallel(pathf_queue, mmi, mmi->spawn_count);
-	int i = 0, knownPathmax = 100, knownPath_count = 0;
+	int knownPathmax = 100, knownPath_count = 0;
 	PS* known_Path = malloc(knownPathmax * sizeof(PS));
 
+//	int = 0;
 //	while(i++ < 100) {
 //		work_queue(mmi, entity_queue, empty_shelfs, pathf_queue, known_Path, &knownPathmax, &knownPath_count);
 //		print_queue_parallel(entity_queue, mmi, mmi->entity_count);
@@ -132,8 +132,9 @@ entity* e;
 	}*/
         MPI_Barrier(MPI_COMM_WORLD);
 	int message[2] = {0,0};
-	entity* work_entity;
-	while(1==1){
+	//entity* work_entity;
+	int temp = 0;
+	while(temp++ < 42){
 //		eployeespawns = mmi->empty_count/employeebag;
 			if(entryrank == 0 && mmi->exit_count > 0) {		//Check if entrygroup-root
 				if(customerindex == entlist_size) {		//End spawning and start emptying the queue
@@ -162,10 +163,11 @@ entity* e;
 					
 					//Spawn locally
 					for(int s = 0; s < message[1]; s++) {
-						work_entity = readEntity(mmi, &entlist, message[0] + s);
-						work_entity->position = mmi->exit_fields[rand() % mmi->exit_count];
-						spawn_entity(mmi, pathf_queue, empty_shelfs, work_entity, CUSTOMER);
-						mmi->spawn_count++;
+						readEntity(mmi, &entlist, message[0] + s, pathf_queue);
+						//work_entity->position = mmi->exit_fields[rand() % mmi->exit_count];
+						//printf("we ptr: %p", work_queue);
+						//spawn_entity(mmi, pathf_queue, empty_shelfs, work_entity, CUSTOMER);
+						//mmi->spawn_count++;
 					}
 				} else {
 					message[0] = 0;
@@ -183,11 +185,11 @@ entity* e;
 
 				if(message[0] > 0) {
 					for(int s = 0; s < message[1]; s++) {
-						work_entity = readEntity(mmi, &entlist, message[0] + s);
-						work_entity->position = mmi->exit_fields[rand() % mmi->exit_count];
-						spawn_entity(mmi, pathf_queue, empty_shelfs, work_entity, CUSTOMER);
+						readEntity(mmi, &entlist, message[0] + s, pathf_queue);
+						//work_entity->position = mmi->exit_fields[rand() % mmi->exit_count];
+						//spawn_entity(mmi, pathf_queue, empty_shelfs, work_entity, CUSTOMER);
 
-						mmi->spawn_count++;
+						//mmi->spawn_count++;
 					}
 				}
 			}

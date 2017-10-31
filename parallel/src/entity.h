@@ -137,7 +137,7 @@ int readInit(MPI_File *fh);
  * @param fh            : file to read
  * @param entid         : id of entity to read
  */
-entity* readEntity(meta* const mmi, MPI_File *fh, int entid);
+void readEntity(meta* const mmi, MPI_File *fh, int entid, queue_t* const pathf_queue);
 
 void pathWriterInit(MPI_File outputfh);
 
