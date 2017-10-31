@@ -4,4 +4,5 @@
 cd src
 make
 cd ..
+rm err.err out.out output.entout
 sbatch job.slurm

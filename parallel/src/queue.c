@@ -27,6 +27,7 @@ queue_t *queue_new(void) {
 		return NULL;
 	}
 	queue->front = queue->back = NULL;
+	queue->length = 0;
 	return queue;
 }
 
@@ -40,6 +41,7 @@ void *queue_dequeue(queue_t *queue) {
 	if (queue->front == NULL) {
 		queue->back = NULL;
 	}
+	queue->length--;
 	free(node);
 	return data;
 }
@@ -60,5 +62,6 @@ int queue_enqueue(queue_t *queue, void *data) {
 		queue->back->next = node;
 		queue->back = node;
 	}
+	queue->length++;
 	return SUCCESS;
 }

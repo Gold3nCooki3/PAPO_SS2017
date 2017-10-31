@@ -20,6 +20,7 @@ struct queue_node_s {
 struct queue_s {
   struct queue_node_s *front;
   struct queue_node_s *back;
+  int length;
 };
 
 typedef struct queue_s queue_t;

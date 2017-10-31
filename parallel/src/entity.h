@@ -23,6 +23,8 @@
 #include "program_test.h"
 #include "AStar.h"
 
+int *readbuf;		//buffer to read a single entity
+int items, ecount;	//contains max_items per entity and number of entities in file
 
 typedef enum PATHF_STATUS {ERR = -1, COMPL = -2} PATHF_STATUS;
 typedef enum EntityType {CUSTOMER, EMPLOYEE=5} EntityType;
@@ -99,12 +101,16 @@ typedef struct PathArrays PathArrays;
 
 static vector3 start_vec;
 
+MPI_File output;
+
 /*Spawn an entity and enqueue it
  * @param queue 	: queue of all entities
  * @param position 	: position where the entity is spawned
+ * @param e		: entitiy to spawn
  * @param type		: type of the entity
  */
-void spawn_entity(meta* const mmi, queue_t* const entity_queue, queue_t* const empty_shelfs, EntityType type);
+void spawn_entity(meta* const mmi, queue_t* const entity_queue, queue_t* const empty_shelfs, entity* e, EntityType type);
+void spawn_entity_random(meta* const mmi, queue_t* const entity_queue, queue_t* const empty_shelfs, EntityType type);
 
 /*Move every entity in the queue, dequeue if entity reached final destination
  * @param market 	: fields where entities move within
@@ -112,5 +118,29 @@ void spawn_entity(meta* const mmi, queue_t* const entity_queue, queue_t* const e
  *
  */
 void work_queue(meta * const mmi, queue_t* const entity_queue, queue_t* const empty_shelfs, queue_t* const pathf_queue, PS* known_Path, int* knownPathmax, int* knownPath_count);
+
+/*
+ * Generates an employee entity to refill an empty shelf
+ * @param id            : id of the employee
+ * @param empty_shelf   : shelf to refill
+ */
+entity* make_worker(int id, vector3* empty_shelf);
+
+/* Prepares the parallel reading in a file for the entry-commgroup
+ *  initially reads the number of entities and the number of max_items per entity
+ * @param fh            : file to read entities from
+ + @return		: number of entities to spawn
+ */
+int readInit(MPI_File *fh);
+
+/* Reads a single entity
+ * @param fh            : file to read
+ * @param entid         : id of entity to read
+ */
+entity* readEntity(meta* const mmi, MPI_File *fh, int entid);
+
+void pathWriterInit(MPI_File outputfh);
+
+void writePath(ASPath path, entity* e);
 
 #endif

@@ -1,0 +1,114 @@
+<?xml version="1.0"?>
+<session>
+    <breakpoints>
+        <breakpoint type="breakpoint" enabled="yes" appliesto="All" condition="" language="auto" filename="entity.c" line="796" function="" fullpath="/home/bremer/git/papo17-working-copy/parallel/src/entity.c" pending="yes"/>
+        <breakpoint type="breakpoint" enabled="no" appliesto="All" condition="" language="auto" filename="marketsim.c" line="151" function="" fullpath="/home/bremer/git/papo17-working-copy/parallel/src/marketsim.c" pending="yes"/>
+        <breakpoint type="breakpoint" enabled="no" appliesto="All" condition="" language="auto" filename="marketsim.c" line="162" function="" fullpath="/home/bremer/git/papo17-working-copy/parallel/src/marketsim.c" pending="yes"/>
+        <breakpoint type="breakpoint" enabled="yes" appliesto="All" condition="" language="auto" filename="marketsim.c" line="178" function="" fullpath="/home/bremer/git/papo17-working-copy/parallel/src/marketsim.c" pending="yes"/>
+        <breakpoint type="breakpoint" enabled="yes" appliesto="All" condition="" language="auto" filename="marketsim.c" line="205" function="" fullpath="/home/bremer/git/papo17-working-copy/parallel/src/marketsim.c" pending="yes"/>
+        <breakpoint type="breakpoint" enabled="yes" appliesto="All" condition="" language="auto" filename="marketsim.c" line="202" function="" fullpath="/home/bremer/git/papo17-working-copy/parallel/src/marketsim.c" pending="yes"/>
+    </breakpoints>
+    <buildmanager>
+        <build_command>make</build_command>
+        <build_working_directory>/home/bremer/git/papo17-working-copy/parallel/src</build_working_directory>
+    </buildmanager>
+    <configuration>
+        <version>
+            <version>49session</version>
+        </version>
+        <checkpointing>
+            <provider>GDB</provider>
+        </checkpointing>
+        <default-breakpoints>
+            <abort>yes</abort>
+            <catch>no</catch>
+            <cuda-kernel-launch>yes</cuda-kernel-launch>
+            <exec>no</exec>
+            <exit>no</exit>
+            <fork>no</fork>
+            <mic-offload>yes</mic-offload>
+            <throw>no</throw>
+        </default-breakpoints>
+        <memory-debugging>
+            <backtraces>yes</backtraces>
+            <cuda-memcheck>no</cuda-memcheck>
+            <custom-allocators></custom-allocators>
+            <enabled>yes</enabled>
+            <guard-pages></guard-pages>
+            <interval>-1</interval>
+            <preload>dmallocthcxx</preload>
+            <setting>low</setting>
+            <subset>*</subset>
+        </memory-debugging>
+        <messages>
+            <cuda-kernel-launch>yes</cuda-kernel-launch>
+            <default-breakpoints>yes</default-breakpoints>
+            <fatal-signals>yes</fatal-signals>
+            <memory-debugging-errors>yes</memory-debugging-errors>
+            <mic-offload>yes</mic-offload>
+            <outdated-source-file>yes</outdated-source-file>
+            <show-cppcheck-timeout>yes</show-cppcheck-timeout>
+            <show-cuda-step-time-warning>yes</show-cuda-step-time-warning>
+            <signals>yes</signals>
+            <user-defined-breakpoints>yes</user-defined-breakpoints>
+            <watchpoints>yes</watchpoints>
+        </messages>
+        <startup>
+            <application-name>/home/bremer/git/papo17-working-copy/parallel/src/prog</application-name>
+            <arguments>/home/bremer/git/papo17-working-copy/parallel/data/ggtest/EASY-TEST10x10x5/mall.mall.hex /home/bremer/git/papo17-working-copy/parallel/data/ggtest/EASY-TEST10x10x5/E10min5max8.elist.hex 100 /home/bremer/git/papo17-working-copy/parallel/output.entout</arguments>
+            <core-file></core-file>
+            <cuda-enabled>no</cuda-enabled>
+            <default-number-of-mpc-tasks>0</default-number-of-mpc-tasks>
+            <default-number-of-nodes>4</default-number-of-nodes>
+            <default-number-of-openmp-threads>-1</default-number-of-openmp-threads>
+            <default-number-of-processes>4</default-number-of-processes>
+            <gdbserver-host></gdbserver-host>
+            <gdbserver-port>10000</gdbserver-port>
+            <input-file></input-file>
+            <mpi-arguments></mpi-arguments>
+            <mpi-enabled>yes</mpi-enabled>
+            <mpi-environment-variables>MPICH_NEMESIS_NETMOD=tcp</mpi-environment-variables>
+            <mpirun></mpirun>
+            <mpirun-is-script>no</mpirun-is-script>
+            <openmp-enabled>no</openmp-enabled>
+            <override-mpirun>no</override-mpirun>
+            <plugins></plugins>
+            <quick-restart>yes</quick-restart>
+            <use-input-file>no</use-input-file>
+            <working-directory></working-directory>
+        </startup>
+        <template-variables>
+            <variable>
+                <name>QUEUE_TAG</name>
+                <value>west</value>
+            </variable>
+            <variable>
+                <name>WALL_CLOCK_LIMIT_TAG</name>
+                <value>04:30:00</value>
+            </variable>
+        </template-variables>
+    </configuration>
+    <evaluations/>
+    <groups>
+        <colorcount>2</colorcount>
+        <viewmode>AutomaticView</viewmode>
+    </groups>
+    <memorydebugger>
+        <suppression>
+            <frame>0</frame>
+            <position>
+                <function>unaligned_bigint</function>
+            </position>
+        </suppression>
+    </memorydebugger>
+    <sources recursive="yes" auto-internal="yes">
+        <internal>/home/bremer/git</internal>
+        <internal>/home/bremer/git/papo17-working-copy/parallel/src</internal>
+        <internal>/home/bremer/git/papo17-working-copy/parallel</internal>
+        <internal>/home/bremer/git/papo17-working-copy</internal>
+    </sources>
+    <threads>
+        <viewmode>AutomaticView</viewmode>
+    </threads>
+    <visitpicks/>
+</session>

@@ -38,8 +38,9 @@ static float PathNodeHeuristic(void *fromNode, void *toNode, void *context) {
 	PathNode *from = (PathNode *) fromNode;
 	PathNode *to = (PathNode *) toNode;
 	if (from->z != to->z){
-		MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-		exit(EXIT_FAILURE);
+//TODO!		MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+//		exit(EXIT_FAILURE);
+		return 0;
 	}
 	return (fabs(from->x - to->x) + fabs(from->y - to->y));
 }
@@ -161,7 +162,7 @@ ASPath generate_localpath(vector3 start, vector3 dest, meta* const mmi,
 	PathNode pathFrom = (PathNode) start;
 	vector3 pathTo_v = dest;
 
-	if (pathTo_v.z != start.z) {
+	if (pathTo_v.z != start.z) {/*
 		if (mmi->lift_count > 0) {
 			//printf(" searching for lift \n");
 			pathTo_v = get_close_vector3(mmi->lift_fields, mmi->lift_count,
@@ -169,7 +170,9 @@ ASPath generate_localpath(vector3 start, vector3 dest, meta* const mmi,
 		} else {
 			*lift_flag = TRUE;
 			return NULL;
-		}
+		}*/
+                *lift_flag = FALSE;
+                return NULL;
 	} else if (in_process(dest)) {
 		switch (in_matrix_g(dest)->type) {
 		case REGISTER:
@@ -373,6 +376,12 @@ void generate_paths(queue_t* const queue, meta* const mmi, PS* known_Path, int* 
 	while (node != NULL) {
 		entity* e = node->data;
 		int lift_flag = FALSE;
+		printf("e->list[e->listpos]: %i,%i,%i", e->list[e->listpos].x, e->list[e->listpos].y, e->list[e->listpos].z);
+                if(e->list[e->listpos].z != e->list[e->listpos+1].z) {
+                        e->listpos++;
+                        printf("WECHSLE STOCKWERK!");
+                        continue;
+                }
 		ASPath tempPath = generate_localpath(e->position, e->list[e->listpos],
 				mmi, &lift_flag, &e->memory_dest);
 		if (ASPathGetCount(tempPath) > 0) {
@@ -408,8 +417,7 @@ void generate_paths(queue_t* const queue, meta* const mmi, PS* known_Path, int* 
 					result = c;
 					e->path = path;
 					break;
-				}
-				if (c == mmi->edge_count - 1) {
+				}else if (c == mmi->edge_count - 1) {
 					printf("Error");
 					MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 					exit(EXIT_FAILURE);
@@ -442,7 +450,7 @@ void generate_paths(queue_t* const queue, meta* const mmi, PS* known_Path, int* 
 			rightcount, leftcount, core_c_r ,core_c_l, new_c_r, new_c_l, not_completed};
 
 	//int max_iter = 0;
-	while (TURE) {
+	while (TRUE) {
 		int pos_r = PA.rightcount - PA.new_c_r;
 		int pos_l = PA.leftcount - PA.new_c_l;
 
@@ -556,6 +564,7 @@ EnS move_entity(meta* const mmi, queue_t* const empty_shelfs, entity* const e) {
 		switch (in_matrix_g(e->memory_dest)->type) {
 		case STOCK:
 		case EXIT:
+			writePath(e->path, e);
 			ASPathDestroy(e->path);
 			return DESTROY;
 			break;
@@ -571,7 +580,11 @@ EnS move_entity(meta* const mmi, queue_t* const empty_shelfs, entity* const e) {
 				if (!in_process(e->position))
 					return_val = UP;
 			}
-			//printf("PF_ Takeing the lift %d, iP: %d\n", return_val, !in_process(e->position));
+                        new_pos = ASPathGetNode(e->path, e->path_position);
+                        e->position = *new_pos;
+                        e->path_position++;
+                        return_val = NEWPATH;
+			//printf("PF_ Taking the lift %d, iP: %d\n", return_val, !in_process(e->position));
 			break;
 		case CORRIDOR:
 			if (!in_process(e->list[e->listpos])) {
@@ -597,6 +610,7 @@ EnS move_entity(meta* const mmi, queue_t* const empty_shelfs, entity* const e) {
 		default:
 			break;
 		}
+		writePath(e->path, e);
 		ASPathDestroy(e->path);
 		e->path_position = 0;
 	} else if (e->listpos >= e->amountItems) { //
@@ -800,7 +814,7 @@ void work_queue(meta * const mmi, queue_t* const entity_queue,
 		MPI_Recv(&count, 1, MPI_INT, targets[i], ENTITYTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
 		if(targets[i] == 1)printf("R 1: COUNT RECV %d\n", count);
-		EssentialEntity * entityarr = malloc(count * sizeof(EssentialEntity));
+		EssentialEntity * entityarr = malloc((count+1) * sizeof(EssentialEntity));
 		MPI_Recv(entityarr, count, MPI_Entity, targets[i], ENTITYTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		for(int b = 0; b < count; b++){
 			entity* e = calloc(1, sizeof(*e));
@@ -880,11 +894,182 @@ vector3* generate_list(meta* const mmi, queue_t* empty_shelfs, int* items,
 }
 
 /*Spawn an entity and enqueue it
+ * @param entity_queue  : queue of all entities
+ * @param position      : position where the entity is spawned
+ * @param type          : type of the entity
+ */
+void spawn_entity(meta* const mmi, queue_t* const entity_queue, queue_t* const empty_shelfs, entity* e, EntityType type){
+        static int counter = 0;
+//        vector3 * list= malloc(sizeof(vector3));
+//      list[1] = {4,4,4};
+        queue_enqueue(entity_queue, e);
+        //Should be done with a Mutex..
+        counter++;
+	mmi->spawn_count++;
+//        mmi->entity_count = counter;
+}
+
+entity* make_worker(int id, vector3* empty_shelf) {
+        entity* e = calloc(1, sizeof(*e));
+                e->id = id;
+                e->type = EMPLOYEE;
+                e->listpos = 0;
+                e->path_position = 0;
+                e->amountItems = 1;
+                //will be changed by the spawning process
+                e->position= (vector3) {0,0,0};
+                e->memory_dest.x = -1;
+                //exit has to be concatenated
+                e->list = empty_shelf;
+        return e;
+}
+
+/* Reads the first to integers of an input file to determine the number of entities and the max size of their shopping list
+ * @param *fh           : file pointer
+ */
+int readInit(MPI_File *fh) {
+        MPI_File_read_all(*fh, &items, 1, MPI_INT, MPI_STATUS_IGNORE);
+        MPI_File_read_all(*fh, &ecount, 1, MPI_INT, MPI_STATUS_IGNORE);
+        //Change endian if necessary
+        #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+        items = __builtin_bswap32(items);
+        ecount = __builtin_bswap32(ecount);
+        #endif
+        readbuf = calloc(items*3+1, sizeof(int));
+	return ecount;
+}
+
+
+/* Reads a single entity with id and shoppingn list from a file into a buffer
+ * @param *fh           : file pointer
+ * @param entid         : the id of the entity to read [0, ecount]
+ */
+entity* readEntity(meta* const mmi, MPI_File *fh, int entid) {
+        int offset = (entid * (items*3+1) +2) * 4;
+        MPI_File_read_at(*fh, offset, readbuf, items*3+1, MPI_INT, MPI_STATUS_IGNORE);
+
+        //Generate list
+        vector3* list = calloc(3*items, sizeof(vector3));
+        int o = 0;
+
+        for(int i = 0; i < items*3; i++) {
+        #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+        //readbuf[i+1] = __builtin_bswap32(readbuf[i+1]);
+        //readbuf[i+2] = __builtin_bswap32(readbuf[i+2]);
+        //readbuf[i+3] = __builtin_bswap32(readbuf[i+3]);
+        list[o] = (vector3) {__builtin_bswap32(readbuf[i+1]), __builtin_bswap32(readbuf[i+2]), __builtin_bswap32(readbuf[i+3])};
+        #elif
+                list[o] = (vector3) {readbuf[i+1], readbuf[i+2], readbuf[i+3]};
+        #endif
+                o++;
+        }
+/*        printf("-------------------------\n");
+for(int i = 0; i < items*3; i+=3) {
+    printf("%d,%d,%d\n", list[i].x, list[i].y, list[i].z);
+}*/
+
+        entity* e = calloc(1, sizeof(*e));
+                e->id = readbuf[0];
+                e->type = CUSTOMER;
+                e->listpos = 0;
+                e->path_position = 0;
+                e->amountItems = items;
+                e->position = mmi->exit_fields[rand() % mmi->exit_count];
+                e->memory_dest.x = -1;
+
+	int addedfields = 1;
+	vector3* resolvedlist = calloc(3*items*3+3, sizeof(vector3));
+        resolvedlist[0] = e->position;
+	//check if first item and entry are in same story
+	if(e->position.z != list[0].z) {
+		resolvedlist[addedfields] = mmi->lift_fields[rand() % mmi->lift_count];
+		resolvedlist[addedfields].z = e->position.z;
+		addedfields++;
+                resolvedlist[addedfields] = resolvedlist[addedfields-1];
+                resolvedlist[addedfields].z = list[0].z;
+                addedfields++;
+                resolvedlist[addedfields] = list[0];
+                addedfields++;
+	}
+	//Resolve story changes
+        int c = 1;
+        for(c = 1;c < items; c++) {
+            if(list[c*3].x == 0 && list[c*3].y == 0 && list[c*3].z == 0) break;
+            if(list[c*3-1].z == list[c*3].z) {                  //fields are on same level
+                resolvedlist[addedfields] = list[c*3];
+                addedfields++;
+            } else {                                        //levelchange needed, get to next elevator
+                resolvedlist[addedfields] = mmi->lift_fields[rand() % mmi->lift_count];
+                resolvedlist[addedfields].z = resolvedlist[addedfields-1].z;
+                addedfields++;
+                resolvedlist[addedfields] = resolvedlist[addedfields-1];
+                resolvedlist[addedfields].z = list[c*3].z;
+                addedfields++;
+                resolvedlist[addedfields] = list[c*3];
+                addedfields++;
+            }
+        }
+        //Get back to exit (entrance == exit)
+        if(list[c*3].z != e->position.z) {
+            resolvedlist[addedfields] = mmi->lift_fields[rand() % mmi->lift_count];
+            resolvedlist[addedfields].z = list[c*3-1].z;
+            addedfields++;
+            resolvedlist[addedfields] = resolvedlist[addedfields-1];
+            resolvedlist[addedfields].z = list[c*3].z;
+            addedfields++;
+            resolvedlist[addedfields] = list[c*3];
+        } else {
+            resolvedlist[addedfields] = list[c*3];
+        }
+        printf("-------------------------%i\n",addedfields);
+for(int i = 0; i < addedfields; i++) {
+    printf("%d,%d,%d\n", resolvedlist[i].x, resolvedlist[i].y, resolvedlist[i].z);
+}/*
+for(int i = 0; i < items*3; i+=3) {
+    printf("%d,%d,%d\n", list[i].x, list[i].y, list[i].z);
+}*/
+        vector3* tmp;
+	tmp = realloc(resolvedlist, addedfields);
+        if(tmp == NULL) {
+            MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+        }
+        resolvedlist = tmp;
+        e->list = resolvedlist;
+//	e->list = list;
+	free(list);
+        return e;
+}
+
+void pathWriterInit(MPI_File outputfh) {
+	output = outputfh;
+}
+
+void writePath(ASPath path, entity* e) {
+	int size = ASPathGetCount(path)*3*sizeof(int)+sizeof(int)*3+1;
+	int* writecontainer = malloc(size);
+	writecontainer[0] = size;
+	writecontainer[1] = e->id;
+	writecontainer[2] = e->listpos;
+	writecontainer[3] = e->path_position;
+	for(int i = 0; i > ASPathGetCount(path); i++) {
+		vector3* field = ASPathGetNode(path, i);
+		writecontainer[i*3+4] = field->x;
+		writecontainer[i*3+5] = field->y;
+		writecontainer[i*3+6] = field->z;
+	}
+	printf("--------------------------------------%i",size);
+	MPI_File_write_shared(output, writecontainer, size, MPI_INT, MPI_STATUS_IGNORE);
+//	MPI_File_write_shared(output, &e->id, 1, MPI_INT, MPI_STATUS_IGNORE);
+}
+
+//Warning, legacy code!
+
+/*Spawn an entity and enqueue it
  * @param entity_queue 	: queue of all entities
  * @param position 	: position where the entity is spawned
  * @param type		: type of the entity
  */
-void spawn_entity(meta* const mmi, queue_t* const entity_queue,
+void spawn_entity_random(meta* const mmi, queue_t* const entity_queue,
 		queue_t* const empty_shelfs, EntityType type) {
 	static int counter = 0;
 	vector3 * list = malloc(2* sizeof(vector3));

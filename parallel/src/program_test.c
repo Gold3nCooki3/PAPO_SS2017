@@ -48,6 +48,7 @@ void print_queue_parallel(queue_t* const queue, meta *mmi , int chunk_length){
 		for(int source = 1; source < mmi->size; source++){
 			int old_cl = chunk_length;
 			MPI_Recv(&chunk_length, 1, MPI_INT, source, PRINTTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                        if(chunk_length > 0) {
 			if(old_cl != chunk_length) print_chunk = realloc(print_chunk, chunk_length * sizeof(PrintEntity));
 			MPI_Recv(print_chunk, chunk_length, MPI_PrintEntity, source, PRINTTAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 			// print data
@@ -57,6 +58,7 @@ void print_queue_parallel(queue_t* const queue, meta *mmi , int chunk_length){
 						print_chunk[i].posx, print_chunk[i].posy, print_chunk[i].posz,
 						print_chunk[i].destx, print_chunk[i].desty, print_chunk[i].destz, chunk_length);
 			}
+                        }
 		}
 		printf("\n");
 	}else{
@@ -64,7 +66,9 @@ void print_queue_parallel(queue_t* const queue, meta *mmi , int chunk_length){
 		collect_entities(queue, mmi->rank, chunk_length, print_chunk);
 		//send data
 		MPI_Isend(&chunk_length, 1, MPI_INT, MASTER, PRINTTAG, MPI_COMM_WORLD, &req);
+                if(chunk_length > 0) {
 		MPI_Isend(print_chunk, chunk_length, MPI_PrintEntity, MASTER, PRINTTAG, MPI_COMM_WORLD,  &req);
+                }
 	}
 	free(print_chunk);
 //	printf("rank: %d\n", mmi->rank);
